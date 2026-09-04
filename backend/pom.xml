@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
+
     <!-- ============================================================
-         Spring Boot baseline
+         SPRING BOOT BASELINE
          ============================================================ -->
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -17,30 +17,58 @@
     <groupId>com.neelastack</groupId>
     <artifactId>neelastack-backend</artifactId>
     <version>1.0.0</version>
+
     <name>neelastack-backend</name>
     <description>Neelastack freelancing platform - backend API</description>
 
+    <!-- ============================================================
+         PROPERTIES
+         ============================================================ -->
     <properties>
-        <java.version>21</java.version>
 
-        <!-- Directly managed application libraries -->
+        <!-- Runtime -->
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+
+        <!-- Application libraries -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <jjwt.version>0.12.6</jjwt.version>
 
-        <!-- Security / compatibility -->
+        <!-- API / observability / file handling -->
         <springdoc.version>2.8.17</springdoc.version>
         <sentry.version>8.53.0</sentry.version>
         <tika.version>3.3.2</tika.version>
 
-        <!-- Build -->
-        <maven.compiler.release>21</maven.compiler.release>
+        <!-- ========================================================
+             SECURITY PATCH OVERRIDES
+
+             Spring Boot dependency management exposes these
+             properties specifically for controlled overrides.
+             ======================================================== -->
+
+        <!-- Trivy: CVE-2026-59901 -->
+        <netty.version>4.1.136.Final</netty.version>
+
+        <!-- Trivy: CVE-2026-65182 / CVE-2026-65905 /
+             CVE-2026-68525 -->
+        <tomcat.version>10.1.59</tomcat.version>
+
+        <!-- Trivy: CVE-2026-54291 -->
+        <postgresql.version>42.7.12</postgresql.version>
+
+        <!-- Trivy: CVE-2021-0341 -->
+        <okhttp.version>4.12.0</okhttp.version>
+
     </properties>
 
+    <!-- ============================================================
+         DEPENDENCIES
+         ============================================================ -->
     <dependencies>
 
-        <!-- ============================================================
+        <!-- ========================================================
              CORE
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -82,9 +110,9 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              MFA
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>dev.samstevens.totp</groupId>
@@ -92,14 +120,14 @@
             <version>1.7.1</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              DATABASE
-             PostgreSQL + Flyway versions are managed by Spring Boot BOM
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -113,9 +141,9 @@
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              JWT
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -137,9 +165,26 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
+             OKHTTP
+             Explicitly override vulnerable transitive 3.10.0
+             ======================================================== -->
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>logging-interceptor</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
+
+        <!-- ========================================================
              UTILITIES
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -153,9 +198,9 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              API DOCS
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -163,9 +208,9 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              FILE STORAGE
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>com.cloudinary</groupId>
@@ -173,9 +218,9 @@
             <version>1.39.0</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              PAYMENTS
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>com.razorpay</groupId>
@@ -189,9 +234,9 @@
             <version>20240303</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              OBSERVABILITY
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>io.sentry</groupId>
@@ -199,9 +244,9 @@
             <version>${sentry.version}</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              PDF
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>com.github.librepdf</groupId>
@@ -209,10 +254,9 @@
             <version>1.3.39</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              FILE CONTENT DETECTION
-             Tika 3.x is the maintained line
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.apache.tika</groupId>
@@ -220,9 +264,9 @@
             <version>${tika.version}</version>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              TEST
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -236,9 +280,9 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- ============================================================
+        <!-- ========================================================
              TESTCONTAINERS
-             ============================================================ -->
+             ======================================================== -->
 
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -260,14 +304,13 @@
 
     </dependencies>
 
-    <!-- ================================================================
+    <!-- ============================================================
          BUILD
-         ================================================================ -->
-
+         ============================================================ -->
     <build>
         <plugins>
 
-            <!-- Stable single-fork test execution -->
+            <!-- Stable integration-test execution -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -293,12 +336,13 @@
                 </configuration>
             </plugin>
 
-            <!-- Compiler -->
+            <!-- Compiler / annotation processing -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>${maven.compiler.release}</release>
+
                     <annotationProcessorPaths>
 
                         <path>
