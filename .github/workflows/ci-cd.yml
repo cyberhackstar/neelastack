@@ -77,10 +77,25 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - working-directory: frontend
-        run: npm ci
-      - working-directory: frontend
-        run: npm audit --audit-level=high
+
+      - name: npm audit
+        working-directory: frontend
+        run: |
+          for attempt in 1 2 3 4 5; do
+            echo "npm audit attempt $attempt/5"
+
+            if npm audit --audit-level=high; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 5 ]; then
+              echo "npm audit failed; retrying in 15 seconds..."
+              sleep 15
+            fi
+          done
+
+          echo "::error::npm audit failed after 5 attempts"
+          exit 1
 
   sast:
     name: SAST (CodeQL)
@@ -148,6 +163,7 @@ jobs:
         run: mvn -B clean verify
         env:
           MFA_ENCRYPTION_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+          JWT_SECRET: ci-only-jwt-secret-change-me-please-32-bytes-minimum
           GOOGLE_CLIENT_ID: ci-test-client-id
           GOOGLE_CLIENT_SECRET: ci-test-client-secret
       - name: Upload surefire reports
