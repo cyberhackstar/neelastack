@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -23,6 +25,7 @@ import java.util.Map;
  * stuffing and contact-form spam.
  */
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -38,15 +41,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/api/v1/auth/resend-verification", new Limit(5, Duration.ofMinutes(10)),
             "/api/v1/public/inquiries", new Limit(5, Duration.ofMinutes(10)),
             "/api/v1/public/audit-preview/score", new Limit(20, Duration.ofMinutes(10)),
-            "/api/v1/public/audit-preview/unlock", new Limit(5, Duration.ofMinutes(10))
-    );
+            "/api/v1/public/audit-preview/unlock", new Limit(5, Duration.ofMinutes(10)));
 
-    private record Limit(int maxRequests, Duration window) {}
+    private record Limit(int maxRequests, Duration window) {
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                     @NonNull HttpServletResponse response,
-                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         Limit limit = LIMITS.get(request.getRequestURI());
 
@@ -65,7 +68,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 redisTemplate.expire(key, limit.window());
             }
         } catch (Exception e) {
-            // Redis unavailable — fail open rather than blocking all traffic on this endpoint.
+            // Redis unavailable — fail open rather than blocking all traffic on this
+            // endpoint.
             log.warn("Rate limiter could not reach Redis, allowing request through: {}", e.getMessage());
             filterChain.doFilter(request, response);
             return;
@@ -75,8 +79,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setStatus(429);
             response.setContentType("application/json");
             response.getWriter().write(
-                    "{\"status\":429,\"error\":\"Too Many Requests\",\"message\":\"Please slow down and try again shortly.\"}"
-            );
+                    "{\"status\":429,\"error\":\"Too Many Requests\",\"message\":\"Please slow down and try again shortly.\"}");
             return;
         }
 
