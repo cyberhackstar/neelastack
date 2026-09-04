@@ -7,11 +7,22 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+/**
+ * Shared base for integration tests. Uses a single, reused Postgres + Redis
+ * container pair for the whole test JVM instead of each test class starting
+ * its own container. This avoids the stale-HikariCP-pool bug where Spring's
+ * cached ApplicationContext keeps a DataSource pointed at a container that a
+ * previous test class already tore down.
+ *
+ * Requires src/test/resources/testcontainers.properties containing:
+ * testcontainers.reuse.enable=true
+ */
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 public abstract class AbstractIntegrationTest {
 
-  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine").withReuse(true);
+  static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+      .withReuse(true);
 
   static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine")
       .withExposedPorts(6379)

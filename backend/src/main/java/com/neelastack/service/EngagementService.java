@@ -34,11 +34,11 @@ public class EngagementService {
         User client = userRepository.findByEmail(request.clientEmail().toLowerCase().trim())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No registered client account found for email: " + request.clientEmail() +
-                        " — the client must sign up first."));
+                                " — the client must sign up first."));
 
         Inquiry inquiry = request.inquiryId() != null
                 ? inquiryRepository.findById(request.inquiryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Inquiry not found: " + request.inquiryId()))
+                        .orElseThrow(() -> new ResourceNotFoundException("Inquiry not found: " + request.inquiryId()))
                 : null;
 
         Engagement engagement = Engagement.builder()
@@ -54,16 +54,19 @@ public class EngagementService {
         return toDto(engagementRepository.save(engagement));
     }
 
+    @Transactional(readOnly = true)
     public List<EngagementDto> listAllForAdmin() {
         return engagementRepository.findAllByOrderByCreatedAtDesc().stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<EngagementDto> listForCurrentClient() {
         User user = currentUserProvider.get();
         return engagementRepository.findByClientIdOrderByCreatedAtDesc(user.getId())
                 .stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public EngagementDto get(UUID id) {
         return toDto(getEntityWithAccessCheck(id));
     }
@@ -76,7 +79,10 @@ public class EngagementService {
         return toDto(engagementRepository.save(engagement));
     }
 
-    /** Fetches an engagement, enforcing that the caller is either its client or an admin. */
+    /**
+     * Fetches an engagement, enforcing that the caller is either its client or an
+     * admin.
+     */
     Engagement getEntityWithAccessCheck(UUID id) {
         Engagement engagement = engagementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Engagement not found: " + id));
