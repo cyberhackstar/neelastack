@@ -3,14 +3,16 @@ package com.neelastack.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
@@ -23,10 +25,12 @@ import java.time.Duration;
  * public site never serves stale content after an edit.
  *
  * Implements CachingConfigurer (rather than just exposing a stray
+ * 
  * @Bean CacheErrorHandler) because that's the only mechanism Spring's cache
- * AOP interceptor actually consults for a custom error handler — a bare
+ *       AOP interceptor actually consults for a custom error handler — a bare
  * @Bean of type CacheErrorHandler sitting in the context is silently
- * ignored, which is a mistake worth flagging since it's an easy one to make.
+ *       ignored, which is a mistake worth flagging since it's an easy one to
+ *       make.
  */
 @Configuration
 @EnableCaching
@@ -35,9 +39,11 @@ public class CacheConfig implements CachingConfigurer {
 
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
-        // activateDefaultTyping lives on ObjectMapper, not on Jackson2ObjectMapperBuilder
+        // activateDefaultTyping lives on ObjectMapper, not on
+        // Jackson2ObjectMapperBuilder
         // (the builder has no such method) — build the mapper first, then call it on
-        // the built instance, which mutates it in place and returns `this` for chaining.
+        // the built instance, which mutates it in place and returns `this` for
+        // chaining.
         ObjectMapper mapper = Jackson2ObjectMapperBuilder.json().build();
         mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL);
@@ -77,7 +83,8 @@ public class CacheConfig implements CachingConfigurer {
 
             @Override
             public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Cache EVICT failed for cache '{}', key '{}': {}", cache.getName(), key, exception.getMessage());
+                log.warn("Cache EVICT failed for cache '{}', key '{}': {}", cache.getName(), key,
+                        exception.getMessage());
             }
 
             @Override

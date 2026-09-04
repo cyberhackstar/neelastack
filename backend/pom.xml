@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
+
 
     <!-- ============================================================
          SPRING BOOT BASELINE
@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -25,32 +25,40 @@
          PROPERTIES
          ============================================================ -->
     <properties>
+
         <!-- Runtime -->
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
 
         <!-- Application libraries -->
         <mapstruct.version>1.6.3</mapstruct.version>
-        <jjwt.version>0.13.0</jjwt.version>
+        <jjwt.version>0.12.6</jjwt.version>
 
         <!-- API / observability / file handling -->
-        <springdoc.version>3.1.0</springdoc.version>
-        <sentry.version>8.55.0</sentry.version>
+        <springdoc.version>2.8.17</springdoc.version>
+        <sentry.version>8.53.0</sentry.version>
         <tika.version>3.3.2</tika.version>
 
-        <!-- Explicitly maintained application dependencies -->
-        <postgresql.version>42.7.13</postgresql.version>
-        <okhttp.version>5.5.0</okhttp.version>
+        <!-- ========================================================
+             SECURITY PATCH OVERRIDES
 
-        <!-- Cloudinary HTTP5 client avoids the obsolete Apache HttpClient 4.4 chain -->
-        <cloudinary.version>2.4.0</cloudinary.version>
+             Spring Boot dependency management exposes these
+             properties specifically for controlled overrides.
+             ======================================================== -->
 
-        <!-- Payment / JSON -->
-        <razorpay.version>1.4.10</razorpay.version>
-        <org-json.version>20260814</org-json.version>
+        <!-- Trivy: CVE-2026-59901 -->
+        <netty.version>4.1.136.Final</netty.version>
 
-        <!-- Keep this only if your source still requires it; Boot 4 manages its own Tomcat/Netty -->
-        <!-- Do NOT carry forward the old Boot 3.x netty/tomcat overrides. -->
+        <!-- Trivy: CVE-2026-65182 / CVE-2026-65905 /
+             CVE-2026-68525 -->
+        <tomcat.version>10.1.59</tomcat.version>
+
+        <!-- Trivy: CVE-2026-54291 -->
+        <postgresql.version>42.7.12</postgresql.version>
+
+        <!-- Trivy: CVE-2021-0341 -->
+        <okhttp.version>4.12.0</okhttp.version>
+
     </properties>
 
     <!-- ============================================================
@@ -159,6 +167,7 @@
 
         <!-- ========================================================
              OKHTTP
+             Explicitly override vulnerable transitive 3.10.0
              ======================================================== -->
 
         <dependency>
@@ -180,7 +189,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.48</version>
             <optional>true</optional>
         </dependency>
 
@@ -206,8 +214,8 @@
 
         <dependency>
             <groupId>com.cloudinary</groupId>
-            <artifactId>cloudinary-http5</artifactId>
-            <version>${cloudinary.version}</version>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.39.0</version>
         </dependency>
 
         <!-- ========================================================
@@ -217,13 +225,13 @@
         <dependency>
             <groupId>com.razorpay</groupId>
             <artifactId>razorpay-java</artifactId>
-            <version>${razorpay.version}</version>
+            <version>1.4.6</version>
         </dependency>
 
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>${org-json.version}</version>
+            <version>20240303</version>
         </dependency>
 
         <!-- ========================================================
@@ -336,10 +344,10 @@
                     <release>${maven.compiler.release}</release>
 
                     <annotationProcessorPaths>
+
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.48</version>
                         </path>
 
                         <path>
@@ -347,6 +355,7 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
                         </path>
+
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
