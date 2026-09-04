@@ -11,8 +11,11 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+
+import java.util.Date;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -53,7 +56,6 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void defaultRevocationStub() {
-
         lenient()
                 .when(tokenRevocationService.isRevoked(anyString()))
                 .thenReturn(false);
@@ -61,5 +63,9 @@ public abstract class AbstractIntegrationTest {
         lenient()
                 .when(tokenRevocationService.isFamilyRevoked(anyString()))
                 .thenReturn(false);
+
+        lenient()
+                .when(tokenRevocationService.tryClaim(anyString(), any(Date.class)))
+                .thenReturn(true);
     }
 }
