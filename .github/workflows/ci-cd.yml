@@ -49,15 +49,8 @@ jobs:
           cache: maven
       - name: OWASP Dependency-Check
         working-directory: backend
-        run: mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8
+        run: mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8 -DnvdApiKeyEnvironmentVariable=NVD_API_KEY
         env:
-          # REQUIRED, not optional: without a registered NVD API key, the plugin's NVD
-          # feed update is aggressively rate-limited by NVD and this step reliably fails
-          # outright (no report.html even gets written) before it ever gets to actually
-          # scan anything -- that failure looks identical to "a real CVE >= 8 was found"
-          # in the Actions UI, which is misleading. Register a free key at
-          # https://nvd.nist.gov/developers/request-an-api-key and add it as the
-          # NVD_API_KEY repository secret (Settings -> Secrets and variables -> Actions).
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Upload report
         if: always()
