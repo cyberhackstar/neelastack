@@ -26,6 +26,9 @@ describe('AuthService', () => {
     email: 'jane@example.com',
     role: 'CLIENT',
     emailVerified: false,
+    mfaRequired: false,
+    mfaToken: null,
+    mustChangePassword: false,
   };
 
   function clearStorage() {

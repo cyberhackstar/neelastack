@@ -41,10 +41,12 @@ class LeadScoringServiceTest {
 
     @Test
     void budgetPlusUrgencyPlusExistingSystem_crossesWarmThreshold() {
-        // 30 + 20 + 15 = 65 -> WARM (60-79).
+        // 30 (budget) + 20 (urgency, via "ASAP") + 15 (existing system) + 10 (clear timeline —
+        // "ASAP" is not "not sure", so it also satisfies hasClearTimeline separately from the
+        // urgency bonus; see notSureTimeline_doesNotCountAsClearTimeline) = 75 -> WARM (60-79).
         int score = service.score("₹5,00,000+", "ASAP", null, "Existing Rails app", null, null);
 
-        assertThat(score).isEqualTo(65);
+        assertThat(score).isEqualTo(75);
         assertThat(service.tier(score)).isEqualTo(LeadTier.WARM);
     }
 

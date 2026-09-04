@@ -74,8 +74,12 @@ class EstimateCalculatorServiceTest {
         when(pricingRuleService.getActiveRule(eq("audit-review")))
                 .thenReturn(Optional.of(rule("audit-review", 25_000, 75_000L)));
 
+        // Timeline deliberately non-urgent ("3 months", matching the "normal" baseline used
+        // elsewhere in this suite, e.g. urgentRequest_bumpsBothBoundsByConfiguredUrgencyFactor) —
+        // isUrgent() treats strings like "2 week"/"1 week" as a rush signal and bumps both
+        // bounds, which this test isn't exercising.
         EstimateDto estimate = service.calculate(
-                InquiryIntent.MODERNIZE, "Code audit / performance review", null, List.of(), "2 weeks");
+                InquiryIntent.MODERNIZE, "Code audit / performance review", null, List.of(), "3 months");
 
         assertThat(estimate.low()).isEqualByComparingTo(BigDecimal.valueOf(25_000));
         assertThat(estimate.high()).isEqualByComparingTo(BigDecimal.valueOf(75_000));

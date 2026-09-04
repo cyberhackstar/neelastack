@@ -2,6 +2,10 @@
 
 Enterprise-grade client-acquisition and delivery platform for an independent software engineering practice. Spring Boot 3.4 (Java 21) + Angular 19 (SSR) + PostgreSQL + Redis.
 
+See [`docs/FEATURES.md`](docs/FEATURES.md) for a full feature-by-feature breakdown of
+what the platform does (public site, lead qualification, quotations, client portal,
+payments, admin back office, security/MFA, and infrastructure).
+
 ## Structure
 - `backend/` — Spring Boot API (JWT auth, Postgres, Flyway, Redis, Swagger)
 - `frontend/` — Angular SSR app
@@ -39,6 +43,14 @@ obtained once via a trusted channel — see the `deploy` job in `.github/workflo
 for exactly how these are used). The production `.env` itself (DB/Redis/JWT secrets,
 `ADMIN_BOOTSTRAP_*`, Razorpay, Cloudinary, Google OAuth, SMTP) lives on the Oracle VM at
 `/opt/neelastack/.env` and is not passed through GitHub Actions.
+
+## GitHub Actions secrets needed for CI to pass
+`NVD_API_KEY` — **required**, not optional, despite the name suggesting otherwise. The
+`dependency-scan-backend` job's OWASP Dependency-Check step fails outright (before it even
+produces a report) if this is unset, because NVD aggressively rate-limits unauthenticated
+feed updates. Register a free key at
+[nvd.nist.gov/developers/request-an-api-key](https://nvd.nist.gov/developers/request-an-api-key)
+and add it under **Settings → Secrets and variables → Actions**.
 
 ---
 

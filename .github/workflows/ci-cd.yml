@@ -51,9 +51,13 @@ jobs:
         working-directory: backend
         run: mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8
         env:
-          # Optional but strongly recommended: register a free NVD API key
-          # (https://nvd.nist.gov/developers/request-an-api-key) as a repo secret to
-          # avoid the NVD feed's unauthenticated rate limit slowing this job down.
+          # REQUIRED, not optional: without a registered NVD API key, the plugin's NVD
+          # feed update is aggressively rate-limited by NVD and this step reliably fails
+          # outright (no report.html even gets written) before it ever gets to actually
+          # scan anything -- that failure looks identical to "a real CVE >= 8 was found"
+          # in the Actions UI, which is misleading. Register a free key at
+          # https://nvd.nist.gov/developers/request-an-api-key and add it as the
+          # NVD_API_KEY repository secret (Settings -> Secrets and variables -> Actions).
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       - name: Upload report
         if: always()
@@ -86,14 +90,40 @@ jobs:
       actions: read
       contents: read
     strategy:
+      # Without this, a java-kotlin failure cancels the still-running javascript-typescript
+      # matrix job (GitHub's matrix default is fail-fast: true) — masking whether the JS/TS
+      # analysis would have passed on its own, and showing a confusing "operation was
+      # canceled" instead of that job's real result.
+      fail-fast: false
       matrix:
-        language: [java-kotlin, javascript-typescript]
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
     steps:
       - uses: actions/checkout@v4
+      # Only needed for the java-kotlin leg (backend/pom.xml declares Java 21 —
+      # see pom.xml's <maven.compiler.release>). Without this, CodeQL's autobuild falls
+      # back to whatever JDK happens to be first on the default runner's PATH, which may
+      # not satisfy that requirement and can fail the build outright.
+      - if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-      - uses: github/codeql-action/autobuild@v3
+          build-mode: ${{ matrix.build-mode }}
+      # build-mode: manual (java-kotlin only) replaces autobuild. autobuild scans for a
+      # build file at/near the repo root and fails here because pom.xml lives in
+      # backend/, not the root -- pointing Maven at it directly is more reliable than
+      # trying to get autobuild's root-relative heuristics to find it.
+      - if: matrix.language == 'java-kotlin'
+        working-directory: backend
+        run: mvn -B clean compile -DskipTests
       - uses: github/codeql-action/analyze@v3
 
   # --- Tests ---------------------------------------------------------------------

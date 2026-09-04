@@ -16,6 +16,9 @@ describe('adminGuard', () => {
     email: 'admin@example.com',
     role: 'ADMIN',
     emailVerified: true,
+    mfaRequired: false,
+    mfaToken: null,
+    mustChangePassword: false,
   };
 
   const clientUser: AuthResponse = { ...adminUser, role: 'CLIENT', email: 'client@example.com' };

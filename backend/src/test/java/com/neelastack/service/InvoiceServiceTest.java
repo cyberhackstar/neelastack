@@ -67,7 +67,7 @@ class InvoiceServiceTest {
 
     private Invoice invoiceWithOrder(String orderId, InvoiceStatus status) {
         Engagement engagement = Engagement.builder().id(UUID.randomUUID()).build();
-        return Invoice.builder()
+        Invoice invoice = Invoice.builder()
                 .id(UUID.randomUUID())
                 .engagement(engagement)
                 .invoiceNumber("NLS-2026-0001")
@@ -76,6 +76,11 @@ class InvoiceServiceTest {
                 .status(status)
                 .razorpayOrderId(orderId)
                 .build();
+        // getInvoiceWithAccessCheck() (called by createOrder/verifyAndConfirmPayment before
+        // the locked findByIdForUpdate read) uses a plain findById(). Stub it here so every
+        // test built from this helper satisfies both reads without repeating this in each test.
+        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        return invoice;
     }
 
     // --- createOrder ---
@@ -83,7 +88,6 @@ class InvoiceServiceTest {
     @Test
     void createOrder_rejectsAlreadyPaidInvoice() {
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PAID);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
         when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
 
@@ -98,7 +102,6 @@ class InvoiceServiceTest {
         // in flight for this invoice -- the fix for the concurrency bug described in the
         // spec: this must NOT call Razorpay again or overwrite razorpayOrderId.
         Invoice invoice = invoiceWithOrder("order_EXISTING", InvoiceStatus.PENDING);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
         when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
 
@@ -124,7 +127,7 @@ class InvoiceServiceTest {
     @Test
     void verifyAndConfirmPayment_validSignature_marksInvoicePaid() {
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PENDING);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -145,7 +148,7 @@ class InvoiceServiceTest {
     @Test
     void verifyAndConfirmPayment_invalidSignature_marksFailedAndThrows() {
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PENDING);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -164,7 +167,7 @@ class InvoiceServiceTest {
     @Test
     void verifyAndConfirmPayment_wrongOrderId_rejectedBeforeSignatureCheck() {
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PENDING);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
 
         // A different order ID than the one actually issued for this invoice.
@@ -206,7 +209,7 @@ class InvoiceServiceTest {
     @Test
     void webhook_marksPendingInvoicePaid() {
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PENDING);
-        when(invoiceRepository.findByRazorpayOrderId("order_123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByRazorpayOrderIdForUpdate("order_123")).thenReturn(Optional.of(invoice));
 
         invoiceService.markPaidFromWebhook("order_123", "pay_999", PaymentSource.WEBHOOK);
 
@@ -222,7 +225,7 @@ class InvoiceServiceTest {
         // browser-side verifyAndConfirmPayment already marked this invoice PAID.
         Invoice invoice = invoiceWithOrder("order_123", InvoiceStatus.PAID);
         invoice.setRazorpayPaymentId("pay_456");
-        when(invoiceRepository.findByRazorpayOrderId("order_123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByRazorpayOrderIdForUpdate("order_123")).thenReturn(Optional.of(invoice));
 
         invoiceService.markPaidFromWebhook("order_123", "pay_456", PaymentSource.WEBHOOK);
 
@@ -233,7 +236,7 @@ class InvoiceServiceTest {
 
     @Test
     void webhook_unknownOrderId_doesNothingAndDoesNotThrow() {
-        when(invoiceRepository.findByRazorpayOrderId("order_UNKNOWN")).thenReturn(Optional.empty());
+        when(invoiceRepository.findByRazorpayOrderIdForUpdate("order_UNKNOWN")).thenReturn(Optional.empty());
 
         invoiceService.markPaidFromWebhook("order_UNKNOWN", "pay_999", PaymentSource.WEBHOOK);
 
@@ -247,10 +250,10 @@ class InvoiceServiceTest {
         // can both arrive for the same invoice almost simultaneously. Whichever wins, the
         // final state must be PAID exactly once with no exception thrown by the second one.
         Invoice invoice = invoiceWithOrder(orderId, InvoiceStatus.PENDING);
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByIdForUpdate(invoice.getId())).thenReturn(Optional.of(invoice));
         when(engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId())).thenReturn(invoice.getEngagement());
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(invoiceRepository.findByRazorpayOrderId(orderId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByRazorpayOrderIdForUpdate(orderId)).thenReturn(Optional.of(invoice));
 
         PaymentVerificationRequest request = new PaymentVerificationRequest(orderId, "pay_456", "sig_789");
         try (MockedStatic<Utils> utils = Mockito.mockStatic(Utils.class)) {
