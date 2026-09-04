@@ -1,4 +1,4 @@
-import { RenderMode, ServerRoute } from '@angular/ssr';
+import { RenderMode, ServerRoute } from "@angular/ssr";
 
 /**
  * Route-level rendering strategy (Angular 19 hybrid rendering / "server routing").
@@ -27,50 +27,48 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
  */
 export const serverRoutes: ServerRoute[] = [
   // ---- Prerendered at build time: no DB dependency ----
-  { path: 'about', renderMode: RenderMode.Prerender },
-  { path: 'team', renderMode: RenderMode.Prerender },
-  { path: 'contact', renderMode: RenderMode.Prerender },
-  { path: 'estimate', renderMode: RenderMode.Prerender },
-  { path: 'architecture-review', renderMode: RenderMode.Prerender },
-  { path: 'audit-preview', renderMode: RenderMode.Prerender },
+  { path: "about", renderMode: RenderMode.Prerender },
+  { path: "team", renderMode: RenderMode.Prerender },
+  { path: "contact", renderMode: RenderMode.Prerender },
+  { path: "estimate", renderMode: RenderMode.Prerender },
+  { path: "architecture-review", renderMode: RenderMode.Prerender },
+  { path: "audit-preview", renderMode: RenderMode.Prerender },
 
   // ---- Server-rendered per request: reads live CMS/DB data ----
-  { path: '', renderMode: RenderMode.Server },
-  { path: 'services', renderMode: RenderMode.Server },
-  { path: 'portfolio', renderMode: RenderMode.Server },
-  { path: 'portfolio/:slug', renderMode: RenderMode.Server },
-  { path: 'blog', renderMode: RenderMode.Server },
-  { path: 'blog/:slug', renderMode: RenderMode.Server },
-  { path: 'solutions', renderMode: RenderMode.Server },
-  { path: 'solutions/:slug', renderMode: RenderMode.Server },
-  { path: 'quote/:token', renderMode: RenderMode.Server },
-  { path: 'testimonial/:token', renderMode: RenderMode.Server },
+  { path: "", renderMode: RenderMode.Server },
+  { path: "services", renderMode: RenderMode.Server },
+  { path: "portfolio", renderMode: RenderMode.Server },
+  { path: "portfolio/:slug", renderMode: RenderMode.Server },
+  { path: "blog", renderMode: RenderMode.Server },
+  { path: "blog/:slug", renderMode: RenderMode.Server },
+  { path: "solutions", renderMode: RenderMode.Server },
+  { path: "solutions/:slug", renderMode: RenderMode.Server },
+  { path: "quote/:token", renderMode: RenderMode.Server },
+  { path: "testimonial/:token", renderMode: RenderMode.Server },
 
   // ---- Client-only: authenticated app shell + auth flow, all noindex already ----
-  { path: 'login', renderMode: RenderMode.Client },
-  { path: 'register', renderMode: RenderMode.Client },
-  { path: 'forgot-password', renderMode: RenderMode.Client },
-  { path: 'reset-password', renderMode: RenderMode.Client },
-  { path: 'verify-email', renderMode: RenderMode.Client },
-  { path: 'oauth-callback', renderMode: RenderMode.Client },
-  { path: 'dashboard', renderMode: RenderMode.Client },
-  { path: 'dashboard/:id', renderMode: RenderMode.Client },
-  { path: 'admin', renderMode: RenderMode.Client },
-  { path: 'admin/content/services', renderMode: RenderMode.Client },
-  { path: 'admin/content/projects', renderMode: RenderMode.Client },
-  { path: 'admin/content/blog', renderMode: RenderMode.Client },
-  { path: 'admin/content/solutions', renderMode: RenderMode.Client },
-  { path: 'admin/pricing-rules', renderMode: RenderMode.Client },
-  { path: 'admin/security', renderMode: RenderMode.Client },
-  { path: 'admin/inquiries', renderMode: RenderMode.Client },
-  { path: 'admin/inquiries/:id', renderMode: RenderMode.Client },
+  { path: "login", renderMode: RenderMode.Client },
+  { path: "register", renderMode: RenderMode.Client },
+  { path: "forgot-password", renderMode: RenderMode.Client },
+  { path: "reset-password", renderMode: RenderMode.Client },
+  { path: "verify-email", renderMode: RenderMode.Client },
+  { path: "oauth-callback", renderMode: RenderMode.Client },
+  { path: "dashboard", renderMode: RenderMode.Client },
+  { path: "dashboard/:id", renderMode: RenderMode.Client },
+  { path: "admin", renderMode: RenderMode.Client },
+  { path: "admin/content/services", renderMode: RenderMode.Client },
+  { path: "admin/content/projects", renderMode: RenderMode.Client },
+  { path: "admin/content/blog", renderMode: RenderMode.Client },
+  { path: "admin/content/solutions", renderMode: RenderMode.Client },
+  { path: "admin/pricing-rules", renderMode: RenderMode.Client },
+  { path: "admin/security", renderMode: RenderMode.Client },
+  { path: "admin/inquiries", renderMode: RenderMode.Client },
+  { path: "admin/inquiries/:id", renderMode: RenderMode.Client },
 
   // ---- Fallback: 404 page rendered on the server with a real 404 status, so
   //      crawlers that hit a dead link get an honest status code, not a 200. ----
   {
-    path: '**',
+    path: "**",
     renderMode: RenderMode.Server,
-    status: 404,
-    headers: { 'Cache-Control': 'no-store' },
   },
 ];
