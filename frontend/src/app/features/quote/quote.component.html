@@ -1,0 +1,102 @@
+<section class="quote-page">
+  <div class="container">
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      @if (notFound()) {
+        <div class="card">
+          <h1>Quotation not found</h1>
+          <p>This link may be incorrect or the quotation may have been withdrawn. Contact hello&#64;neelastack.com if you think this is a mistake.</p>
+        </div>
+      }
+      @if (quotation(); as q) {
+      <span class="eyebrow">// QUOTATION</span>
+      <h1 class="section-heading">{{ q.title }}</h1>
+      <p class="section-sub">Prepared for {{ q.clientName }}</p>
+
+      @if (q.scopeSummary) {
+        <div class="card scope">
+          <h2>Scope</h2>
+          <p>{{ q.scopeSummary }}</p>
+        </div>
+      }
+
+      <div class="card line-items">
+        <h2>Line items</h2>
+        <table>
+          <tbody>
+            @for (item of q.lineItems; track item.description) {
+              <tr>
+                <td>{{ item.description }}</td>
+                <td class="amount">{{ q.currency }} {{ item.amount }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Total</td>
+              <td class="amount total">{{ q.currency }} {{ q.totalAmount }}</td>
+            </tr>
+          </tfoot>
+        </table>
+        @if (q.validUntil) {
+          <p class="valid-until">Valid until {{ q.validUntil }}</p>
+        }
+      </div>
+
+      @if (q.relatedCaseStudy; as cs) {
+        <div class="card case-study-proof">
+          <span class="eyebrow">// SIMILAR WORK</span>
+          <h2>{{ cs.title }}</h2>
+          @if (cs.summary) {
+            <p>{{ cs.summary }}</p>
+          }
+          @if (cs.keyMetrics.length) {
+            <ul class="key-metrics">
+              @for (metric of cs.keyMetrics; track metric) {
+                <li>{{ metric }}</li>
+              }
+            </ul>
+          }
+          @if (cs.averageRating && cs.reviewCount) {
+            <p class="rating">★ {{ cs.averageRating }} ({{ cs.reviewCount }} review{{ cs.reviewCount === 1 ? '' : 's' }})</p>
+          }
+          <a [routerLink]="['/portfolio', cs.slug]" class="btn btn-ghost">View full case study →</a>
+        </div>
+      }
+
+      @if (q.status === 'SENT') {
+        <div class="card actions">
+          @if (!showRejectReason()) {
+            <button class="btn btn-primary" (click)="accept()" [disabled]="responding()">
+              {{ responding() ? 'Processing…' : 'Accept quotation' }}
+            </button>
+            <button class="btn btn-ghost" (click)="showRejectReason.set(true)" [disabled]="responding()">
+              Decline
+            </button>
+          } @else {
+            <label>
+              Let us know why (optional)
+              <textarea [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)" rows="3"></textarea>
+            </label>
+            <div class="reject-actions">
+              <button class="btn btn-primary" (click)="reject()" [disabled]="responding()">
+                {{ responding() ? 'Sending…' : 'Confirm decline' }}
+              </button>
+              <button class="btn btn-ghost" (click)="showRejectReason.set(false)">Cancel</button>
+            </div>
+          }
+        </div>
+      } @else if (q.status === 'ACCEPTED') {
+        <div class="card status-notice accepted">
+          <p>You accepted this quotation. We'll be in touch shortly to get started.</p>
+        </div>
+      } @else if (q.status === 'REJECTED') {
+        <div class="card status-notice rejected">
+          <p>You declined this quotation. If anything changes, just reply to the original email.</p>
+        </div>
+      }
+      }
+    }
+  </div>
+</section>

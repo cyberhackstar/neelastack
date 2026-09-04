@@ -1,0 +1,22 @@
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot dot-red"></span>
+    <span class="dot dot-amber"></span>
+    <span class="dot dot-teal"></span>
+    @if (url) {
+      <span class="address-bar">{{ displayUrl }}</span>
+    }
+  </div>
+  <div class="browser-viewport">
+    @if (screenshotUrl) {
+      <img [src]="screenshotUrl" [alt]="title + ' screenshot'" loading="lazy" />
+    } @else {
+      <div class="placeholder">
+        <span class="placeholder-initials">{{ initials }}</span>
+      </div>
+    }
+    <div class="viewport-overlay" aria-hidden="true">
+      <span>View case study <span class="arrow">→</span></span>
+    </div>
+  </div>
+</div>

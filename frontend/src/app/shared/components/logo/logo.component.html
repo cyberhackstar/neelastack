@@ -1,0 +1,12 @@
+<a routerLink="/" class="logo" [class.logo-footer]="variant === 'footer'" aria-label="Neelastack — home">
+  <img
+    class="mark"
+    src="https://res.cloudinary.com/ddrt7emvo/image/upload/v1788147833/neelastack-logo_ddudpm.webp"
+    alt=""
+    width="700"
+    height="356"
+  />
+  @if (variant === 'footer') {
+    <span class="tagline">Engineering that ships.</span>
+  }
+</a>

@@ -1,0 +1,118 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// ADMIN</span>
+        <h1 class="section-heading">Pricing Rules</h1>
+        <p class="muted">
+          Drives every range the public estimator quotes. No prices are hardcoded in
+          application code — this is the only place they're set.
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="startCreate()">+ New rule</button>
+    </div>
+
+    @if (formOpen()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate class="card cms-form">
+        <h2>{{ editingId() ? 'Edit pricing rule' : 'New pricing rule' }}</h2>
+
+        <div class="row two">
+          <label>
+            Service key
+            <input type="text" formControlName="serviceKey"
+                   placeholder="e.g. full-stack, api-backend, audit-review" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="active" />
+            Active (only one active rule per service key is used)
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Base low (₹)
+            <input type="number" formControlName="baseLow" />
+          </label>
+          <label>
+            Base high (₹) — leave blank for "no automatic upper bound"
+            <input type="number" formControlName="baseHigh" />
+          </label>
+        </div>
+
+        <div class="row four">
+          <label>
+            Complexity factor
+            <input type="number" step="0.01" formControlName="complexityFactor" />
+          </label>
+          <label>
+            Scale factor
+            <input type="number" step="0.01" formControlName="scaleFactor" />
+          </label>
+          <label>
+            Integration factor
+            <input type="number" step="0.01" formControlName="integrationFactor" />
+          </label>
+          <label>
+            Urgency factor
+            <input type="number" step="0.01" formControlName="urgencyFactor" />
+          </label>
+        </div>
+
+        <label>
+          Notes (internal only)
+          <textarea formControlName="notes" rows="2"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Service key</th>
+              <th>Base range</th>
+              <th>Factors (C / S / I / U)</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rule of rules(); track rule.id) {
+              <tr>
+                <td class="mono">{{ rule.serviceKey }}</td>
+                <td>
+                  ₹{{ rule.baseLow | number: '1.0-0' }}
+                  – {{ rule.baseHigh !== null ? '₹' + (rule.baseHigh | number: '1.0-0') : 'scoped conversation' }}
+                </td>
+                <td class="mono">
+                  {{ rule.complexityFactor }} / {{ rule.scaleFactor }} / {{ rule.integrationFactor }} / {{ rule.urgencyFactor }}
+                </td>
+                <td>v{{ rule.version }}</td>
+                <td>
+                  <span class="tag" [class.published]="rule.active">
+                    {{ rule.active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <button type="button" class="link-btn" (click)="startEdit(rule)">Edit</button>
+                  <button type="button" class="link-btn danger" (click)="remove(rule)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

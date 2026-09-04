@@ -1,0 +1,165 @@
+@if (engagement(); as engagement) {
+  <section class="dashboard-page">
+    <div class="container">
+      <a routerLink="/dashboard" class="back-link">&larr; All projects</a>
+
+      <div class="header-row">
+        <div>
+          <span class="eyebrow">// PROJECT</span>
+          <h1 class="section-heading">{{ engagement.title }}</h1>
+        </div>
+
+        @if (isAdmin) {
+          <div class="status-control">
+            <label for="eng-status">Status</label>
+            <select id="eng-status" [ngModel]="engagement.status" (ngModelChange)="updateEngagementStatus($event)">
+              @for (status of engagementStatuses; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <span class="tag status-{{ engagement.status.toLowerCase() }}">{{ engagement.status.replace('_', ' ') }}</span>
+        }
+      </div>
+
+      @if (engagement.description) {
+        <p class="section-sub">{{ engagement.description }}</p>
+      }
+
+      <h2 class="sub-heading">Milestones</h2>
+
+      @if (milestones().length > 0) {
+        <ul class="milestones">
+          @for (milestone of milestones(); track milestone.id) {
+            <li class="milestone milestone-{{ milestone.status.toLowerCase() }}">
+              <div class="milestone-main">
+                <span class="dot"></span>
+                <div>
+                  <h3>{{ milestone.title }}</h3>
+                  @if (milestone.description) {
+                    <p>{{ milestone.description }}</p>
+                  }
+                  @if (milestone.dueDate) {
+                    <span class="due">Due {{ milestone.dueDate | date: 'mediumDate' }}</span>
+                  }
+                </div>
+              </div>
+
+              @if (isAdmin) {
+                <select [ngModel]="milestone.status" (ngModelChange)="updateMilestoneStatus(milestone.id, $event)">
+                  @for (status of milestoneStatuses; track status) {
+                    <option [value]="status">{{ status }}</option>
+                  }
+                </select>
+              } @else {
+                <span class="tag">{{ milestone.status.replace('_', ' ') }}</span>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No milestones yet.</p>
+      }
+
+      @if (isAdmin) {
+        <form [formGroup]="milestoneForm" (ngSubmit)="addMilestone()" novalidate class="card milestone-form">
+          <div class="row two">
+            <label>
+              Title
+              <input type="text" formControlName="title" />
+            </label>
+            <label>
+              Due date
+              <input type="date" formControlName="dueDate" />
+            </label>
+          </div>
+          <label>
+            Description
+            <textarea formControlName="description" rows="2"></textarea>
+          </label>
+          <button type="submit" class="btn btn-ghost" [disabled]="addingMilestone()">
+            {{ addingMilestone() ? 'Adding…' : '+ Add milestone' }}
+          </button>
+        </form>
+      }
+
+      <h2 class="sub-heading">Files</h2>
+
+      <div class="upload-row">
+        <label class="upload-btn">
+          {{ uploading() ? 'Uploading…' : 'Upload a file' }}
+          <input type="file" (change)="onFileSelected($event)" [disabled]="uploading()" hidden />
+        </label>
+        @if (uploadError()) {
+          <span class="error">{{ uploadError() }}</span>
+        }
+      </div>
+
+      @if (files().length > 0) {
+        <ul class="files">
+          @for (file of files(); track file.id) {
+            <li>
+              <a [href]="file.fileUrl" target="_blank" rel="noopener">{{ file.fileName }}</a>
+              <span class="meta">{{ formatSize(file.fileSizeBytes) }} &middot; {{ file.uploadedByName }} &middot; {{ file.createdAt | date: 'mediumDate' }}</span>
+              <button type="button" class="remove" (click)="deleteFile(file.id)">Remove</button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No files uploaded yet.</p>
+      }
+
+      <h2 class="sub-heading">Invoices</h2>
+
+      @if (paymentError()) {
+        <p class="error">{{ paymentError() }}</p>
+      }
+
+      @if (invoices().length > 0) {
+        <ul class="invoices">
+          @for (invoice of invoices(); track invoice.id) {
+            <li>
+              <div class="invoice-main">
+                <span class="invoice-number">{{ invoice.invoiceNumber }}</span>
+                <span class="invoice-desc">{{ invoice.description }}</span>
+              </div>
+              <span class="amount">{{ invoice.currency }} {{ invoice.amount }}</span>
+              <span class="tag status-{{ invoice.status.toLowerCase() }}">{{ invoice.status }}</span>
+              <button class="btn btn-ghost" (click)="downloadInvoicePdf(invoice)">PDF</button>
+              @if (invoice.status === 'PENDING') {
+                <button class="btn btn-primary" (click)="payInvoice(invoice)" [disabled]="payingInvoiceId() === invoice.id">
+                  {{ payingInvoiceId() === invoice.id ? 'Processing…' : 'Pay now' }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No invoices yet.</p>
+      }
+
+      @if (isAdmin) {
+        <form [formGroup]="invoiceForm" (ngSubmit)="createInvoice()" novalidate class="card milestone-form">
+          <div class="row two">
+            <label>
+              Description
+              <input type="text" formControlName="description" placeholder="e.g. Milestone 1 — 50% advance" />
+            </label>
+            <label>
+              Amount (INR)
+              <input type="number" formControlName="amount" />
+            </label>
+          </div>
+          <label>
+            Due date (optional)
+            <input type="date" formControlName="dueDate" />
+          </label>
+          <button type="submit" class="btn btn-ghost" [disabled]="creatingInvoice()">
+            {{ creatingInvoice() ? 'Creating…' : '+ Create invoice' }}
+          </button>
+        </form>
+      }
+    </div>
+  </section>
+}

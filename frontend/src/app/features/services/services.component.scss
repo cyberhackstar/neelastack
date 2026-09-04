@@ -1,0 +1,157 @@
+.page-header {
+  padding: 4rem 0 2rem;
+}
+
+.services-list {
+  padding-bottom: 4rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+
+  h2 {
+    font-family: var(--font-display);
+    margin: 0 0 0.75rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    margin-top: 1rem;
+  }
+}
+
+/* The flagship service (first by displayOrder — the admin's own priority
+   ordering) gets visual priority: wider, raised, teal-glow border. This
+   directs attention without fabricating a stat like "most popular". */
+.service-featured {
+  grid-column: span 2;
+  background: var(--color-panel-raised);
+  border-color: var(--color-teal);
+  box-shadow: 0 20px 48px -24px rgba(45, 212, 191, 0.25);
+
+  h2 {
+    font-size: 1.4rem;
+  }
+}
+
+.tag-amber {
+  color: var(--color-amber);
+  border-color: var(--color-amber-dim);
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+@media (max-width: 720px) {
+  .service-featured {
+    grid-column: span 1;
+  }
+}
+
+.guarantees, .faq {
+  padding-bottom: 4.5rem;
+}
+
+.guarantee-card {
+  h3 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    margin: 0 0 0.6rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 720px;
+}
+
+.faq-list-inline {
+  margin-top: 1rem;
+  max-width: none;
+
+  .faq-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+
+    summary {
+      font-weight: 450;
+    }
+  }
+}
+
+.faq-item {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+
+  summary {
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: '+';
+      color: var(--color-teal);
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+    }
+  }
+
+  &[open] summary::after {
+    content: '−';
+  }
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin: 0.9rem 0 0;
+  }
+}
+
+.cta-band {
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding: 4rem 0;
+}
+
+.cta-inner {
+  text-align: center;
+}
+
+.center-sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}

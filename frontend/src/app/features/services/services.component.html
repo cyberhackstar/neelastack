@@ -1,0 +1,89 @@
+<section class="page-header">
+  <div class="container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <span class="eyebrow">// SERVICES</span>
+    <h1 class="section-heading">Services & pricing</h1>
+    <p class="section-sub">
+      Every engagement starts with a scoped, written proposal — you know the price and the
+      deliverable before any code is written. No open-ended hourly billing, no scope surprises
+      halfway through.
+    </p>
+    <div class="cta-row">
+      <a routerLink="/estimate" class="btn btn-ghost btn-arrow">Get an instant estimate <span class="arrow">→</span></a>
+      <a routerLink="/solutions" class="btn btn-ghost btn-arrow">Browse solutions by tech stack <span class="arrow">→</span></a>
+      <a routerLink="/portfolio" class="btn btn-ghost btn-arrow">See case studies <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="services-list">
+  <div class="container grid">
+    @for (service of services(); track service.id; let first = $first) {
+      <article class="card card-tilt" [class.service-featured]="first">
+        @if (first) {
+          <span class="tag tag-amber">FLAGSHIP</span>
+        }
+        <h2>{{ service.title }}</h2>
+        <p>{{ service.description || service.summary }}</p>
+        @if (service.startingPrice) {
+          <span class="tag">{{ service.startingPrice }}</span>
+        }
+        @if (service.faqs?.length) {
+          <div class="faq-list faq-list-inline">
+            @for (faq of service.faqs; track faq.id) {
+              <details class="faq-item">
+                <summary>{{ faq.question }}</summary>
+                <p>{{ faq.answer }}</p>
+              </details>
+            }
+          </div>
+        }
+        <a routerLink="/contact" class="btn btn-ghost btn-arrow">
+          Request a quote <span class="arrow">→</span>
+        </a>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="guarantees">
+  <div class="container">
+    <span class="eyebrow">// HOW ENGAGEMENTS WORK</span>
+    <h2 class="section-heading">What every project includes</h2>
+
+    <div class="grid">
+      @for (item of guarantees; track item.title) {
+        <div class="card guarantee-card">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="container">
+    <span class="eyebrow">// FAQ</span>
+    <h2 class="section-heading">Common questions</h2>
+
+    <div class="faq-list">
+      @for (faq of faqs; track faq.question) {
+        <details class="faq-item">
+          <summary>{{ faq.question }}</summary>
+          <p>{{ faq.answer }}</p>
+        </details>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="cta-band bg-grid">
+  <div class="container cta-inner">
+    <h2 class="section-heading">Not sure which service fits?</h2>
+    <p class="section-sub center-sub">Send a short description of what you're building — you'll get a scoped recommendation, not a sales pitch.</p>
+    <a routerLink="/contact" class="btn btn-primary btn-arrow">
+      Describe your project <span class="arrow">→</span>
+    </a>
+  </div>
+</section>

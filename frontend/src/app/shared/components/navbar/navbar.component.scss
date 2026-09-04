@@ -1,0 +1,306 @@
+.navbar {
+  border-bottom: 1px solid transparent;
+  background: rgba(13, 17, 23, 0.7);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding-top: env(safe-area-inset-top);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.navbar.scrolled {
+  background: rgba(13, 17, 23, 0.92);
+  backdrop-filter: blur(14px);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem;
+  gap: 1.5rem;
+  transition: padding 0.25s ease;
+}
+
+.navbar.scrolled .navbar-inner {
+  padding: 0.8rem 1.5rem;
+}
+
+app-logo {
+  flex-shrink: 0;
+}
+
+.primary-nav {
+  display: flex;
+  gap: 1.75rem;
+  flex: 1;
+  justify-content: center;
+
+  a {
+    position: relative;
+    text-decoration: none;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    white-space: nowrap;
+    padding-bottom: 4px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 100%;
+      bottom: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--color-teal);
+      box-shadow: 0 0 6px rgba(45, 212, 191, 0.6);
+      transition: right 0.2s ease;
+    }
+
+    &.active {
+      color: var(--color-text);
+
+      &::after {
+        right: 0;
+      }
+    }
+
+    &:hover {
+      color: var(--color-teal);
+
+      &::after {
+        right: 0;
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-nav a::after {
+    transition: none;
+  }
+}
+
+.account-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+
+  a:not(.btn) {
+    text-decoration: none;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    white-space: nowrap;
+  }
+
+  .user {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  button {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+}
+
+// ---- Mobile hamburger ----
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+
+  span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: 2px;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+  }
+
+  &.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  &.open span:nth-child(2) {
+    opacity: 0;
+  }
+  &.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+
+// A full-width dropdown anchored to the bottom of the navbar (not a
+// full-height side drawer) — it sizes to its own content, so on a normal
+// phone every link is visible at once with nothing to scroll. `max-height` +
+// `overflow-y` stay in as a safety net only, for the rare case of a very
+// short/landscape viewport combined with the longer admin link list — it
+// should never engage on the public nav.
+.mobile-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 45;
+  padding: 1.25rem 1.5rem;
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.65);
+  animation: panel-drop 0.2s ease-out;
+}
+
+@keyframes panel-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  a {
+    text-decoration: none;
+    color: var(--color-text);
+    font-size: 1rem;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--color-border);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+
+    &.active {
+      color: var(--color-teal);
+    }
+  }
+}
+
+.mobile-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+}
+
+.mobile-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .user {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  button {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    min-height: 40px;
+  }
+}
+
+.mobile-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  min-height: 48px;
+}
+
+// Cut over to the hamburger well before the desktop nav would visually
+// squeeze — five links + account nav + logo needs real breathing room.
+// A raw max-width alone under-covers landscape phones/small foldables, so
+// this also checks available height so short, wide viewports still get the
+// compact bar instead of an overflowing one.
+@media (max-width: 920px), (max-height: 420px) {
+  .primary-nav,
+  .account-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+}
+
+// Tighten spacing in the narrow band just above the cutover (roughly
+// tablet-landscape widths) so the full desktop nav never feels cramped
+// right before it collapses.
+@media (min-width: 921px) and (max-width: 1080px) {
+  .primary-nav {
+    gap: 1.1rem;
+  }
+
+  .account-nav {
+    gap: 0.65rem;
+  }
+}
+
+// Very narrow phones (≤360px) — trim inner padding a touch so content
+// doesn't feel edge-to-edge. The panel itself stays full-width (left:0;
+// right:0, same as the base rule) — no separate fixed-width model here.
+@media (max-width: 360px) {
+  .navbar-inner {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mobile-panel {
+    padding-left: 1.1rem;
+    padding-right: calc(1.1rem + env(safe-area-inset-right));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-panel {
+    animation: none;
+  }
+  .navbar,
+  .navbar-inner {
+    transition: none;
+  }
+}

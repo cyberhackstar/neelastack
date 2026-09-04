@@ -1,0 +1,100 @@
+<svg
+  class="diagram"
+  viewBox="0 0 520 380"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Diagram showing a request travelling from the browser through Nginx and Spring Boot to Postgres and Redis"
+>
+  <defs>
+    <linearGradient id="nodeStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#2A3140" />
+    </linearGradient>
+    <pattern id="microgrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#2A3140" stroke-width="0.5" opacity="0.4" />
+    </pattern>
+    <filter id="primaryGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="520" height="380" fill="url(#microgrid)" />
+
+  <!-- layer labels -->
+  <text x="16" y="16" class="layer-label">CLIENT</text>
+  <text x="16" y="146" class="layer-label">EDGE</text>
+  <text x="185" y="86" class="layer-label">APPLICATION</text>
+  <text x="90" y="276" class="layer-label">DATA</text>
+
+  <!-- connective paths -->
+  <path id="path-client-nginx" d="M 90 60 L 90 130" class="link" />
+  <path id="path-nginx-api" d="M 90 170 L 90 230 L 260 230 L 260 130" class="link" />
+  <path id="path-api-pg" d="M 300 170 L 300 230 L 400 230 L 400 280" class="link" />
+  <path id="path-api-redis" d="M 220 170 L 220 230 L 140 230 L 140 280" class="link" />
+
+  <!-- Client -->
+  <g class="node">
+    <rect x="40" y="20" width="100" height="40" rx="8" />
+    <text x="90" y="45" text-anchor="middle">Browser</text>
+  </g>
+
+  <!-- Nginx -->
+  <g class="node node-pulse-amber" style="animation-delay: 2.4s">
+    <rect x="40" y="130" width="100" height="40" rx="8" />
+    <text x="90" y="155" text-anchor="middle">Nginx</text>
+  </g>
+
+  <!-- Spring Boot API -->
+  <g class="node node-primary node-pulse-amber" filter="url(#primaryGlow)" style="animation-delay: 3s">
+    <rect x="185" y="90" width="150" height="44" rx="8" />
+    <text x="260" y="117" text-anchor="middle">Spring Boot API</text>
+  </g>
+
+  <!-- Postgres -->
+  <g class="node node-pulse-teal" style="animation-delay: 3.4s">
+    <rect x="350" y="280" width="100" height="40" rx="8" />
+    <text x="400" y="305" text-anchor="middle">PostgreSQL</text>
+  </g>
+
+  <!-- Redis -->
+  <g class="node node-pulse-teal" style="animation-delay: 3s">
+    <rect x="90" y="280" width="100" height="40" rx="8" />
+    <text x="140" y="305" text-anchor="middle">Redis</text>
+  </g>
+
+  <!-- animated request packets -->
+  <circle r="4" class="packet packet-amber">
+    <animateMotion dur="2.4s" repeatCount="indefinite" begin="0s">
+      <mpath href="#path-client-nginx" />
+    </animateMotion>
+  </circle>
+
+  <circle r="4" class="packet packet-amber">
+    <animateMotion dur="2.4s" repeatCount="indefinite" begin="0.6s">
+      <mpath href="#path-nginx-api" />
+    </animateMotion>
+  </circle>
+
+  <circle r="4" class="packet packet-teal">
+    <animateMotion dur="2s" repeatCount="indefinite" begin="1.4s">
+      <mpath href="#path-api-pg" />
+    </animateMotion>
+  </circle>
+
+  <circle r="4" class="packet packet-teal">
+    <animateMotion dur="1.6s" repeatCount="indefinite" begin="1.4s">
+      <mpath href="#path-api-redis" />
+    </animateMotion>
+  </circle>
+</svg>
+
+<ul class="integrations" aria-hidden="true">
+  <li>Razorpay</li>
+  <li>Cloudinary</li>
+  <li>Google OAuth</li>
+  <li>Sentry</li>
+</ul>

@@ -1,0 +1,98 @@
+.post {
+  padding: 4rem 0 5rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 2.5rem;
+}
+
+.body {
+  max-width: 680px;
+  line-height: 1.8;
+  color: var(--color-text);
+
+  ::ng-deep p {
+    margin-bottom: 1.25rem;
+  }
+
+  ::ng-deep h2, ::ng-deep h3 {
+    font-family: var(--font-display);
+    margin: 2rem 0 1rem;
+  }
+
+  ::ng-deep a {
+    color: var(--color-teal);
+  }
+
+  ::ng-deep pre {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+}
+
+.related {
+  margin-top: 4rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--color-border);
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    margin: 0 0 1.25rem;
+  }
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.related-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.cta-block {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.75rem;
+  }
+}

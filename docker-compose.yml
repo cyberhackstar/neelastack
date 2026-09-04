@@ -1,0 +1,104 @@
+# Local development stack: Postgres + Redis + backend + frontend
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: neelastack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-neelastack}
+      POSTGRES_USER: ${DB_USERNAME:-neelastack}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-neelastack}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-neelastack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: neelastack-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-neelastack}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD:-neelastack}\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: neelastack-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-neelastack}
+      DB_USERNAME: ${DB_USERNAME:-neelastack}
+      DB_PASSWORD: ${DB_PASSWORD:-neelastack}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-neelastack}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-in-production-please}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
+      # Consumed by AdminBootstrapRunner (see application.yml's app.admin-bootstrap.*).
+      # Left blank here (safe no-op locally) but MUST be set in the .env used by the CI
+      # e2e job so a clean CI-local stack actually gets an admin account — see
+      # .github/workflows/ci-cd.yml's e2e job, which sets these to the same values it
+      # passes to Playwright as E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD.
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      ADMIN_BOOTSTRAP_FULL_NAME: ${ADMIN_BOOTSTRAP_FULL_NAME:-Neelastack Admin}
+      CORS_ALLOWED_ORIGINS: http://localhost:4200,http://localhost:4000
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@neelastack.com}
+      MAIL_ADMIN_ADDRESS: ${MAIL_ADMIN_ADDRESS:-admin@neelastack.com}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: neelastack-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      PORT: 4000
+      INTERNAL_API_URL: http://backend:8080
+    ports:
+      - "4000:4000"
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,164 @@
+@if (inquiry(); as inquiry) {
+  <section class="admin-page">
+    <div class="container">
+      <a routerLink="/admin/inquiries" class="back-link">&larr; All inquiries</a>
+
+      <span class="eyebrow">// INQUIRY</span>
+      <h1 class="section-heading">{{ inquiry.name }}</h1>
+
+      <div class="card details">
+        <dl>
+          <dt>Email</dt><dd>{{ inquiry.email }}</dd>
+          <dt>Phone</dt><dd>{{ inquiry.phone || '—' }}</dd>
+          <dt>Company</dt><dd>{{ inquiry.company || '—' }}</dd>
+          <dt>Intent</dt><dd>{{ inquiry.intent || '—' }}</dd>
+          <dt>Project type</dt><dd>{{ inquiry.projectType || '—' }}</dd>
+          <dt>Budget range</dt><dd>{{ inquiry.budgetRange || '—' }}</dd>
+          @if (inquiry.leadTier) {
+            <dt>Lead score</dt><dd>{{ inquiry.leadTier }} · {{ inquiry.leadScore }}/100</dd>
+          }
+          @if (inquiry.estimate && (inquiry.estimate.low || inquiry.estimate.high)) {
+            <dt>Preliminary estimate</dt>
+            <dd>₹{{ inquiry.estimate.low | number: '1.0-0' }} – ₹{{ inquiry.estimate.high | number: '1.0-0' }}</dd>
+          }
+          <dt>Received</dt><dd>{{ inquiry.createdAt | date: 'medium' }}</dd>
+        </dl>
+        <p class="message">{{ inquiry.message }}</p>
+
+        <div class="status-control">
+          <label for="status">Status</label>
+          <select id="status" [ngModel]="inquiry.status" (ngModelChange)="updateStatus($event)">
+            @for (status of statuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <h2 class="sub-heading">Quotations</h2>
+
+      @if (quotations().length > 0) {
+        <div class="quotation-list">
+          @for (quotation of quotations(); track quotation.id) {
+            <div class="card quotation-card">
+              <div class="quotation-head">
+                <h3>{{ quotation.title }}</h3>
+                <span class="tag">{{ quotation.status }}</span>
+              </div>
+              <p class="total">{{ quotation.currency }} {{ quotation.totalAmount }}</p>
+              @if (quotation.status !== 'DRAFT') {
+                <p class="view-meta">
+                  @if (quotation.viewCount && quotation.viewCount > 0) {
+                    Viewed {{ quotation.viewCount }}x
+                    @if (quotation.lastViewedAt) {
+                      — last {{ quotation.lastViewedAt | date: 'medium' }}
+                    }
+                  } @else {
+                    Not yet opened
+                  }
+                </p>
+              }
+              @if (quotation.status === 'REJECTED' && quotation.responseReason) {
+                <p class="decline-reason">Client's reason: "{{ quotation.responseReason }}"</p>
+              }
+              @if (quotation.status === 'DRAFT') {
+                <button class="btn btn-primary" (click)="sendQuotation(quotation.id)" [disabled]="sendingId() === quotation.id">
+                  {{ sendingId() === quotation.id ? 'Sending…' : 'Send to client' }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <h2 class="sub-heading">Create a quotation</h2>
+
+      <form [formGroup]="form" (ngSubmit)="createQuotation()" novalidate class="card quotation-form">
+        <label>
+          Title
+          <input type="text" formControlName="title" placeholder="e.g. Full-stack MVP build" />
+        </label>
+
+        <label>
+          Scope summary
+          <textarea formControlName="scopeSummary" rows="3"></textarea>
+        </label>
+
+        <div formArrayName="lineItems" class="line-items">
+          @for (item of lineItems.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="line-item">
+              <input type="text" formControlName="description" placeholder="Line item description" />
+              <input type="number" formControlName="amount" placeholder="Amount" />
+              <button type="button" class="remove" (click)="removeLineItem(i)">&times;</button>
+            </div>
+          }
+        </div>
+
+        <button type="button" class="btn btn-ghost" (click)="addLineItem()">+ Add line item</button>
+
+        <div class="row two">
+          <label>
+            Currency
+            <input type="text" formControlName="currency" />
+          </label>
+          <label>
+            Valid until
+            <input type="date" formControlName="validUntil" />
+          </label>
+        </div>
+
+        <label>
+          Internal notes (optional)
+          <textarea formControlName="notes" rows="2"></textarea>
+        </label>
+
+        <button type="submit" class="btn btn-primary" [disabled]="creating()">
+          {{ creating() ? 'Creating…' : 'Create quotation' }}
+        </button>
+      </form>
+
+      <h2 class="sub-heading">Start a client project</h2>
+      <p class="hint">
+        Converts this inquiry into a project on the client's dashboard. The client must already
+        have a registered account at this email address.
+      </p>
+
+      @if (engagementCreated()) {
+        <div class="card success">
+          <p>Project created — it now appears on the client's dashboard.</p>
+        </div>
+      } @else {
+        <form [formGroup]="engagementForm" (ngSubmit)="createEngagement()" novalidate class="card quotation-form">
+          <label>
+            Project title
+            <input type="text" formControlName="title" placeholder="e.g. Neelastack MVP build" />
+          </label>
+
+          <label>
+            Description (optional)
+            <textarea formControlName="description" rows="2"></textarea>
+          </label>
+
+          <div class="row two">
+            <label>
+              Start date
+              <input type="date" formControlName="startDate" />
+            </label>
+            <label>
+              Target end date
+              <input type="date" formControlName="targetEndDate" />
+            </label>
+          </div>
+
+          @if (engagementError()) {
+            <p class="error">{{ engagementError() }}</p>
+          }
+
+          <button type="submit" class="btn btn-primary" [disabled]="creatingEngagement()">
+            {{ creatingEngagement() ? 'Creating…' : 'Create project' }}
+          </button>
+        </form>
+      }
+    </div>
+  </section>
+}

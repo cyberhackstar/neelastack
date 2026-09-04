@@ -1,0 +1,28 @@
+<section class="dashboard-page">
+  <div class="container">
+    <span class="eyebrow">// MY PROJECTS</span>
+    <h1 class="section-heading">Dashboard</h1>
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (engagements().length === 0) {
+      <div class="card empty">
+        <p>No active projects yet. Once we agree on scope, your project will show up here.</p>
+      </div>
+    } @else {
+      <div class="grid">
+        @for (engagement of engagements(); track engagement.id) {
+          <a [routerLink]="['/dashboard', engagement.id]" class="card card-tilt engagement-card">
+            <div class="card-head">
+              <h2>{{ engagement.title }}</h2>
+              <span class="tag status-{{ engagement.status.toLowerCase() }}">{{ engagement.status.replace('_', ' ') }}</span>
+            </div>
+            @if (engagement.description) {
+              <p>{{ engagement.description }}</p>
+            }
+          </a>
+        }
+      </div>
+    }
+  </div>
+</section>

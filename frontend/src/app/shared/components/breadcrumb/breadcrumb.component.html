@@ -1,0 +1,18 @@
+<nav class="breadcrumb-trail" aria-label="Breadcrumb">
+  <ol>
+    <li>
+      <a routerLink="/">Home</a>
+      <span class="sep" aria-hidden="true">/</span>
+    </li>
+    @for (item of items; track item.path; let last = $last) {
+      <li>
+        @if (last) {
+          <span aria-current="page">{{ item.name }}</span>
+        } @else {
+          <a [routerLink]="item.path">{{ item.name }}</a>
+          <span class="sep" aria-hidden="true">/</span>
+        }
+      </li>
+    }
+  </ol>
+</nav>

@@ -1,0 +1,76 @@
+@if (page(); as p) {
+  <section class="page-header">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems()" />
+      <span class="eyebrow">// {{ p.primaryStack }}</span>
+      <h1 class="section-heading">{{ p.h1Title }}</h1>
+      <p class="section-sub">{{ p.intro }}</p>
+      <div class="stack-tags">
+        <span class="tag tag-amber">{{ p.primaryStack }}</span>
+        @if (p.secondaryStack) {
+          <span class="tag">{{ p.secondaryStack }}</span>
+        }
+        @if (p.targetIndustry) {
+          <span class="tag">{{ p.targetIndustry }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="solution-body">
+    <div class="container">
+      <p class="body-copy">{{ p.bodyContent }}</p>
+
+      @if (p.useCases.length) {
+        <h2>Common engagements</h2>
+        <ul class="use-cases">
+          @for (useCase of p.useCases; track useCase) {
+            <li>{{ useCase }}</li>
+          }
+        </ul>
+      }
+
+      @if (p.startingPrice) {
+        <p class="starting-price"><strong>Starting price:</strong> {{ p.startingPrice }}</p>
+      }
+
+      <div class="cta-row">
+        <a routerLink="/contact" class="btn btn-primary btn-arrow">
+          Start a project <span class="arrow">→</span>
+        </a>
+        <a routerLink="/estimate" class="btn btn-ghost btn-arrow">
+          Get an instant estimate <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <p class="internal-link">
+        See the full <a routerLink="/services">services & pricing</a> this solution draws on.
+      </p>
+
+      @if (relatedCaseStudies().length) {
+        <h2>Related case studies</h2>
+        <ul class="related-list">
+          @for (project of relatedCaseStudies(); track project.id) {
+            <li><a [routerLink]="['/portfolio', project.slug]">{{ project.title }}</a> — {{ project.summary }}</li>
+          }
+        </ul>
+      }
+
+      @if (relatedArticles().length) {
+        <h2>Related articles</h2>
+        <ul class="related-list">
+          @for (post of relatedArticles(); track post.id) {
+            <li><a [routerLink]="['/blog', post.slug]">{{ post.title }}</a></li>
+          }
+        </ul>
+      }
+    </div>
+  </section>
+} @else if (notFoundService.notFound()) {
+  <div class="container not-found-block">
+    <h1>Solution not found</h1>
+    <p>This solution page doesn't exist or may have been removed.</p>
+    <a routerLink="/solutions" class="btn btn-primary">Back to solutions</a>
+  </div>
+}
+

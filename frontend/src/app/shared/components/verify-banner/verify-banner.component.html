@@ -1,0 +1,17 @@
+@if (auth.currentUser(); as user) {
+  @if (!user.emailVerified && !dismissed()) {
+    <div class="verify-banner">
+      <div class="container banner-inner">
+        @if (sent()) {
+          <span>Verification email sent — check your inbox.</span>
+        } @else {
+          <span>Please verify your email address ({{ user.email }}) to secure your account.</span>
+          <button type="button" class="link-btn" (click)="resend()" [disabled]="sending()">
+            {{ sending() ? 'Sending…' : 'Resend email' }}
+          </button>
+        }
+        <button type="button" class="dismiss" (click)="dismissed.set(true)" aria-label="Dismiss">&times;</button>
+      </div>
+    </div>
+  }
+}

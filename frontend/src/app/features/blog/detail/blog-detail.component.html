@@ -1,0 +1,45 @@
+@if (post(); as post) {
+  <article class="post">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems()" />
+
+      @if (post.category) {
+        <span class="tag">{{ post.category }}</span>
+      }
+      <h1 class="section-heading">{{ post.title }}</h1>
+      <p class="meta">
+        {{ post.authorName || 'Neelastack' }} &middot; {{ post.publishedAt | date: 'longDate' }}
+      </p>
+
+      <div class="body" [innerHTML]="post.content"></div>
+
+      <div class="cta-block">
+        <p>Found this useful and have a project in mind?</p>
+        <div class="cta-row">
+          <a routerLink="/estimate" class="btn btn-primary btn-arrow">Get an instant estimate <span class="arrow">→</span></a>
+          <a routerLink="/services" class="btn btn-ghost btn-arrow">See our services <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      @if (relatedPosts().length > 0) {
+        <div class="related">
+          <h2>Related articles</h2>
+          <div class="related-grid">
+            @for (related of relatedPosts(); track related.id) {
+              <a [routerLink]="['/blog', related.slug]" class="card card-tilt related-card">
+                <h3>{{ related.title }}</h3>
+                <p>{{ related.excerpt }}</p>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </article>
+} @else if (notFoundService.notFound()) {
+  <div class="container not-found-block">
+    <h1>Post not found</h1>
+    <p>This blog post doesn't exist or may have been removed.</p>
+    <a routerLink="/blog" class="btn btn-primary">Back to the blog</a>
+  </div>
+}

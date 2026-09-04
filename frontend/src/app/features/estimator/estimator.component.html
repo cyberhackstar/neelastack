@@ -1,0 +1,205 @@
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow eyebrow-amber">// PROJECT ESTIMATOR</span>
+    <h1 class="section-heading">Tell us what you're building.</h1>
+    <p class="section-sub">
+      A few quick steps, then a preliminary range — not a binding quote. Prefer to just
+      write a message instead? <a routerLink="/contact">Use the simple contact form</a>.
+    </p>
+  </div>
+</section>
+
+<section class="estimator-section">
+  <div class="container estimator-shell">
+    <div class="progress">
+      @for (step of steps(); track step.key; let i = $index) {
+        <span class="progress-dot" [class.active]="i === stepIndex()" [class.done]="i < stepIndex()"></span>
+      }
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="next()" novalidate class="card wizard-card">
+      @switch (currentStepKey()) {
+        @case ('intent') {
+          <h2>What are you looking to do?</h2>
+          <div class="intent-grid">
+            <button type="button" class="intent-option" [class.selected]="form.controls.intent.value === 'BUILD'" (click)="selectIntent('BUILD')">
+              <span class="tag">BUILD</span>
+              <p>Something new</p>
+            </button>
+            <button type="button" class="intent-option" [class.selected]="form.controls.intent.value === 'FIX'" (click)="selectIntent('FIX')">
+              <span class="tag">FIX</span>
+              <p>Something broken</p>
+            </button>
+            <button type="button" class="intent-option" [class.selected]="form.controls.intent.value === 'MODERNIZE'" (click)="selectIntent('MODERNIZE')">
+              <span class="tag">MODERNIZE</span>
+              <p>Something old</p>
+            </button>
+          </div>
+        }
+
+        @case ('type') {
+          <h2>What kind of project is this?</h2>
+          <label>
+            Project type
+            <select formControlName="projectType">
+              <option value="">Select one</option>
+              @for (type of projectTypeOptions(); track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        @case ('existing') {
+          <h2>Tell us about the existing system.</h2>
+          <label>
+            Current technology, age, and the main problems with it
+            <textarea formControlName="existingSystem" rows="5" placeholder="e.g. 8-year-old PHP app, slow admin panel, no tests"></textarea>
+          </label>
+        }
+
+        @case ('scope') {
+          <h2>What does it need to do?</h2>
+          <label>
+            Core features or requirements
+            <textarea formControlName="scopeDetails" rows="5" placeholder="Describe the main things the system needs to do"></textarea>
+          </label>
+          @if (form.controls.scopeDetails.touched && form.controls.scopeDetails.invalid) {
+            <p class="error">A short description helps — at least a sentence or two.</p>
+          }
+        }
+
+        @case ('scale') {
+          <h2>Scale and integrations</h2>
+          <label>
+            Expected users
+            <select formControlName="usersScale">
+              <option value="">Select one</option>
+              @for (opt of usersScaleOptions; track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </label>
+          <fieldset class="checkbox-group">
+            <legend>Integrations needed (select any)</legend>
+            @for (opt of integrationOptions; track opt) {
+              <label class="checkbox-row">
+                <input type="checkbox" [checked]="isIntegrationChecked(opt)" (change)="toggleIntegration(opt, $any($event.target).checked)" />
+                {{ opt }}
+              </label>
+            }
+          </fieldset>
+        }
+
+        @case ('timeline') {
+          <h2>Timeline and budget</h2>
+          <label>
+            Timeline
+            <select formControlName="timeline">
+              <option value="">Select one</option>
+              @for (opt of timelineOptions; track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </label>
+          @if (form.controls.intent.value === 'FIX') {
+            <label>
+              Urgency
+              <select formControlName="urgency">
+                @for (opt of urgencyOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </label>
+          }
+          <label>
+            Budget range
+            <select formControlName="budgetRange">
+              <option value="">Select one</option>
+              @for (opt of budgetOptions; track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        @case ('contact') {
+          <h2>Where should the estimate go?</h2>
+          <div class="row two">
+            <label>
+              Name
+              <input type="text" formControlName="name" autocomplete="name" />
+            </label>
+            <label>
+              Email
+              <input type="email" formControlName="email" autocomplete="email" />
+            </label>
+          </div>
+          <div class="row two">
+            <label>
+              Phone (optional)
+              <input type="tel" formControlName="phone" autocomplete="tel" />
+            </label>
+            <label>
+              Company (optional)
+              <input type="text" formControlName="company" autocomplete="organization" />
+            </label>
+          </div>
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+        }
+
+        @case ('estimate') {
+          @if (submitted() && estimate(); as est) {
+            <div class="estimate-result">
+              <h2>✓ Preliminary estimate</h2>
+              @if (est.low && est.high) {
+                <p class="estimate-range">₹{{ est.low | number: '1.0-0' }} – ₹{{ est.high | number: '1.0-0' }}</p>
+              } @else {
+                <p class="estimate-range">Custom scope</p>
+              }
+              <p class="disclaimer">{{ est.disclaimer }}</p>
+
+              @if (bookingUrl()) {
+                <app-booking-widget [bookingUrl]="bookingUrl()!" />
+              }
+
+              <div class="next-steps">
+                <div class="step-item">
+                  <span class="step-num">01</span>
+                  <p>We review your brief</p>
+                </div>
+                <div class="step-item">
+                  <span class="step-num">02</span>
+                  <p>I reply within one business day</p>
+                </div>
+                <div class="step-item">
+                  <span class="step-num">03</span>
+                  <p>You receive a scoped, fixed-price proposal</p>
+                </div>
+              </div>
+
+              <div class="result-actions">
+                <a routerLink="/portfolio" class="btn btn-ghost">View our work</a>
+                <a routerLink="/" class="btn btn-ghost">Return home</a>
+              </div>
+            </div>
+          }
+        }
+      }
+
+      @if (currentStepKey() !== 'estimate') {
+        <div class="wizard-nav">
+          @if (stepIndex() > 0) {
+            <button type="button" class="btn btn-ghost" (click)="back()">Back</button>
+          }
+          <button type="submit" class="btn btn-primary btn-arrow" [disabled]="submitting()">
+            {{ isLastInputStep() ? (submitting() ? 'Submitting…' : 'Get my estimate') : 'Next' }}
+            <span class="arrow">→</span>
+          </button>
+        </div>
+      }
+    </form>
+  </div>
+</section>

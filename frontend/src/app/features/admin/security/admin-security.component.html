@@ -1,0 +1,123 @@
+<section class="admin-page">
+  <div class="container">
+    <span class="eyebrow">// ADMIN</span>
+    <h1 class="section-heading">Security settings</h1>
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      @if (statusError()) {
+        <p class="error-text">{{ statusError() }}</p>
+      } @else {
+        @if (recoveryCodes(); as codes) {
+          <!-- Recovery codes — shown exactly once, right after verification succeeds -->
+          <div class="card recovery-panel">
+            <h2>Save your recovery codes</h2>
+            <p class="muted">
+              Each code can be used once to sign in if you lose access to your authenticator app.
+              Store them somewhere safe — <strong>this is the only time they'll be shown.</strong>
+            </p>
+            <ul class="recovery-codes">
+              @for (code of codes; track code) {
+                <li>{{ code }}</li>
+              }
+            </ul>
+            <div class="recovery-actions">
+              <button type="button" class="btn btn-ghost" (click)="copyRecoveryCodes()">
+                {{ codesCopied() ? 'Copied ✓' : 'Copy all' }}
+              </button>
+              <button type="button" class="btn btn-primary" (click)="acknowledgeRecoveryCodes()">
+                I've saved these codes
+              </button>
+            </div>
+          </div>
+        } @else {
+          @if (setupData(); as setup) {
+            <!-- Enrollment step 2: scan QR, enter current code -->
+            <div class="card enroll-panel">
+              <h2>Scan this QR code</h2>
+              <p class="muted">
+                Use an authenticator app (Google Authenticator, 1Password, Authy) to scan the code below,
+                or enter the secret manually.
+              </p>
+              <img class="qr-code" [src]="setup.qrCodeDataUri" alt="MFA enrollment QR code" width="220" height="220" />
+              <p class="manual-secret">
+                Manual entry secret: <code>{{ setup.manualEntrySecret }}</code>
+              </p>
+
+              <form [formGroup]="verifyForm" (ngSubmit)="submitVerify()">
+                <label>
+                  Enter the 6-digit code from your app
+                  <input type="text" inputmode="numeric" maxlength="6" placeholder="000000" formControlName="code" />
+                </label>
+                @if (verifyError()) {
+                  <p class="error-text">{{ verifyError() }}</p>
+                }
+                <div class="enroll-actions">
+                  <button type="button" class="btn btn-ghost" (click)="cancelEnroll()">Cancel</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="verifyForm.invalid || verifying()">
+                    {{ verifying() ? 'Verifying…' : 'Verify & enable' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          } @else {
+            @if (status(); as st) {
+              @if (st.mfaEnabled) {
+                <div class="card status-panel">
+                  <h2><span class="dot dot-on"></span> Two-factor authentication is enabled</h2>
+                  <dl>
+                    <dt>Enrolled</dt>
+                    <dd>{{ st.mfaEnrolledAt ? (st.mfaEnrolledAt | date: 'medium') : '—' }}</dd>
+                    <dt>Recovery codes remaining</dt>
+                    <dd>{{ st.remainingRecoveryCodes }}</dd>
+                  </dl>
+
+                  @if (!disableFormOpen()) {
+                    <button type="button" class="btn btn-ghost" (click)="openDisable()">Disable MFA</button>
+                  } @else {
+                    <form class="disable-form" [formGroup]="disableForm" (ngSubmit)="submitDisable()">
+                      <h3>Disable two-factor authentication</h3>
+                      <p class="muted">This requires your current password and a fresh authenticator code.</p>
+                      <label>
+                        Password
+                        <input type="password" formControlName="password" autocomplete="current-password" />
+                      </label>
+                      <label>
+                        Authenticator code
+                        <input type="text" inputmode="numeric" maxlength="6" placeholder="000000" formControlName="code" />
+                      </label>
+                      @if (disableError()) {
+                        <p class="error-text">{{ disableError() }}</p>
+                      }
+                      <div class="enroll-actions">
+                        <button type="button" class="btn btn-ghost" (click)="cancelDisable()">Cancel</button>
+                        <button type="submit" class="btn btn-danger" [disabled]="disableForm.invalid || disabling()">
+                          {{ disabling() ? 'Disabling…' : 'Disable MFA' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+                </div>
+              } @else {
+                <div class="card status-panel">
+                  <h2><span class="dot dot-off"></span> Two-factor authentication is off</h2>
+                  <p class="muted">
+                    Add an authenticator app as a second factor. High-risk actions (invoices, payments,
+                    pricing rules, sessions) will then also ask for a fresh code before they go through.
+                  </p>
+                  @if (setupError()) {
+                    <p class="error-text">{{ setupError() }}</p>
+                  }
+                  <button type="button" class="btn btn-primary" (click)="startEnroll()" [disabled]="settingUp()">
+                    {{ settingUp() ? 'Starting…' : 'Enable two-factor authentication' }}
+                  </button>
+                </div>
+              }
+            }
+          }
+        }
+      }
+    }
+  </div>
+</section>

@@ -1,0 +1,223 @@
+<section class="hero bg-grid">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">// FULL-STACK ENGINEERING</span>
+      <h1><span class="line">Software</span><span class="line">that holds up.</span></h1>
+      <p class="lede">
+        Production-grade web applications, backend systems and digital platforms
+        built to survive real usage — Spring Boot on the backend, Angular on the front,
+        deployed the way real companies deploy.
+      </p>
+
+      <div class="hero-actions">
+        <a routerLink="/contact" class="btn btn-primary btn-arrow">
+          Start a project <span class="arrow">→</span>
+        </a>
+        <a routerLink="/portfolio" class="btn btn-ghost">Explore our work</a>
+      </div>
+
+      <dl class="stat-strip">
+        @for (stat of stats; track stat.label) {
+          <div class="stat-block">
+            <dt class="stat-value">{{ stat.value }}</dt>
+            <dd class="stat-label">{{ stat.label }}</dd>
+          </div>
+        }
+        <div class="stat-block">
+          <span class="stat-flag">PRODUCTION</span>
+          <dd class="stat-label">status monitored</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div
+      class="hero-visual glass-panel"
+      aria-hidden="true"
+      [style.transform]="'translate3d(' + parallax().x + 'px, ' + parallax().y + 'px, 0)'"
+    >
+      <app-architecture-diagram></app-architecture-diagram>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="system-line" aria-hidden="true"></div>
+  </div>
+</section>
+
+<section class="trust-band">
+  <div class="container">
+    <span class="eyebrow">// ENGINEERED FOR PRODUCTION</span>
+    <div class="trust-strip">
+      @for (item of trustItems; track item) {
+        <span class="trust-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          {{ item }}
+        </span>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="lifecycle-band">
+  <div class="container">
+    <span class="eyebrow">// FULL LIFECYCLE</span>
+    <h2 class="section-heading">Software doesn't end at deployment.</h2>
+    <p class="section-sub">You engineer the entire lifecycle, not just the interface.</p>
+
+    <div class="lifecycle-flow">
+      <div class="lifecycle-stage">
+        <span class="tag eyebrow-amber">BUILD</span>
+        <ul>
+          <li>Architecture</li>
+          <li>Code</li>
+          <li>Testing</li>
+        </ul>
+      </div>
+      <div class="lifecycle-connector system-line" aria-hidden="true"></div>
+      <div class="lifecycle-stage">
+        <span class="tag">SHIP</span>
+        <ul>
+          <li>CI/CD</li>
+          <li>Docker</li>
+          <li>Cloud release</li>
+        </ul>
+      </div>
+      <div class="lifecycle-connector system-line" aria-hidden="true"></div>
+      <div class="lifecycle-stage">
+        <span class="tag">OPERATE</span>
+        <ul>
+          <li>Monitoring</li>
+          <li>Security</li>
+          <li>Optimization</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="services-preview">
+  <div class="container">
+    <span class="eyebrow">// SERVICES</span>
+    <h2 class="section-heading">What I build</h2>
+    <p class="section-sub">Scoped, fixed-outcome engagements — not open-ended hours.</p>
+
+    <div class="grid">
+      @for (service of services(); track service.id) {
+        <article class="card card-tilt">
+          <h3>{{ service.title }}</h3>
+          <p>{{ service.summary }}</p>
+          @if (service.startingPrice) {
+            <span class="tag">{{ service.startingPrice }}</span>
+          }
+        </article>
+      }
+    </div>
+
+    <a routerLink="/services" class="btn btn-ghost see-all">View all services</a>
+  </div>
+</section>
+
+@if (featuredProjects().length > 0) {
+  <section class="work-preview">
+    <div class="container">
+      <span class="eyebrow">// SELECTED WORK</span>
+      <h2 class="section-heading">Recent builds</h2>
+
+      <div class="grid">
+        @for (project of featuredProjects(); track project.id) {
+          <a [routerLink]="['/portfolio', project.slug]" class="card card-tilt project-card">
+            <app-browser-mockup
+              [url]="project.liveUrl || 'neelastack.com'"
+              [screenshotUrl]="project.coverImageUrl"
+              [title]="project.title"
+            ></app-browser-mockup>
+            <h3>{{ project.title }}</h3>
+            <p>{{ project.summary }}</p>
+            <div class="tags">
+              @for (tech of project.techStack; track tech) {
+                <span class="tag">{{ tech }}</span>
+              }
+            </div>
+            @if (project.liveUrl) {
+              <span class="status-chip">
+                <span class="status-dot"></span> Live in production
+              </span>
+            }
+          </a>
+        }
+      </div>
+
+      <a routerLink="/portfolio" class="btn btn-ghost see-all">View full portfolio</a>
+    </div>
+  </section>
+}
+
+<section class="why-band">
+  <div class="container">
+    <span class="eyebrow">// WHY NEELASTACK</span>
+    <h2 class="section-heading">Confidence before persuasion.</h2>
+
+    <div class="grid why-grid">
+      <article class="card">
+        <span class="tag">PRODUCTION, NOT PROTOTYPES</span>
+        <p>Engineering decisions consider security, testing, deployment and maintainability from day one — not bolted on after launch.</p>
+      </article>
+      <article class="card">
+        <span class="tag">FULL-STACK OWNERSHIP</span>
+        <p>Frontend, backend, database, integrations and deployment — one engineer accountable for the whole system, not a hand-off between teams.</p>
+      </article>
+      <article class="card">
+        <span class="tag">DIRECT COMMUNICATION</span>
+        <p>No account managers, no agency layers. You talk to the person writing the code.</p>
+      </article>
+      <article class="card">
+        <span class="tag">TRANSPARENT DELIVERY</span>
+        <p>Milestones, documentation, source ownership and clear scope — you always know where the project stands.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band bg-grid">
+  <div class="container cta-inner">
+    <span class="eyebrow eyebrow-amber">// LET'S TALK</span>
+    <h2 class="section-heading">Have a system to build, fix, or modernize?</h2>
+    <p class="section-sub center-sub">Tell me which one — I'll reply with a scoped estimate, not a sales call.</p>
+
+    <div class="cta-paths">
+      <a routerLink="/estimate" [queryParams]="{ intent: 'build' }" class="card card-tilt cta-path">
+        <span class="tag">BUILD</span>
+        <h3>Something new</h3>
+        <p>A platform, product, or MVP built from architecture through launch.</p>
+        <span class="cta-path-link">Start building <span class="arrow">→</span></span>
+      </a>
+      <a routerLink="/estimate" [queryParams]="{ intent: 'fix' }" class="card card-tilt cta-path">
+        <span class="tag">FIX</span>
+        <h3>Something broken</h3>
+        <p>Bugs, outages, performance issues, or a system nobody wants to touch.</p>
+        <span class="cta-path-link">Get it stabilized <span class="arrow">→</span></span>
+      </a>
+      <a routerLink="/estimate" [queryParams]="{ intent: 'modernize' }" class="card card-tilt cta-path">
+        <span class="tag">MODERNIZE</span>
+        <h3>Something old</h3>
+        <p>Legacy code, outdated stacks, or infrastructure due for a rebuild.</p>
+        <span class="cta-path-link">Plan the upgrade <span class="arrow">→</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="review-band">
+  <div class="container review-inner">
+    <div>
+      <span class="eyebrow">// ALREADY HAVE AN APPLICATION?</span>
+      <h3>Get a focused architecture review.</h3>
+      <p>Performance, security, scalability, and technical debt — a written summary, not a sales call.</p>
+    </div>
+    <a routerLink="/architecture-review" class="btn btn-ghost btn-arrow">
+      Request an architecture review <span class="arrow">→</span>
+    </a>
+  </div>
+</section>

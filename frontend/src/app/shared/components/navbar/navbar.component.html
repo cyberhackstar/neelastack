@@ -1,0 +1,85 @@
+<header class="navbar" [class.scrolled]="scrolled()">
+  <div class="container navbar-inner">
+    <app-logo></app-logo>
+
+    <nav class="primary-nav" aria-label="Primary">
+      <a routerLink="/services" routerLinkActive="active" ariaCurrentWhenActive="page">Services</a>
+      <a routerLink="/solutions" routerLinkActive="active" ariaCurrentWhenActive="page">Solutions</a>
+      <a routerLink="/portfolio" routerLinkActive="active" ariaCurrentWhenActive="page">Portfolio</a>
+      <a routerLink="/blog" routerLinkActive="active" ariaCurrentWhenActive="page">Blog</a>
+      <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">About</a>
+      <a routerLink="/team" routerLinkActive="active" ariaCurrentWhenActive="page">Team</a>
+    </nav>
+
+    <nav class="account-nav" aria-label="Account">
+      @if (auth.currentUser(); as user) {
+        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+        @if (user.role === 'ADMIN') {
+          <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
+          <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>
+        }
+        <span class="user">{{ user.fullName }}</span>
+        <button (click)="auth.logout()">Sign out</button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page">Sign in</a>
+        <a routerLink="/contact" class="btn btn-primary btn-arrow">
+          Start a project <span class="arrow">→</span>
+        </a>
+      }
+    </nav>
+
+    <button
+      #menuToggleBtn
+      type="button"
+      class="menu-toggle"
+      [class.open]="menuOpen()"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-label="Toggle menu"
+      aria-controls="mobile-nav-panel"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+
+  @if (menuOpen()) {
+    <div class="mobile-backdrop" (click)="closeMenu()"></div>
+    <div
+      #mobilePanel
+      class="mobile-panel"
+      id="mobile-nav-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mobile navigation"
+      (keydown)="onPanelKeydown($event)"
+    >
+      <nav class="mobile-links" aria-label="Mobile primary">
+        <a routerLink="/services" routerLinkActive="active" ariaCurrentWhenActive="page">Services</a>
+        <a routerLink="/solutions" routerLinkActive="active" ariaCurrentWhenActive="page">Solutions</a>
+        <a routerLink="/portfolio" routerLinkActive="active" ariaCurrentWhenActive="page">Portfolio</a>
+        <a routerLink="/blog" routerLinkActive="active" ariaCurrentWhenActive="page">Blog</a>
+        <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">About</a>
+        <a routerLink="/team" routerLinkActive="active" ariaCurrentWhenActive="page">Team</a>
+
+        <div class="mobile-divider"></div>
+
+        @if (auth.currentUser(); as user) {
+          <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+          @if (user.role === 'ADMIN') {
+            <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin Dashboard</a>
+            <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>
+          }
+          <div class="mobile-user-row">
+            <span class="user">{{ user.fullName }}</span>
+            <button (click)="auth.logout()">Sign out</button>
+          </div>
+        } @else {
+          <a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page">Sign in</a>
+          <a routerLink="/contact" class="btn btn-primary mobile-cta">Get a quote</a>
+        }
+      </nav>
+    </div>
+  }
+</header>

@@ -1,0 +1,146 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// ADMIN — PROGRAMMATIC SEO SILO</span>
+        <h1 class="section-heading">Solutions</h1>
+        <p class="muted intro-copy">
+          Curated stack/engagement landing pages (e.g. "Spring Boot + Angular Development").
+          This is a curated content engine, not a mass page generator — publish only pages
+          with genuinely unique content behind them.
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="startCreate()">+ New solution page</button>
+    </div>
+
+    @if (error(); as err) {
+      <p class="error-banner">{{ err }}</p>
+    }
+
+    @if (formOpen()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate class="card cms-form">
+        <h2>{{ editingId() ? 'Edit solution page' : 'New solution page' }}</h2>
+
+        <div class="row two">
+          <label>
+            H1 / page title
+            <input type="text" formControlName="h1Title" (blur)="slugify()" placeholder="Spring Boot + Angular Development" />
+          </label>
+          <label>
+            Slug
+            <input type="text" formControlName="slug" placeholder="spring-boot-angular-development" />
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Meta title (≤160 chars)
+            <input type="text" formControlName="metaTitle" maxlength="160" />
+          </label>
+          <label>
+            Meta description (≤300 chars)
+            <input type="text" formControlName="metaDescription" maxlength="300" />
+          </label>
+        </div>
+
+        <label>
+          Intro (short lead-in shown near the top)
+          <textarea formControlName="intro" rows="3"></textarea>
+        </label>
+
+        <label>
+          Body content (full page copy — capabilities, architecture, process, security, etc.)
+          <textarea formControlName="bodyContent" rows="10"></textarea>
+        </label>
+
+        <div class="row two">
+          <label>
+            Primary technology
+            <input type="text" formControlName="primaryStack" placeholder="Spring Boot" />
+          </label>
+          <label>
+            Secondary technology (optional)
+            <input type="text" formControlName="secondaryStack" placeholder="Angular" />
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Target industry (optional)
+            <input type="text" formControlName="targetIndustry" placeholder="E-commerce" />
+          </label>
+          <label>
+            Starting price (optional)
+            <input type="text" formControlName="startingPrice" placeholder="e.g. Starts at ₹80,000" />
+          </label>
+        </div>
+
+        <label>
+          Use cases (one per line — rendered as a real list, not filler)
+          <textarea formControlName="useCasesText" rows="4" placeholder="Inventory dashboards&#10;Multi-tenant SaaS backends&#10;Legacy API replacement"></textarea>
+        </label>
+
+        <div class="row two">
+          <label>
+            Display order
+            <input type="number" formControlName="displayOrder" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="published" />
+            Published (visible on the live site and in the sitemap)
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (solutions().length === 0) {
+      <p class="muted">No solution pages yet. Create the first one above.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Page</th>
+              <th>Slug</th>
+              <th>Primary stack</th>
+              <th>Order</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (page of solutions(); track page.id) {
+              <tr>
+                <td>{{ page.h1Title }}</td>
+                <td class="mono">{{ page.slug }}</td>
+                <td>{{ page.primaryStack }}</td>
+                <td>{{ page.displayOrder }}</td>
+                <td>
+                  <span class="tag" [class.published]="page.published">
+                    {{ page.published ? 'Published' : 'Draft' }}
+                  </span>
+                </td>
+                <td class="actions">
+                  @if (previewHref(page); as href) {
+                    <a [href]="href" target="_blank" rel="noopener" class="link-btn">View</a>
+                  }
+                  <button type="button" class="link-btn" (click)="startEdit(page)">Edit</button>
+                  <button type="button" class="link-btn danger" (click)="remove(page)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

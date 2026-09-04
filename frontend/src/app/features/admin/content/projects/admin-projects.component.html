@@ -1,0 +1,129 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// ADMIN</span>
+        <h1 class="section-heading">Portfolio</h1>
+      </div>
+      <button class="btn btn-primary" (click)="startCreate()">+ New project</button>
+    </div>
+
+    @if (formOpen()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate class="card cms-form">
+        <h2>{{ editingId() ? 'Edit project' : 'New project' }}</h2>
+
+        <div class="row two">
+          <label>
+            Title
+            <input type="text" formControlName="title" (blur)="slugify()" />
+          </label>
+          <label>
+            Slug
+            <input type="text" formControlName="slug" />
+          </label>
+        </div>
+
+        <label>
+          Summary
+          <textarea formControlName="summary" rows="2"></textarea>
+        </label>
+
+        <label>
+          Problem statement
+          <textarea formControlName="problemStatement" rows="3"></textarea>
+        </label>
+
+        <label>
+          Solution
+          <textarea formControlName="solution" rows="3"></textarea>
+        </label>
+
+        <label>
+          Outcome
+          <textarea formControlName="outcome" rows="3"></textarea>
+        </label>
+
+        <div class="row two">
+          <label>
+            Cover image URL (optional — Cloudinary URL)
+            <input type="text" formControlName="coverImageUrl" />
+          </label>
+          <label>
+            Tech stack (comma-separated)
+            <input type="text" formControlName="techStackText" placeholder="Angular, Spring Boot, PostgreSQL" />
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Live URL (optional)
+            <input type="text" formControlName="liveUrl" />
+          </label>
+          <label>
+            Repo URL (optional)
+            <input type="text" formControlName="repoUrl" />
+          </label>
+        </div>
+
+        <div class="row three">
+          <label>
+            Display order
+            <input type="number" formControlName="displayOrder" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="featured" />
+            Featured on homepage
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="published" />
+            Published
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      <div class="table-scroll">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>Featured</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (project of projects(); track project.id) {
+            <tr>
+              <td>{{ project.title }}</td>
+              <td class="mono">{{ project.slug }}</td>
+              <td>{{ project.featured ? 'Yes' : '—' }}</td>
+              <td>
+                <span class="tag" [class.published]="project.published !== false">
+                  {{ project.published === false ? 'Draft' : 'Published' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button type="button" class="link-btn" (click)="startEdit(project)">Edit</button>
+                <button type="button" class="link-btn danger" (click)="remove(project)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</section>

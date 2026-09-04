@@ -1,0 +1,103 @@
+.quote-page {
+  padding: 4rem 0 5rem;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.card {
+  margin-top: 1.5rem;
+
+  h1 {
+    font-family: var(--font-display);
+    margin-top: 0;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.92rem;
+  }
+
+  .amount {
+    text-align: right;
+    font-family: var(--font-mono);
+  }
+
+  tfoot td {
+    border-bottom: none;
+    padding-top: 1rem;
+    font-weight: 600;
+  }
+
+  .total {
+    color: var(--color-teal);
+    font-size: 1.1rem;
+  }
+}
+
+.valid-until {
+  font-size: 0.8rem;
+  margin-top: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  label {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-panel-raised);
+    color: var(--color-text);
+  }
+
+  .reject-actions {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+  }
+}
+
+.status-notice {
+  p {
+    margin: 0;
+  }
+}
+
+.status-notice.accepted p {
+  color: #3fb950;
+}
+
+.status-notice.rejected p {
+  color: var(--color-text-muted);
+}

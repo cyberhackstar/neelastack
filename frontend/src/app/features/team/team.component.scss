@@ -1,0 +1,70 @@
+.page-header {
+  padding: 4.5rem 0 2.5rem;
+}
+
+.team-grid-section {
+  padding-bottom: 4rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.member-card {
+  text-align: left;
+
+  .avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, var(--color-amber), var(--color-teal));
+    color: #0d1117;
+    margin-bottom: 1.25rem;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    margin: 0 0 0.3rem;
+  }
+
+  .role {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-teal);
+    margin-bottom: 0.9rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+}
+
+.cta-band {
+  background: var(--color-panel);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding: 4rem 0;
+}
+
+.cta-inner {
+  text-align: center;
+}

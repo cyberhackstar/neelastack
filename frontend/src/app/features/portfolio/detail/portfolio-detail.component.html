@@ -1,0 +1,95 @@
+@if (project(); as project) {
+  <article class="case-study">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems()" />
+
+      <span class="eyebrow">// CASE STUDY</span>
+      <h1 class="section-heading">{{ project.title }}</h1>
+      <p class="section-sub">{{ project.summary }}</p>
+
+      <app-browser-mockup
+        [url]="project.liveUrl || 'neelastack.com'"
+        [screenshotUrl]="project.coverImageUrl"
+        [title]="project.title"
+        class="hero-mockup"
+      ></app-browser-mockup>
+
+      <div class="tags">
+        @for (tech of project.techStack; track tech) {
+          <span class="tag">{{ tech }}</span>
+        }
+      </div>
+
+      <div class="links">
+        @if (project.liveUrl) {
+          <a [href]="project.liveUrl" target="_blank" rel="noopener" class="btn btn-ghost">Live site</a>
+        }
+        @if (project.repoUrl) {
+          <a [href]="project.repoUrl" target="_blank" rel="noopener" class="btn btn-ghost">Repository</a>
+        }
+      </div>
+
+      @if (project.problemStatement) {
+        <section class="block">
+          <h2>The problem</h2>
+          <p>{{ project.problemStatement }}</p>
+        </section>
+      }
+
+      @if (project.solution) {
+        <section class="block">
+          <h2>The approach</h2>
+          <p>{{ project.solution }}</p>
+        </section>
+      }
+
+      @if (project.outcome) {
+        <section class="block">
+          <h2>The outcome</h2>
+          <p>{{ project.outcome }}</p>
+        </section>
+      }
+
+      <section class="block cta-block">
+        <p>Have a similar project in mind?</p>
+        <div class="cta-row">
+          <a routerLink="/estimate" class="btn btn-primary btn-arrow">Get an instant estimate <span class="arrow">→</span></a>
+          <a routerLink="/services" class="btn btn-ghost btn-arrow">See our services <span class="arrow">→</span></a>
+        </div>
+      </section>
+
+      @if (project.reviews?.length) {
+        <section class="block reviews">
+          <h2>
+            Client feedback
+            @if (project.averageRating) {
+              <span class="rating-summary">{{ project.averageRating }}/5 · {{ project.reviewCount }} review{{ project.reviewCount === 1 ? '' : 's' }}</span>
+            }
+          </h2>
+          <div class="review-list">
+            @for (review of project.reviews; track review.id) {
+              <blockquote class="review-card">
+                <p>&ldquo;{{ review.reviewBody }}&rdquo;</p>
+                <footer>
+                  <strong>{{ review.authorName }}</strong>
+                  @if (review.authorTitle) {
+                    <span>, {{ review.authorTitle }}</span>
+                  }
+                  <span class="review-stars" [attr.aria-label]="review.rating + ' out of 5 stars'">
+                    {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
+                  </span>
+                </footer>
+              </blockquote>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </article>
+} @else if (notFoundService.notFound()) {
+  <div class="container not-found-block">
+    <h1>Project not found</h1>
+    <p>This case study doesn't exist or may have been removed.</p>
+    <a routerLink="/portfolio" class="btn btn-primary">Back to portfolio</a>
+  </div>
+}

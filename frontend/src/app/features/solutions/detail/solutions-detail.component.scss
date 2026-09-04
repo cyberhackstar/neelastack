@@ -1,0 +1,60 @@
+.breadcrumb {
+  display: inline-block;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.stack-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.solution-body {
+  padding-block: 2rem 6rem;
+  max-width: 760px;
+
+  .body-copy {
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  .use-cases {
+    margin: 1rem 0 2rem;
+    padding-left: 1.25rem;
+    line-height: 1.8;
+  }
+
+  .starting-price {
+    margin-bottom: 2rem;
+  }
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.internal-link {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.related-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+
+  li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  a {
+    color: var(--color-teal);
+  }
+}

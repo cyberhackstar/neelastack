@@ -1,0 +1,149 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.diagram {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.link {
+  fill: none;
+  stroke: #2A3140;
+  stroke-width: 1.5;
+}
+
+.node rect {
+  fill: #161B22;
+  stroke: #2A3140;
+  stroke-width: 1.5;
+}
+
+.node text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  fill: #8B949E;
+}
+
+.node-primary rect {
+  stroke: #2DD4BF;
+  stroke-width: 2;
+}
+
+.node-primary text {
+  fill: #E6EDF3;
+}
+
+.packet {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Very subtle "arrival" glow — a brief brighten-and-fade on the node a
+   packet is about to reach, timed via animation-delay in the template to
+   roughly line up with the packet's travel time. Loops on the same cycle
+   as the packets (4s) so it stays perpetually in sync without JS. */
+.node-pulse-amber rect,
+.node-pulse-teal rect {
+  animation-duration: 4s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+
+.node-pulse-amber rect {
+  animation-name: node-glow-amber;
+}
+
+.node-pulse-teal rect {
+  animation-name: node-glow-teal;
+}
+
+@keyframes node-glow-amber {
+  0%, 92%, 100% {
+    stroke: #2A3140;
+    filter: none;
+  }
+  95% {
+    stroke: #F5A623;
+    filter: drop-shadow(0 0 5px rgba(245, 166, 35, 0.65));
+  }
+}
+
+@keyframes node-glow-teal {
+  0%, 92%, 100% {
+    stroke: #2A3140;
+    filter: none;
+  }
+  95% {
+    stroke: #2DD4BF;
+    filter: drop-shadow(0 0 5px rgba(45, 212, 191, 0.65));
+  }
+}
+
+.node-primary.node-pulse-amber rect {
+  animation-name: node-glow-amber-primary;
+}
+
+@keyframes node-glow-amber-primary {
+  0%, 92%, 100% {
+    stroke: #2DD4BF;
+    filter: none;
+  }
+  95% {
+    stroke: #F5A623;
+    filter: drop-shadow(0 0 6px rgba(245, 166, 35, 0.7));
+  }
+}
+
+.packet-amber {
+  fill: #F5A623;
+  color: #F5A623;
+}
+
+.packet-teal {
+  fill: #2DD4BF;
+  color: #2DD4BF;
+}
+
+.layer-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  fill: #8B949E;
+  opacity: 0.55;
+}
+
+.integrations {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  margin: 1rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px dashed var(--color-border);
+
+  li {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.02em;
+
+    &::before {
+      content: '● ';
+      color: var(--color-teal);
+      font-size: 0.5rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .packet {
+    display: none;
+  }
+
+  .node-pulse-amber rect,
+  .node-pulse-teal rect {
+    animation: none;
+  }
+}

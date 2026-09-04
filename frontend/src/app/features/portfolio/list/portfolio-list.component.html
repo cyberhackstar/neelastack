@@ -1,0 +1,36 @@
+<section class="page-header">
+  <div class="container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <span class="eyebrow">// PORTFOLIO</span>
+    <h1 class="section-heading">Selected work</h1>
+    <p class="section-sub">Real projects, real constraints. Each case study covers the problem, the approach, and the measurable outcome.</p>
+  </div>
+</section>
+
+<section class="list">
+  <div class="container grid">
+    @for (project of projects(); track project.id) {
+      <a [routerLink]="['/portfolio', project.slug]" class="card card-tilt project-card">
+        <app-browser-mockup
+          [url]="project.liveUrl || 'neelastack.com'"
+          [screenshotUrl]="project.coverImageUrl"
+          [title]="project.title"
+        ></app-browser-mockup>
+        <h2>{{ project.title }}</h2>
+        <p>{{ project.summary }}</p>
+        <div class="tags">
+          @for (tech of project.techStack; track tech) {
+            <span class="tag">{{ tech }}</span>
+          }
+        </div>
+        @if (project.liveUrl) {
+          <span class="status-chip">
+            <span class="status-dot"></span> Live in production
+          </span>
+        }
+      </a>
+    } @empty {
+      <p class="empty">Case studies are being written up — check back soon.</p>
+    }
+  </div>
+</section>

@@ -1,0 +1,104 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// ADMIN</span>
+        <h1 class="section-heading">Services</h1>
+      </div>
+      <button class="btn btn-primary" (click)="startCreate()">+ New service</button>
+    </div>
+
+    @if (formOpen()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate class="card cms-form">
+        <h2>{{ editingId() ? 'Edit service' : 'New service' }}</h2>
+
+        <div class="row two">
+          <label>
+            Title
+            <input type="text" formControlName="title" (blur)="slugify()" />
+          </label>
+          <label>
+            Slug
+            <input type="text" formControlName="slug" />
+          </label>
+        </div>
+
+        <label>
+          Summary (short, shown on cards)
+          <textarea formControlName="summary" rows="2"></textarea>
+        </label>
+
+        <label>
+          Full description (shown on the services page)
+          <textarea formControlName="description" rows="4"></textarea>
+        </label>
+
+        <div class="row two">
+          <label>
+            Icon name (optional)
+            <input type="text" formControlName="icon" />
+          </label>
+          <label>
+            Starting price (optional)
+            <input type="text" formControlName="startingPrice" placeholder="e.g. Starts at ₹40,000" />
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Display order
+            <input type="number" formControlName="displayOrder" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="published" />
+            Published (visible on the live site)
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      <div class="table-scroll">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>Order</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (service of services(); track service.id) {
+            <tr>
+              <td>{{ service.title }}</td>
+              <td class="mono">{{ service.slug }}</td>
+              <td>{{ service.displayOrder }}</td>
+              <td>
+                <span class="tag" [class.published]="service.published !== false">
+                  {{ service.published === false ? 'Draft' : 'Published' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button type="button" class="link-btn" (click)="startEdit(service)">Edit</button>
+                <button type="button" class="link-btn danger" (click)="remove(service)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</section>

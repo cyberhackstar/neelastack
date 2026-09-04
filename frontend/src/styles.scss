@@ -1,0 +1,315 @@
+/* Font loading moved to a <link> tag in index.html — @import here would create
+   a blocking chain (fetch CSS -> parse -> discover @import -> fetch again)
+   instead of letting the browser fetch fonts in parallel with this stylesheet. */
+
+:root {
+  /* ---- Palette ---- */
+  --color-bg: #0D1117;
+  --color-panel: #161B22;
+  --color-panel-raised: #1C2330;
+  --color-border: #2A3140;
+  --color-text: #E6EDF3;
+  --color-text-muted: #8B949E;
+  --color-amber: #F5A623;
+  --color-amber-dim: #8a5f18;
+  --color-teal: #2DD4BF;
+  /* Used extremely sparingly — informational states/links only, never as a third
+     "brand" color. See design notes: amber = action, teal = engineering. */
+  --color-info: #4F8CFF;
+
+  /* ---- Type ---- */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* ---- Layout ---- */
+  --max-width: 1160px;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  scroll-behavior: smooth;
+  font-synthesis: none; /* avoid the browser fabricating bold/italic styles for the
+                            fallback font, which changes metrics again once the real
+                            font arrives and contributes to layout shift */
+}
+
+a {
+  color: inherit;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--color-teal);
+  text-transform: none;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+/* Business/decision-facing labels use amber; engineering/system labels use teal.
+   This is the visual grammar: amber = the business moves forward, teal = the
+   engineering that makes it possible. */
+.eyebrow-amber {
+  color: var(--color-amber);
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  margin: 0 0 0.75rem;
+  line-height: 1.15;
+}
+
+.section-sub {
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  max-width: 620px;
+  margin: 0 0 2.5rem;
+  line-height: 1.6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--color-amber);
+  color: #1a1200;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.25);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-teal);
+  color: var(--color-teal);
+}
+
+/* Opt-in directional nudge for CTA buttons — a small arrow shift on hover,
+   not a giant animated button. Add alongside .btn-primary or .btn-ghost. */
+.btn-arrow .arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.btn-arrow:hover .arrow {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-arrow:hover .arrow {
+    transform: none;
+  }
+}
+
+.card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.card-tilt:hover {
+  transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
+  border-color: var(--color-teal);
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 5px;
+  background: var(--color-panel-raised);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* ---- Signature system: engineering grid + glow ----
+   Very subtle backdrop for hero/showcase sections. Combine with a radial glow
+   and a mask so it fades out toward the edges instead of tiling harshly. */
+.bg-grid {
+  position: relative;
+  isolation: isolate;
+}
+
+.bg-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(139, 148, 158, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 148, 158, 0.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+.bg-grid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(480px circle at 18% 8%, rgba(245, 166, 35, 0.08), transparent 60%),
+    radial-gradient(560px circle at 85% 20%, rgba(45, 212, 191, 0.1), transparent 60%);
+}
+
+/* ---- Glass panels ----
+   Reserved for a handful of premium/showcase surfaces (hero visual, featured
+   CTA, featured case study). Everything else stays a solid .card so the glass
+   effect reads as intentional hierarchy, not a global theme. */
+.glass-panel {
+  background: rgba(22, 27, 34, 0.55);
+  border: 1px solid rgba(42, 49, 64, 0.8);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ---- Signature motif: the system line ----
+   A thin animated teal line used sparingly to connect sections (hero →
+   architecture → process → CTA), so it becomes a recognizable Neelastack mark
+   rather than a one-off decoration. */
+.system-line {
+  position: relative;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-teal) 20%,
+    var(--color-teal) 80%,
+    transparent
+  );
+  overflow: hidden;
+}
+
+.system-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #fff 50%, transparent);
+  opacity: 0.6;
+  animation: system-line-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes system-line-pulse {
+  0% { left: -30%; }
+  100% { left: 100%; }
+}
+
+/* ---- Stat blocks ----
+   Small bordered technical indicators, used in place of plain text stats. */
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-panel);
+  min-width: 108px;
+}
+
+.stat-block .stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  color: var(--color-teal);
+  line-height: 1;
+}
+
+.stat-block .stat-label {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.stat-block .stat-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--color-amber);
+  letter-spacing: 0.04em;
+}
+
+.stat-block .stat-flag::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-amber);
+  box-shadow: 0 0 6px var(--color-amber);
+}
+
+/* ---- Trust strip ----
+   A row of verified engineering-standard checkmarks. Only list claims that
+   are actually true of the delivered work. */
+.trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  justify-content: center;
+}
+
+.trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.trust-item svg {
+  flex-shrink: 0;
+  color: var(--color-teal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,65 @@
+.page-header {
+  padding: 4rem 0 2rem;
+}
+
+.list {
+  padding-bottom: 4rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.project-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+
+  app-browser-mockup {
+    display: block;
+    margin-bottom: 1.1rem;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  box-shadow: 0 0 6px var(--color-teal);
+}
+
+.empty {
+  color: var(--color-text-muted);
+}

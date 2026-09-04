@@ -1,0 +1,16 @@
+-- V16 created reviews.rating as SMALLINT, but the Review entity declares it as
+-- java.lang.Integer, which Hibernate's schema validator expects to map to SQL INTEGER
+-- (int4), not SMALLINT (int2). ddl-auto is "validate" in this app (see application.yml
+-- / application-prod.yml — this app never lets Hibernate auto-generate DDL against a
+-- real database), so that mismatch fails startup outright rather than silently doing
+-- the wrong thing.
+--
+-- Widening SMALLINT -> INTEGER is a safe, lossless, no-downtime change (every existing
+-- 1-5 value fits trivially) and doesn't touch the existing
+-- `CHECK (rating BETWEEN 1 AND 5)` constraint, which still applies unchanged.
+--
+-- V16 itself is left as-is rather than edited in place: it may already be applied
+-- against a running database, and Flyway validates already-applied migrations by
+-- checksum — editing a past migration file breaks that check for anyone who already
+-- ran it. Fixing forward with a new migration is the correct move here.
+ALTER TABLE reviews ALTER COLUMN rating TYPE INTEGER;

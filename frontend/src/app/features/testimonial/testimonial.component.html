@@ -1,0 +1,82 @@
+<section class="testimonial-page">
+  <div class="container testimonial-shell">
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (notFound()) {
+      <div class="card">
+        <h1>Link not found</h1>
+        <p>This link may be incorrect. Contact hello&#64;neelastack.com if you think this is a mistake.</p>
+      </div>
+    } @else {
+      <!-- Angular's control-flow syntax only allows an "as" binding on the primary @if,
+           not on an @else if -- nesting a plain @if inside this @else is the correct way
+           to still bind `request()` to `r` here. Behavior is unchanged either way: if
+           request() is falsy, nothing renders, same as before. -->
+      @if (request(); as r) {
+      @if (r.status !== 'PENDING' || submitted()) {
+        <div class="card success">
+          <h1>Thank you{{ r.status === 'PENDING' ? '' : ', ' + r.clientName }}!</h1>
+          <p>
+            @if (submitted()) {
+              Your review has been received — we really appreciate it. It'll be reviewed and,
+              with your permission, may appear on our site.
+            } @else {
+              This link has already been used — thanks again for your feedback.
+            }
+          </p>
+          <a routerLink="/" class="btn btn-ghost">Return home</a>
+        </div>
+      } @else {
+        <span class="eyebrow">// QUICK FAVOR</span>
+        <h1 class="section-heading">How was your project{{ r.projectTitle ? ' — ' + r.projectTitle : '' }}?</h1>
+        <p class="section-sub">
+          Hi {{ r.clientName }} — a couple of minutes of your time would really help. Submitting this
+          form is your consent to be considered for publication; it stays private until we review it
+          with you.
+        </p>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card testimonial-card">
+          <fieldset class="rating-group">
+            <legend>Rating</legend>
+            <div class="rating-options">
+              @for (r2 of ratingOptions; track r2) {
+                <label class="rating-option">
+                  <input type="radio" formControlName="rating" [value]="r2" />
+                  {{ r2 }}★
+                </label>
+              }
+            </div>
+          </fieldset>
+
+          <label>
+            Your role/title (optional)
+            <input type="text" formControlName="authorTitle" placeholder="e.g. CTO, Acme Inc." />
+          </label>
+
+          <label>
+            Your review
+            <textarea formControlName="reviewBody" rows="5" placeholder="What was it like working with Neelastack? What stood out?"></textarea>
+          </label>
+          @if (form.controls.reviewBody.touched && form.controls.reviewBody.invalid) {
+            <p class="error">A few sentences helps other teams evaluating us.</p>
+          }
+
+          <label>
+            Video testimonial link (optional)
+            <input type="text" formControlName="videoUrl" placeholder="https://" />
+          </label>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <button type="submit" class="btn btn-primary btn-arrow" [disabled]="submitting()">
+            {{ submitting() ? 'Sending…' : 'Submit review' }}
+            <span class="arrow">→</span>
+          </button>
+        </form>
+      }
+      }
+    }
+  </div>
+</section>

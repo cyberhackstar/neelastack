@@ -1,0 +1,119 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// ADMIN</span>
+        <h1 class="section-heading">Blog</h1>
+      </div>
+      <button class="btn btn-primary" (click)="startCreate()">+ New article</button>
+    </div>
+
+    @if (formOpen()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate class="card cms-form">
+        <h2>{{ editingId() ? 'Edit article' : 'New article' }}</h2>
+
+        <div class="row two">
+          <label>
+            Title
+            <input type="text" formControlName="title" (blur)="slugify()" />
+          </label>
+          <label>
+            Slug
+            <input type="text" formControlName="slug" />
+          </label>
+        </div>
+
+        <label>
+          Excerpt (shown on the blog list)
+          <textarea formControlName="excerpt" rows="2"></textarea>
+        </label>
+
+        <label>
+          Content (HTML supported — paragraphs, headings, code blocks)
+          <textarea formControlName="content" rows="10"></textarea>
+        </label>
+
+        <div class="row two">
+          <label>
+            Cover image URL (optional)
+            <input type="text" formControlName="coverImageUrl" />
+          </label>
+          <label>
+            Author name
+            <input type="text" formControlName="authorName" />
+          </label>
+        </div>
+
+        <div class="row two">
+          <label>
+            Category
+            <input type="text" formControlName="category" placeholder="e.g. Backend, Architecture" />
+          </label>
+          <label>
+            Tags (comma-separated)
+            <input type="text" formControlName="tagsText" placeholder="spring-boot, postgresql" />
+          </label>
+        </div>
+
+        <label>
+          Meta title (SEO — shown in Google results)
+          <input type="text" formControlName="metaTitle" />
+        </label>
+
+        <label>
+          Meta description (SEO — shown in Google results)
+          <textarea formControlName="metaDescription" rows="2"></textarea>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="published" />
+          Published (live on the site — unchecked saves as a draft)
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      <div class="table-scroll">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Published</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (post of posts(); track post.id) {
+            <tr>
+              <td>{{ post.title }}</td>
+              <td>{{ post.category || '—' }}</td>
+              <td>
+                <span class="tag" [class.published]="post.published">
+                  {{ post.published ? 'Published' : 'Draft' }}
+                </span>
+              </td>
+              <td>{{ post.publishedAt ? (post.publishedAt | date: 'mediumDate') : '—' }}</td>
+              <td class="actions">
+                <button type="button" class="link-btn" (click)="startEdit(post)">Edit</button>
+                <button type="button" class="link-btn danger" (click)="remove(post)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</section>

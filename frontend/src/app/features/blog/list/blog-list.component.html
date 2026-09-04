@@ -1,0 +1,57 @@
+<section class="page-header">
+  <div class="container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <span class="eyebrow">// WRITING</span>
+    <h1 class="section-heading">Blog</h1>
+    <p class="section-sub">Notes on architecture, performance, and shipping software that lasts.</p>
+
+    <div class="search-row">
+      <input
+        type="search"
+        placeholder="Search articles…"
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="search()"
+      />
+      <button type="button" class="btn btn-ghost" (click)="search()">Search</button>
+      @if (searchTerm() || activeTag()) {
+        <button type="button" class="btn btn-ghost" (click)="clearFilters()">Clear</button>
+      }
+    </div>
+
+    @if (availableTags.length > 0) {
+      <div class="tag-row">
+        @for (tag of availableTags; track tag) {
+          <button
+            type="button"
+            class="tag-filter"
+            [class.active]="activeTag() === tag"
+            (click)="filterByTag(tag)"
+          >{{ tag }}</button>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="list">
+  <div class="container grid">
+    @for (post of posts(); track post.id) {
+      <a [routerLink]="['/blog', post.slug]" class="card card-tilt post-card">
+        @if (post.category) {
+          <span class="tag">{{ post.category }}</span>
+        }
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.excerpt }}</p>
+        @if (post.tags.length) {
+          <div class="post-tags">
+            @for (tag of post.tags; track tag) {
+              <span class="mini-tag">#{{ tag }}</span>
+            }
+          </div>
+        }
+      </a>
+    } @empty {
+      <p class="empty">No articles match your search.</p>
+    }
+  </div>
+</section>

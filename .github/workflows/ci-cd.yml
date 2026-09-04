@@ -1,0 +1,341 @@
+name: CI/CD
+
+# Section 3 (master prompt): this file did not exist in the repo before this pass —
+# confirmed via direct inspection, not assumed — despite the README and
+# infra/deploy/deploy.sh already referencing it. Parallel jobs feed a single gated
+# deploy job that only runs on pushes to main once every other job has passed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  NODE_VERSION: '22'
+
+jobs:
+  # --- Security scanning (run on every push/PR) -------------------------------------
+
+  secret-scan:
+    name: Secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history on the first run so Gitleaks can check the whole log, not just
+          # this diff; subsequent runs are effectively incremental via Gitleaks' own
+          # commit-range detection in Actions.
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-scan-backend:
+    name: Dependency vulnerability scan — backend (OWASP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: OWASP Dependency-Check
+        working-directory: backend
+        run: mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8
+        env:
+          # Optional but strongly recommended: register a free NVD API key
+          # (https://nvd.nist.gov/developers/request-an-api-key) as a repo secret to
+          # avoid the NVD feed's unauthenticated rate limit slowing this job down.
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: backend/target/dependency-check-report.html
+          retention-days: 14
+
+  dependency-scan-frontend:
+    name: Dependency vulnerability scan — frontend (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npm audit --audit-level=high
+
+  sast:
+    name: SAST (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        language: [java-kotlin, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+
+  # --- Tests ---------------------------------------------------------------------
+
+  backend-tests:
+    name: Backend integration tests (Testcontainers + real Postgres)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: mvn clean verify
+        working-directory: backend
+        # spring-boot-testcontainers (already in pom.xml) spins up a real Postgres
+        # container per test run rather than mocking the DB layer — the highest-value
+        # test tier here given how much business logic (reconciliation, quotation
+        # lifecycle, pricing) is service-layer SQL-adjacent behavior. Docker is
+        # preinstalled on GitHub-hosted runners, so no extra setup is needed.
+        run: mvn -B clean verify
+        env:
+          MFA_ENCRYPTION_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/target/surefire-reports
+          retention-days: 14
+
+  frontend-build-and-test:
+    name: Frontend build + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - name: ng build (SSR)
+        working-directory: frontend
+        # `ng build` on this project's angular.json produces the SSR bundle
+        # (main.server.ts / app.config.server.ts are present) — this is what
+        # docker-compose/production actually serve via serve:ssr, so this is the
+        # bundle that must be verified, not just the browser-only build.
+        run: npm run build
+      - name: ng test (headless)
+        working-directory: frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+  # --- Container scanning -----------------------------------------------------------
+
+  container-scan:
+    name: Container scanning (Trivy)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t neelastack-backend:${{ github.sha }} ./backend
+      - name: Build frontend image
+        run: docker build -t neelastack-frontend:${{ github.sha }} ./frontend
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: neelastack-backend:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: neelastack-frontend:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
+  # --- E2E ---------------------------------------------------------------------------
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bring up CI-local stack
+        # Reuses docker-compose.yml (the local dev stack), not docker-compose.prod.yml —
+        # this needs a disposable, fast-starting stack, not the production topology.
+        #
+        # ADMIN_BOOTSTRAP_EMAIL/PASSWORD are set here (not left blank) so
+        # AdminBootstrapRunner provisions a real admin account on this clean database —
+        # migration V24 deletes the old seeded admin@neelastack.com / ChangeMe@123
+        # fixture, so without these the CI-local stack would boot with zero admins.
+        # These are disposable, CI-only values consumed solely by the ephemeral
+        # containers torn down at the end of this job; they must never be reused as
+        # production credentials (production uses its own ADMIN_BOOTSTRAP_* secrets,
+        # set once, with the account forced through password-change + MFA enrollment).
+        # The same values are exported as E2E_ADMIN_EMAIL/PASSWORD below so
+        # Playwright's global-setup.ts logs in as this exact bootstrapped account.
+        run: |
+          cat > .env <<EOF
+          JWT_SECRET=e2e-test-secret-not-for-production-use-only-in-ci
+          MFA_ENCRYPTION_KEY=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+          RAZORPAY_KEY_ID=rzp_test_placeholder
+          RAZORPAY_KEY_SECRET=placeholder
+          RAZORPAY_WEBHOOK_SECRET=placeholder
+          ADMIN_BOOTSTRAP_EMAIL=admin@neelastack.com
+          ADMIN_BOOTSTRAP_PASSWORD=CI-only-B00tstrap!Passw0rd
+          ADMIN_BOOTSTRAP_FULL_NAME=CI Admin
+          EOF
+          docker compose up -d --build
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/actuator/health; then exit 0; fi
+            sleep 5
+          done
+          echo "Backend did not become healthy in time" && exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run Playwright suite
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:4000
+          API_BASE_URL: http://localhost:8080
+          # Must match the ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD written into
+          # .env above — global-setup.ts logs in as this account, completes the mandatory
+          # post-bootstrap password change, and hands the resulting session to the specs.
+          # These are disposable, CI-only credentials for an ephemeral database; they are
+          # never valid against a production deployment (see AdminBootstrapRunner and
+          # migration V24, which permanently removed the old seeded admin fixture).
+          E2E_ADMIN_EMAIL: admin@neelastack.com
+          E2E_ADMIN_PASSWORD: CI-only-B00tstrap!Passw0rd
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 14
+      - name: Tear down stack
+        if: always()
+        run: docker compose down -v
+
+  # --- Deploy --------------------------------------------------------------------
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs:
+      - secret-scan
+      - dependency-scan-backend
+      - dependency-scan-frontend
+      - sast
+      - backend-tests
+      - frontend-build-and-test
+      - container-scan
+      - e2e
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify deploy secrets are configured
+        # Disclosed, unresolved gap (see IMPLEMENTATION-STATUS.md): nothing in this repo
+        # documents how deploy.sh is actually invoked in production -- SSH to a
+        # long-lived host, a self-hosted Actions runner, or a cloud provider's deploy
+        # CLI are all plausible and this repo doesn't say which. The SSH-based step
+        # below is the one concrete option encoded; picking it without confirmation
+        # would be a guess dressed up as a fact. This check at least fails loudly and
+        # immediately, before any images are built/pushed, if the secrets it needs were
+        # never set -- instead of failing confusingly deep inside the ssh step.
+        run: |
+          missing=()
+          [ -z "${{ secrets.DEPLOY_HOST }}" ] && missing+=("DEPLOY_HOST")
+          [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ] && missing+=("DEPLOY_SSH_KEY")
+          [ -z "${{ secrets.DEPLOY_KNOWN_HOSTS }}" ] && missing+=("DEPLOY_KNOWN_HOSTS")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Deploy secrets not configured: ${missing[*]}. This job assumes"
+            echo "::error::an SSH-reachable deploy host running infra/deploy/deploy.sh --"
+            echo "::error::confirm that's actually how production is deployed (vs. a"
+            echo "::error::self-hosted runner or a cloud provider's own deploy CLI) before"
+            echo "::error::setting these, and adjust this job if it isn't."
+            exit 1
+          fi
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push images
+        # Canonical registry namespace fix: docker-compose.prod.yml resolves images as
+        # ghcr.io/${GITHUB_REPOSITORY_OWNER}/neelastack-backend:${IMAGE_TAG} /
+        # -frontend:${IMAGE_TAG}. Previously this job built and pushed to a completely
+        # different registry/path (${{ secrets.REGISTRY_HOST }}/neelastack-backend:<sha>,
+        # no ghcr.io prefix, no repository-owner segment) -- deploy.sh's `docker compose
+        # pull` on the VM would have pulled from a location nothing ever pushed to,
+        # either failing outright or silently running a stale/nonexistent image. GHCR is
+        # the single source of truth now: it needs no extra registry secrets (GITHUB_TOKEN
+        # covers auth) and matches what docker-compose.prod.yml already expects.
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t "ghcr.io/${OWNER_LC}/neelastack-backend:${{ github.sha }}" ./backend
+          docker build -t "ghcr.io/${OWNER_LC}/neelastack-frontend:${{ github.sha }}" ./frontend
+          docker push "ghcr.io/${OWNER_LC}/neelastack-backend:${{ github.sha }}"
+          docker push "ghcr.io/${OWNER_LC}/neelastack-frontend:${{ github.sha }}"
+      - name: Deploy via infra/deploy/deploy.sh
+        # deploy.sh itself assumes it's invoked with the commit SHA as the tag to roll
+        # out, from the directory containing docker-compose.prod.yml and .env (which must
+        # define GITHUB_REPOSITORY_OWNER matching the lowercased owner used above -- see
+        # .env.example), and that it waits for container health / runs a smoke test /
+        # auto-rolls-back on failure (see the script's own header comment). This job's
+        # job is just to get the new images built/pushed and hand off the SHA to it over
+        # SSH -- replace this whole step with your real deploy mechanism if it isn't
+        # SSH-to-a-host.
+        #
+        # Host-key verification fix: StrictHostKeyChecking=no accepted ANY host key
+        # presented at connect time with no verification at all, which is a wide-open
+        # MITM window on every single deploy. DEPLOY_KNOWN_HOSTS must contain the real,
+        # pinned known_hosts line(s) for DEPLOY_HOST (get this once via a trusted channel,
+        # e.g. `ssh-keyscan` run locally against the box right after provisioning it, or
+        # the fingerprint your hosting provider displays in its console -- never accept
+        # whatever the CI runner happens to see over the network).
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          trap 'rm -f deploy_key known_hosts' EXIT
+          echo "${DEPLOY_SSH_KEY}" > deploy_key && chmod 600 deploy_key
+          echo "${DEPLOY_KNOWN_HOSTS}" > known_hosts && chmod 644 known_hosts
+          ssh -i deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=known_hosts "${DEPLOY_HOST}" \
+            "cd /opt/neelastack && ./infra/deploy/deploy.sh ${{ github.sha }}"

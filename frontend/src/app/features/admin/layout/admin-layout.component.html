@@ -1,0 +1,47 @@
+<div class="admin-shell" [class.sidebar-open]="sidebarOpen()">
+  <button type="button" class="mobile-topbar-toggle" (click)="toggleSidebar()" aria-label="Toggle admin menu">
+    <span></span><span></span><span></span>
+    <span class="toggle-label">Admin menu</span>
+  </button>
+
+  @if (sidebarOpen()) {
+    <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+  }
+
+  <aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="sidebar-header">
+      <span class="eyebrow">// ADMIN</span>
+      <a routerLink="/" class="back-link">← Back to site</a>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (group of navGroups; track group.heading) {
+        <div class="nav-group">
+          <span class="nav-group-heading">{{ group.heading }}</span>
+          @for (link of group.links; track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: !!link.exact }"
+              (click)="closeSidebar()"
+              class="nav-link"
+            >
+              {{ link.label }}
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    @if (auth.currentUser(); as user) {
+      <div class="sidebar-footer">
+        <span class="user-name">{{ user.fullName }}</span>
+        <button type="button" class="signout-btn" (click)="auth.logout()">Sign out</button>
+      </div>
+    }
+  </aside>
+
+  <div class="admin-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<section class="admin-page">
+  <div class="container">
+    <span class="eyebrow">// ADMIN</span>
+    <h1 class="section-heading">Inquiries</h1>
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (inquiries().length === 0) {
+      <p class="muted">No inquiries yet.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Intent</th>
+              <th>Project type</th>
+              <th>Lead</th>
+              <th>Status</th>
+              <th>Received</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (inquiry of inquiries(); track inquiry.id) {
+              <tr [routerLink]="['/admin/inquiries', inquiry.id]" class="row-link">
+                <td>{{ inquiry.name }}</td>
+                <td>{{ inquiry.email }}</td>
+                <td>{{ inquiry.intent || '—' }}</td>
+                <td>{{ inquiry.projectType || '—' }}</td>
+                <td>
+                  @if (inquiry.leadTier) {
+                    <span class="tag lead-{{ inquiry.leadTier.toLowerCase() }}">{{ inquiry.leadTier }} · {{ inquiry.leadScore }}</span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td><span class="tag status-{{ inquiry.status.toLowerCase() }}">{{ inquiry.status }}</span></td>
+                <td>{{ inquiry.createdAt | date: 'mediumDate' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,213 @@
+<section class="admin-page">
+  <div class="container">
+    <span class="eyebrow">// ADMIN</span>
+    <h1 class="section-heading">Dashboard</h1>
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
+      @if (summary(); as summary) {
+      <div class="stat-grid">
+        <div class="card stat">
+          <span class="stat-value">{{ summary.totalInquiries }}</span>
+          <span class="stat-label">Total inquiries</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value amber">{{ summary.newInquiries }}</span>
+          <span class="stat-label">New — needs a reply</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value" style="color: #ff6b6b">{{ summary.hotLeads }}</span>
+          <span class="stat-label">🔥 Hot leads</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value">{{ summary.totalEngagements }}</span>
+          <span class="stat-label">Active client projects</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value teal">₹{{ summary.totalRevenueCollected | number: '1.0-0' }}</span>
+          <span class="stat-label">Revenue collected</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value">₹{{ summary.pendingInvoiceAmount | number: '1.0-0' }}</span>
+          <span class="stat-label">Pending invoices</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value amber">₹{{ summary.openPipelineValue | number: '1.0-0' }}</span>
+          <span class="stat-label">Open pipeline (sent proposals)</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value teal">₹{{ summary.wonPipelineValue | number: '1.0-0' }}</span>
+          <span class="stat-label">Won (accepted proposals)</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-value">{{ summary.totalProjects }} / {{ summary.totalBlogPosts }}</span>
+          <span class="stat-label">Portfolio items / blog posts</span>
+        </div>
+      </div>
+
+      <h2 class="sub-heading">Sales intelligence</h2>
+      @if (salesIntelligenceLoading()) {
+        <p class="muted">Loading…</p>
+      } @else {
+        @if (salesIntelligence(); as si) {
+        <div class="stat-grid">
+          <div class="card stat">
+            <span class="stat-value amber">₹{{ si.openPipelineValue | number: '1.0-0' }}</span>
+            <span class="stat-label">Open pipeline</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">₹{{ si.weightedPipelineValue | number: '1.0-0' }}</span>
+            <span class="stat-label">Weighted pipeline (heuristic)</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value teal">₹{{ si.wonRevenue | number: '1.0-0' }}</span>
+            <span class="stat-label">Won revenue</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">{{ si.winRatePercent === null ? '—' : (si.winRatePercent | number: '1.0-1') + '%' }}</span>
+            <span class="stat-label">Win rate</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">{{ si.averageDealSize === null ? '—' : '₹' + (si.averageDealSize | number: '1.0-0') }}</span>
+            <span class="stat-label">Average deal size</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">{{ si.averageSalesCycleDays === null ? '—' : (si.averageSalesCycleDays | number: '1.0-1') + ' days' }}</span>
+            <span class="stat-label">Average sales cycle</span>
+          </div>
+        </div>
+
+        <h3 class="sub-heading small">Proposal intelligence</h3>
+        <div class="stat-grid">
+          <div class="card stat">
+            <span class="stat-value amber">{{ si.unviewedProposals }}</span>
+            <span class="stat-label">Unviewed proposals</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">{{ si.viewedAwaitingResponse }}</span>
+            <span class="stat-label">Viewed, awaiting response</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-value">{{ si.averageTimeToFirstViewHours === null ? '—' : (si.averageTimeToFirstViewHours | number: '1.0-1') + ' hrs' }}</span>
+            <span class="stat-label">Avg. time to first view</span>
+          </div>
+        </div>
+        } @else {
+          <p class="muted">Sales intelligence unavailable right now.</p>
+        }
+      }
+
+      <h2 class="sub-heading">Revenue attribution</h2>
+      <div class="dimension-toggle">
+        @for (dim of dimensions; track dim.value) {
+          <button
+            type="button"
+            class="btn btn-ghost"
+            [class.active]="attributionDimension() === dim.value"
+            (click)="loadAttribution(dim.value)"
+          >
+            {{ dim.label }}
+          </button>
+        }
+      </div>
+      @if (attributionLoading()) {
+        <p class="muted">Loading…</p>
+      } @else if (attributionRows() && attributionRows()!.length > 0) {
+        <div class="card table-wrap">
+          <table class="attribution-table">
+            <thead>
+              <tr>
+                <th>{{ currentDimensionLabel() }}</th>
+                <th>Leads</th>
+                <th>Quoted</th>
+                <th>Won</th>
+                <th>Won revenue</th>
+                <th>Conv. %</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of attributionRows(); track row.value) {
+                <tr>
+                  <td>{{ row.value }}</td>
+                  <td>{{ row.leadCount }}</td>
+                  <td>{{ row.quotedCount }}</td>
+                  <td>{{ row.wonCount }}</td>
+                  <td>₹{{ row.wonRevenue | number: '1.0-0' }}</td>
+                  <td>{{ row.conversionRatePercent === null ? '—' : (row.conversionRatePercent | number: '1.0-1') + '%' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="muted">No attribution data yet.</p>
+      }
+
+      <h2 class="sub-heading">Follow-ups</h2>
+      @if (followUpActionError()) {
+        <p class="error-text">{{ followUpActionError() }}</p>
+      }
+      @if (followUpsLoading()) {
+        <p class="muted">Loading…</p>
+      } @else if (followUps() && followUps()!.length > 0) {
+        <ul class="follow-up-list">
+          @for (task of followUps(); track task.quotationId) {
+            <li class="card follow-up-row">
+              <div class="follow-up-main">
+                <span class="follow-up-client">{{ task.clientName || 'Unknown client' }}</span>
+                <span class="meta">{{ task.quotationTitle }} · ₹{{ task.totalAmount | number: '1.0-0' }}</span>
+                <span class="tag">{{ reasonLabel(task.reason) }}</span>
+                <span class="meta">{{ task.daysSinceLastActivity }} day(s) since activity</span>
+              </div>
+              <div class="follow-up-actions">
+                <button type="button" class="btn btn-ghost" (click)="snoozeOneDay(task)">Snooze 1 day</button>
+                <button type="button" class="btn btn-ghost" (click)="markDone(task)">Mark done</button>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No follow-ups needed right now.</p>
+      }
+
+      <h2 class="sub-heading">Projects by status</h2>
+      @if (statusEntries().length > 0) {
+        <div class="card bars">
+          @for (entry of statusEntries(); track entry[0]) {
+            <div class="bar-row">
+              <span class="bar-label">{{ entry[0] }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="(entry[1] / maxStatusCount()) * 100"></div>
+              </div>
+              <span class="bar-count">{{ entry[1] }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted">No projects yet.</p>
+      }
+
+      <h2 class="sub-heading">Recent inquiries</h2>
+      @if (summary.recentInquiries.length > 0) {
+        <ul class="recent-list">
+          @for (inquiry of summary.recentInquiries; track inquiry.id) {
+            <li>
+              <a [routerLink]="['/admin/inquiries', inquiry.id]">{{ inquiry.name }}</a>
+              <span class="meta">{{ inquiry.email }}</span>
+              @if (inquiry.leadTier) {
+                <span class="tag lead-{{ inquiry.leadTier.toLowerCase() }}">{{ inquiry.leadTier }}</span>
+              }
+              <span class="tag">{{ inquiry.status }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No inquiries yet.</p>
+      }
+
+      <a routerLink="/admin/inquiries" class="btn btn-ghost see-all">View all inquiries</a>
+      }
+    }
+  </div>
+</section>

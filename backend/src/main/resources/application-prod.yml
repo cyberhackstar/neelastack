@@ -1,0 +1,28 @@
+spring:
+  jpa:
+    show-sql: false
+
+server:
+  error:
+    # Fail-secure default: never let a raw exception message or stack trace reach a
+    # client response. Handled exceptions still return their intentional, safe
+    # message via GlobalExceptionHandler — this only governs the Spring Boot
+    # framework-level /error fallback (e.g. errors thrown before a controller is
+    # reached). Every error response still carries a requestId to correlate with logs.
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
+  level:
+    root: WARN
+    com.neelastack: INFO
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false

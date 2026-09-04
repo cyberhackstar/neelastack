@@ -1,0 +1,19 @@
+<section class="auth-page">
+  <div class="card">
+    @switch (status()) {
+      @case ('verifying') {
+        <h1>Confirming your email…</h1>
+      }
+      @case ('success') {
+        <h1>Email confirmed</h1>
+        <p>Your account is fully verified.</p>
+        <a routerLink="/dashboard" class="btn btn-primary">Go to dashboard</a>
+      }
+      @case ('error') {
+        <h1>Couldn't verify</h1>
+        <p>{{ errorMessage() }}</p>
+        <a routerLink="/login" class="btn btn-ghost">Back to sign in</a>
+      }
+    }
+  </div>
+</section>

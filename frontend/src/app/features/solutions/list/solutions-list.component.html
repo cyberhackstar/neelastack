@@ -1,0 +1,36 @@
+<section class="page-header">
+  <div class="container">
+    <app-breadcrumb [items]="breadcrumbItems" />
+    <span class="eyebrow">// SOLUTIONS</span>
+    <h1 class="section-heading">Solutions by tech stack</h1>
+    <p class="section-sub">
+      Enterprise development work, organized by the stack and engagement type — each page below
+      covers a specific combination in depth, not a rehash of the general services page.
+    </p>
+  </div>
+</section>
+
+<section class="solutions-list">
+  <div class="container grid">
+    @for (page of pages(); track page.id) {
+      <article class="card card-tilt">
+        <h2>{{ page.h1Title }}</h2>
+        <p>{{ page.intro }}</p>
+        <div class="stack-tags">
+          <span class="tag tag-amber">{{ page.primaryStack }}</span>
+          @if (page.secondaryStack) {
+            <span class="tag">{{ page.secondaryStack }}</span>
+          }
+        </div>
+        @if (page.startingPrice) {
+          <span class="tag">{{ page.startingPrice }}</span>
+        }
+        <a [routerLink]="['/solutions', page.slug]" class="btn btn-ghost btn-arrow">
+          Read more <span class="arrow">→</span>
+        </a>
+      </article>
+    } @empty {
+      <p class="section-sub">More solution pages are on the way — in the meantime, see the full <a routerLink="/services">services list</a>.</p>
+    }
+  </div>
+</section>
