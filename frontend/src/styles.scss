@@ -4,23 +4,24 @@
 
 :root {
   /* ---- Palette ---- */
-  --color-bg: #0D1117;
-  --color-panel: #161B22;
-  --color-panel-raised: #1C2330;
-  --color-border: #2A3140;
-  --color-text: #E6EDF3;
-  --color-text-muted: #8B949E;
-  --color-amber: #F5A623;
+  --color-bg: #0d1117;
+  --color-panel: #161b22;
+  --color-panel-raised: #1c2330;
+  --color-border: #2a3140;
+  --color-text: #e6edf3;
+  --color-text-muted: #8b949e;
+  --color-amber: #f5a623;
   --color-amber-dim: #8a5f18;
-  --color-teal: #2DD4BF;
+  --color-teal: #2dd4bf;
   /* Used extremely sparingly — informational states/links only, never as a third
      "brand" color. See design notes: amber = action, teal = engineering. */
-  --color-info: #4F8CFF;
+  --color-info: #4f8cff;
 
   /* ---- Type ---- */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'IBM Plex Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sanskrit: "Tiro Devanagari Sanskrit", serif;
 
   /* ---- Layout ---- */
   --max-width: 1160px;
@@ -31,7 +32,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--color-bg);
@@ -97,7 +99,9 @@ a {
   text-decoration: none;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .btn-primary {
@@ -143,7 +147,9 @@ a {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 1.75rem;
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .card-tilt:hover {
@@ -170,7 +176,7 @@ a {
 }
 
 .bg-grid::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   z-index: -2;
@@ -178,18 +184,34 @@ a {
     linear-gradient(rgba(139, 148, 158, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(139, 148, 158, 0.06) 1px, transparent 1px);
   background-size: 42px 42px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    #000 40%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    #000 40%,
+    transparent 100%
+  );
 }
 
 .bg-grid::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(480px circle at 18% 8%, rgba(245, 166, 35, 0.08), transparent 60%),
-    radial-gradient(560px circle at 85% 20%, rgba(45, 212, 191, 0.1), transparent 60%);
+    radial-gradient(
+      480px circle at 18% 8%,
+      rgba(245, 166, 35, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      560px circle at 85% 20%,
+      rgba(45, 212, 191, 0.1),
+      transparent 60%
+    );
 }
 
 /* ---- Glass panels ----
@@ -222,7 +244,7 @@ a {
 }
 
 .system-line::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -30%;
@@ -234,8 +256,12 @@ a {
 }
 
 @keyframes system-line-pulse {
-  0% { left: -30%; }
-  100% { left: 100%; }
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 /* ---- Stat blocks ----
@@ -275,7 +301,7 @@ a {
 }
 
 .stat-block .stat-flag::before {
-  content: '';
+  content: "";
   width: 5px;
   height: 5px;
   border-radius: 50%;
