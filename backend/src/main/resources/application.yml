@@ -113,7 +113,7 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:}
     # Optional: enables real expiration on signed file URLs (see FileStorageService).
     # Requires turning on "Token-based authentication" in the Cloudinary console first.
-    auth-token-key: ${CLOUDINARY_AUTH_TOKEN_KEY:}
+    # auth-token-key: ${CLOUDINARY_AUTH_TOKEN_KEY:}
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}
@@ -169,5 +169,3 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
-
-
