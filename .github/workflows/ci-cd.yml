@@ -246,7 +246,7 @@ jobs:
           ADMIN_BOOTSTRAP_EMAIL=admin@neelastack.com
           ADMIN_BOOTSTRAP_PASSWORD=CI-only-B00tstrap!Passw0rd
           ADMIN_BOOTSTRAP_FULL_NAME=CI Admin
-          SPRING_BOOT_ACTUATOR_HEALTH_MAIL_ENABLED=false
+          MANAGEMENT_HEALTH_MAIL_ENABLED=false
           EOF
           docker compose up -d --build
       - name: Wait for backend health
