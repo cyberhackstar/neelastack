@@ -432,24 +432,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push immutable images
+      # IMPORTANT:
+      # Oracle VM is linux/arm64. Build production images specifically
+      # for ARM64 so the Oracle deployment can run them natively.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ARM64 immutable images
         shell: bash
         run: |
+          set -euo pipefail
+
           OWNER_LC="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
 
-          docker build \
+          docker buildx build \
+            --platform linux/arm64 \
             -t "ghcr.io/${OWNER_LC}/neelastack-backend:${{ github.sha }}" \
+            --push \
             ./backend
 
-          docker build \
+          docker buildx build \
+            --platform linux/arm64 \
             -t "ghcr.io/${OWNER_LC}/neelastack-frontend:${{ github.sha }}" \
+            --push \
             ./frontend
-
-          docker push \
-            "ghcr.io/${OWNER_LC}/neelastack-backend:${{ github.sha }}"
-
-          docker push \
-            "ghcr.io/${OWNER_LC}/neelastack-frontend:${{ github.sha }}"
 
       - name: Deploy exact commit SHA to Oracle VM
         env:
