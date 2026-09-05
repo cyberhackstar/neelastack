@@ -7,10 +7,12 @@
 }
 
 .mark {
-  height: 72px;
+  height: 51px;
   width: auto;
   flex-shrink: 0;
-  transition: transform 0.35s ease, height 0.25s ease;
+  transition:
+    transform 0.35s ease,
+    height 0.25s ease;
 }
 
 .logo:hover .mark {

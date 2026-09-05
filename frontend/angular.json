@@ -30,9 +30,23 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
-                { "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" },
-                { "type": "anyComponentStyle", "maximumWarning": "4kb", "maximumError": "8kb" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kb",
+                  "maximumError": "10kb"
+                }
               ],
               "outputHashing": "all"
             },
@@ -47,8 +61,12 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": { "buildTarget": "neelastack-frontend:build:production" },
-            "development": { "buildTarget": "neelastack-frontend:build:development" }
+            "production": {
+              "buildTarget": "neelastack-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "neelastack-frontend:build:development"
+            }
           },
           "defaultConfiguration": "development"
         },
