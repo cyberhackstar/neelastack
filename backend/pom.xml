@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+    <modelVersion>4.0.0</modelVersion>
 
     <!-- ============================================================
          SPRING BOOT BASELINE
@@ -14,6 +15,9 @@
         <relativePath/>
     </parent>
 
+    <!-- ============================================================
+         PROJECT
+         ============================================================ -->
     <groupId>com.neelastack</groupId>
     <artifactId>neelastack-backend</artifactId>
     <version>1.0.0</version>
@@ -26,38 +30,55 @@
          ============================================================ -->
     <properties>
 
-        <!-- Runtime -->
+        <!-- Java -->
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
 
         <!-- Application libraries -->
         <mapstruct.version>1.6.3</mapstruct.version>
-        <jjwt.version>0.12.6</jjwt.version>
-
-        <!-- API / observability / file handling -->
+        <jjwt.version>0.13.0</jjwt.version>
         <springdoc.version>2.8.17</springdoc.version>
         <sentry.version>8.53.0</sentry.version>
         <tika.version>3.3.2</tika.version>
 
-        <!-- ========================================================
-             SECURITY PATCH OVERRIDES
+        <!-- Security / dependency overrides -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
 
-             Spring Boot dependency management exposes these
-             properties specifically for controlled overrides.
-             ======================================================== -->
+        <!-- Jackson (CVE-2026-54515 fix). This is a Spring Boot 3.x
+             dependency-management property that retargets the WHOLE
+             Jackson family (core, databind, annotations, datatype-jsr310,
+             module-parameter-names, etc.) to 2.21.5 together, avoiding
+             the version-skew that pinning individual Jackson artifacts
+             can cause. (Renamed to jackson-2-bom.version on Boot 4.x.) -->
+        <jackson-bom.version>2.21.5</jackson-bom.version>
 
-        <!-- Trivy: CVE-2026-59901 -->
-        <netty.version>4.1.136.Final</netty.version>
+        <!-- Apache HttpComponents 5 -->
+        <httpclient5.version>5.6.4</httpclient5.version>
+        <httpcore5.version>5.4.3</httpcore5.version>
 
-        <!-- Trivy: CVE-2026-65182 / CVE-2026-65905 /
-             CVE-2026-68525 -->
+        <!-- Netty -->
+        <netty.version>4.1.137.Final</netty.version>
+
+        <!-- Log4j 2 -->
+        <log4j2.version>2.25.5</log4j2.version>
+
+        <!-- Tomcat -->
         <tomcat.version>10.1.59</tomcat.version>
 
-        <!-- Trivy: CVE-2026-54291 -->
+        <!-- PostgreSQL -->
         <postgresql.version>42.7.12</postgresql.version>
 
-        <!-- Trivy: CVE-2021-0341 -->
-        <okhttp.version>4.12.0</okhttp.version>
+        <!-- OkHttp -->
+        <okhttp.version>5.5.0</okhttp.version>
+
+        <!-- Testcontainers -->
+        <testcontainers.version>1.21.4</testcontainers.version>
+
+        <!-- Swagger UI -->
+        <swagger-ui.version>5.32.14</swagger-ui.version>
+
+        <!-- OWASP dependency-check -->
+        <dependency-check-maven.version>13.0.0</dependency-check-maven.version>
 
     </properties>
 
@@ -167,7 +188,6 @@
 
         <!-- ========================================================
              OKHTTP
-             Explicitly override vulnerable transitive 3.10.0
              ======================================================== -->
 
         <dependency>
@@ -180,6 +200,49 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>logging-interceptor</artifactId>
             <version>${okhttp.version}</version>
+        </dependency>
+
+        <!-- ========================================================
+             APACHE COMMONS LANG
+             Direct override so the resolved dependency really uses
+             3.18.0 instead of relying only on dependencyManagement.
+             ======================================================== -->
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+
+        <!-- NOTE: No direct Jackson <dependency> overrides here.
+             jackson-bom.version above (in <properties>) already
+             retargets every Jackson artifact via Spring Boot's
+             dependencyManagement — adding explicit <dependency>
+             entries for individual Jackson artifacts would risk
+             re-introducing the version-skew this property avoids. -->
+
+        <!-- ========================================================
+             APACHE HTTPCLIENT 5
+             Cloudinary HTTP5 currently brings an older 5.5.x line.
+             Explicitly pin the patched line.
+             ======================================================== -->
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${httpclient5.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+            <version>${httpcore5.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
+            <version>${httpcore5.version}</version>
         </dependency>
 
         <!-- ========================================================
@@ -208,14 +271,21 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Explicitly replace vulnerable transitive Swagger UI -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
+            <version>${swagger-ui.version}</version>
+        </dependency>
+
         <!-- ========================================================
              FILE STORAGE
              ======================================================== -->
 
         <dependency>
             <groupId>com.cloudinary</groupId>
-            <artifactId>cloudinary-http44</artifactId>
-            <version>1.39.0</version>
+            <artifactId>cloudinary-http5</artifactId>
+            <version>2.4.0</version>
         </dependency>
 
         <!-- ========================================================
@@ -287,12 +357,14 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -308,9 +380,13 @@
          BUILD
          ============================================================ -->
     <build>
+
         <plugins>
 
-            <!-- Stable integration-test execution -->
+            <!-- =====================================================
+                 SUREFIRE
+                 ===================================================== -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -322,7 +398,10 @@
                 </configuration>
             </plugin>
 
-            <!-- Spring Boot -->
+            <!-- =====================================================
+                 SPRING BOOT
+                 ===================================================== -->
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -336,7 +415,10 @@
                 </configuration>
             </plugin>
 
-            <!-- Compiler / annotation processing -->
+            <!-- =====================================================
+                 COMPILER
+                 ===================================================== -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -360,7 +442,31 @@
                 </configuration>
             </plugin>
 
+            <!-- =====================================================
+                 OWASP DEPENDENCY-CHECK
+                 Wired into the build so `mvn verify` (or CI) runs it
+                 with the suppression file applied automatically —
+                 no need to pass -DfailBuildOnCVSS by hand each time.
+                 Run standalone with:
+                   mvn org.owasp:dependency-check-maven:check
+                 ===================================================== -->
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check-maven.version}</version>
+                <configuration>
+                    <failBuildOnCVSS>8</failBuildOnCVSS>
+                    <failBuildOnUnusedSuppressionRule>true</failBuildOnUnusedSuppressionRule>
+                    <suppressionFiles>
+                        <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                    </suppressionFiles>
+                    <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                </configuration>
+            </plugin>
+
         </plugins>
+
     </build>
 
 </project>
