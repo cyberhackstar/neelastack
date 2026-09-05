@@ -11,7 +11,6 @@
 # Images are pulled from GHCR (built by GitHub Actions) rather than built locally.
 # The bundled nginx here is a *reverse proxy only* (routes / -> frontend SSR,
 # /api -> backend, plus SSR caching) — it does not do TLS.
-version: "3.9"
 
 services:
   postgres:
@@ -39,7 +38,11 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      test:
+        [
+          "CMD-SHELL",
+          'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -89,7 +92,6 @@ services:
       # StartupSecretsValidator / CloudinaryConfig / AdminBootstrapRunner would either
       # fail closed on boot or silently skip creating an administrator.
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY}
-      CLOUDINARY_AUTH_TOKEN_KEY: ${CLOUDINARY_AUTH_TOKEN_KEY}
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
       ADMIN_BOOTSTRAP_FULL_NAME: ${ADMIN_BOOTSTRAP_FULL_NAME:-Neelastack Admin}
@@ -128,7 +130,7 @@ services:
       - ./infra/nginx/neelastack.conf:/etc/nginx/conf.d/default.conf:ro
       - ssr_cache:/var/cache/nginx/ssr
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/api/v1/public/ping"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/api/v1/public/ping"]
       interval: 15s
       timeout: 5s
       retries: 5
