@@ -117,6 +117,7 @@ app:
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}
+    mock-enabled: ${RAZORPAY_MOCK_ENABLED:false}
     webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
     # PaymentReconciliationService's polling interval — 20 min default, within the
     # 15-30 min band the reconciliation daemon is required to run at.
@@ -168,3 +169,5 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+

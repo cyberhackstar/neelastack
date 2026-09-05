@@ -28,13 +28,13 @@ test.describe('Admin sales management dashboard', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel(/^email$/i).fill(adminEmail);
+    await page.getByLabel("Email", { exact: true }).fill(adminEmail);
     await page.locator('input[formcontrolname="password"]').fill(adminPassword);
     await page.getByRole('button', { name: /sign in/i }).click();
     // LoginComponent#submit always navigates to '/' on success regardless of role
     // (confirmed in login.component.ts -- it does not branch on ADMIN vs CLIENT), so
     // wait for that redirect, then navigate to /admin explicitly.
-    await page.waitForURL('/', { timeout: 10000 });
+    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
     await page.goto('/admin');
   });
 
@@ -110,13 +110,15 @@ test.describe('Admin sales management dashboard', () => {
     const email = `e2e-nonadmin-${Date.now()}@example.com`;
     await page.goto('/register');
     await page.locator('input[formcontrolname="fullName"]').fill('E2E Non Admin');
-    await page.getByLabel(/^email$/i).fill(email);
+    await page.getByLabel("Email", { exact: true }).fill(email);
     await page.locator('input[formcontrolname="password"]').fill('E2eTestPassword!23');
     await page.getByRole('button', { name: /create account|register|sign up/i }).click();
     // Same redirect-to-'/' behavior as journey 3 / this test's beforeEach.
-    await page.waitForURL('/', { timeout: 10000 });
+    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
 
     await page.goto('/admin');
     await page.waitForURL((url) => !url.pathname.startsWith('/admin'), { timeout: 10000 });
   });
 });
+
+

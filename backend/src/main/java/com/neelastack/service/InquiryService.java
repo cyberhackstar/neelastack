@@ -68,7 +68,7 @@ public class InquiryService {
                 .leadTier(leadScoringService.tier(score))
                 .build();
 
-        Inquiry saved = inquiryRepository.save(inquiry);
+        Inquiry saved = inquiryRepository.saveAndFlush(inquiry);
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
@@ -119,7 +119,7 @@ public class InquiryService {
                 .landingPage(request.landingPage())
                 .build();
 
-        Inquiry saved = inquiryRepository.save(inquiry);
+        Inquiry saved = inquiryRepository.saveAndFlush(inquiry);
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
@@ -161,7 +161,7 @@ public class InquiryService {
                 .landingPage(request.landingPage())
                 .build();
 
-        Inquiry saved = inquiryRepository.save(inquiry);
+        Inquiry saved = inquiryRepository.saveAndFlush(inquiry);
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
@@ -211,7 +211,7 @@ public class InquiryService {
                 .landingPage(request.landingPage())
                 .build();
 
-        Inquiry saved = inquiryRepository.save(inquiry);
+        Inquiry saved = inquiryRepository.saveAndFlush(inquiry);
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
@@ -304,7 +304,7 @@ public class InquiryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inquiry not found: " + id));
         InquiryStatus previous = inquiry.getStatus();
         inquiry.setStatus(status);
-        InquiryDto saved = toDto(inquiryRepository.save(inquiry));
+        InquiryDto saved = toDto(inquiryRepository.saveAndFlush(inquiry));
         auditLogService.recordBestEffort(AuditAction.LEAD_STATUS_CHANGE, "Inquiry", id.toString(),
                 Map.of("from", String.valueOf(previous), "to", String.valueOf(status)));
         return saved;

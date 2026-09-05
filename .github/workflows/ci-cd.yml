@@ -178,7 +178,8 @@ jobs:
         run: npm ci
       - name: ng build (SSR)
         working-directory: frontend
-        # `ng build` on this project's angular.json produces the SSR bundle
+        # 
+g build` on this project's angular.json produces the SSR bundle
         # (main.server.ts / app.config.server.ts are present) — this is what
         # docker-compose/production actually serve via serve:ssr, so this is the
         # bundle that must be verified, not just the browser-only build.
@@ -243,6 +244,7 @@ jobs:
           RAZORPAY_KEY_ID=rzp_test_placeholder
           RAZORPAY_KEY_SECRET=placeholder
           RAZORPAY_WEBHOOK_SECRET=placeholder
+          RAZORPAY_MOCK_ENABLED=true
           ADMIN_BOOTSTRAP_EMAIL=admin@neelastack.com
           ADMIN_BOOTSTRAP_PASSWORD=CI-only-B00tstrap!Passw0rd
           ADMIN_BOOTSTRAP_FULL_NAME=CI Admin
@@ -426,4 +428,6 @@ jobs:
           echo "${DEPLOY_SSH_KEY}" > deploy_key && chmod 600 deploy_key
           echo "${DEPLOY_KNOWN_HOSTS}" > known_hosts && chmod 644 known_hosts
           ssh -i deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=known_hosts "${DEPLOY_HOST}" \
-            "cd /opt/neelastack && ./infra/deploy/deploy.sh ${{ github.sha }}"
+            "cd /home/ubuntu/apps/neelastack && ./infra/deploy/deploy.sh ${{ github.sha }}"
+
+

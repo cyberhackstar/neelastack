@@ -24,6 +24,8 @@ services:
     image: redis:7-alpine
     container_name: neelastack-redis
     restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-neelastack}
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-neelastack}"]
     ports:
       - "6379:6379"
@@ -51,7 +53,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: test
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-neelastack}
@@ -83,6 +85,7 @@ services:
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
       RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      RAZORPAY_MOCK_ENABLED: ${RAZORPAY_MOCK_ENABLED:-false}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
@@ -107,3 +110,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+

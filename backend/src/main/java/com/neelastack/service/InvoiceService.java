@@ -51,6 +51,9 @@ public class InvoiceService {
     @Value("${app.razorpay.key-secret}")
     private String razorpayKeySecret;
 
+    @Value("${app.razorpay.mock-enabled:false}")
+    private boolean razorpayMockEnabled;
+
     // Razorpay order objects themselves have a short validity window (standard orders expire
     // in a matter of hours). A CREATED payment_attempt older than this is treated as stale —
     // a customer who abandoned checkout and returns days later must get a fresh order rather
@@ -151,8 +154,14 @@ public class InvoiceService {
             orderRequest.put("amount", amountInPaise);
             orderRequest.put("currency", invoice.getCurrency());
             orderRequest.put("receipt", invoice.getInvoiceNumber());
-            Order order = razorpayClient.orders.create(orderRequest);
-            String razorpayOrderId = order.get("id");
+            String razorpayOrderId;
+            if (razorpayMockEnabled) {
+                razorpayOrderId = "order_e2e_mock_" + UUID.randomUUID();
+                log.info("Using mocked Razorpay order {} for invoice {}", razorpayOrderId, invoice.getInvoiceNumber());
+            } else {
+                Order order = razorpayClient.orders.create(orderRequest);
+                razorpayOrderId = order.get("id");
+            }
 
             // Belt-and-suspenders: supersede any stale CREATED rows left behind by a crash
             // between order creation and the insert below on a prior attempt (there shouldn't
@@ -211,6 +220,29 @@ public class InvoiceService {
 
         if (invoice.getRazorpayOrderId() == null || !invoice.getRazorpayOrderId().equals(request.razorpayOrderId())) {
             throw new BadRequestException("Order mismatch — please retry the payment");
+        }
+
+        if (razorpayMockEnabled) {
+            if (!"e2e-valid-signature".equals(request.razorpaySignature())) {
+                invoice.setStatus(InvoiceStatus.FAILED);
+                invoiceRepository.save(invoice);
+                paymentAttemptRepository.findByRazorpayOrderId(request.razorpayOrderId()).ifPresent(attempt -> {
+                    attempt.setStatus(PaymentAttemptStatus.FAILED);
+                    paymentAttemptRepository.save(attempt);
+                });
+                throw new BadRequestException("Payment signature is invalid — this payment was not confirmed");
+            }
+            invoice.setRazorpayPaymentId(request.razorpayPaymentId());
+            invoice.setRazorpaySignature(request.razorpaySignature());
+            invoice.setStatus(InvoiceStatus.PAID);
+            invoice.setPaidAt(LocalDateTime.now());
+            InvoiceDto dto = toDto(invoiceRepository.save(invoice));
+            paymentAttemptRepository.findByRazorpayOrderId(request.razorpayOrderId()).ifPresent(attempt -> {
+                attempt.setStatus(PaymentAttemptStatus.SUCCEEDED);
+                paymentAttemptRepository.save(attempt);
+            });
+            testimonialService.queueRequestForInvoice(invoice);
+            return dto;
         }
 
         JSONObject payload = new JSONObject();
@@ -329,3 +361,6 @@ public class InvoiceService {
                 .build();
     }
 }
+
+
+

@@ -15,7 +15,7 @@ test.describe('Client portal dashboard', () => {
   test('register -> login -> dashboard renders (empty state for a fresh account)', async ({ page }) => {
     await page.goto('/register');
     await page.locator('input[formcontrolname="fullName"]').fill('E2E Client');
-    await page.getByLabel(/^email$/i).fill(email);
+    await page.getByLabel("Email", { exact: true }).fill(email);
     await page.locator('input[formcontrolname="password"]').fill(password);
     await page.getByRole('button', { name: /create account|register|sign up/i }).click();
 
@@ -23,7 +23,7 @@ test.describe('Client portal dashboard', () => {
     // not redirect to /dashboard or /login) -- confirmed directly in
     // register.component.ts. The original version of this test waited on a URL
     // register.component.ts never produces and would have hung/timed out in CI.
-    await page.waitForURL('/', { timeout: 10000 });
+    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /dashboard|my projects/i })).toBeVisible();
     // A brand-new account has no engagements yet — the empty state is the correct,
@@ -37,3 +37,5 @@ test.describe('Client portal dashboard', () => {
     await page.waitForURL(/\/login/, { timeout: 10000 });
   });
 });
+
+

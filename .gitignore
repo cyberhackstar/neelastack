@@ -39,3 +39,5 @@ Thumbs.db
 *.bak
 deploy_key
 known_hosts
+
+.env

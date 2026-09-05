@@ -1,4 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import * as dotenv from "dotenv";
+import * as path from "path";
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 /**
  * E2E suite (Section 3, master prompt). No Playwright/Cypress files existed anywhere
@@ -11,19 +15,28 @@ import { defineConfig, devices } from '@playwright/test';
  * e2e job) -- frontend on :4000 (SSR), backend on :8080.
  */
 export default defineConfig({
-  testDir: './tests',
-  globalSetup: require.resolve('./global-setup.ts'),
+  testDir: "./tests",
+  globalSetup: require.resolve("./global-setup.ts"),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [["html", { open: "never" }], ["list"]],
   use: {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:4000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    baseURL: process.env.BASE_URL ?? "http://localhost:4000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          executablePath:
+            "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        },
+      },
+    },
   ],
 });

@@ -10,8 +10,8 @@ test.describe('Architecture review submission', () => {
     await page.goto('/architecture-review');
     await expect(page.getByRole('heading', { name: /free architecture review/i })).toBeVisible();
 
-    await page.getByLabel(/^name$/i).fill('E2E Test User');
-    await page.getByLabel(/^email$/i).fill('e2e-arch-review@example.com');
+    await page.getByLabel("Name", { exact: true }).fill('E2E Test User');
+    await page.getByLabel("Email", { exact: true }).fill('e2e-arch-review@example.com');
     await page.locator('input[formcontrolname="applicationUrl"]').fill('https://example.com');
     await page.locator('textarea[formcontrolname="currentStack"]').fill(
       'Django + React monolith, ~5 years old, slow admin panel, no automated tests.',
@@ -32,3 +32,5 @@ test.describe('Architecture review submission', () => {
     await expect(page.locator('.card.success, [class*="success"]')).toHaveCount(0);
   });
 });
+
+

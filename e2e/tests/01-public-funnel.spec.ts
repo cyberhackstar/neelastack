@@ -25,7 +25,7 @@ test.describe('Public acquisition funnel', () => {
 
     await page.goto('/contact');
     await expect(page).toHaveURL(/\/contact/);
-    await expect(page.getByLabel(/^email$/i)).toBeVisible();
+    await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   });
 
   test('estimator wizard: intent selection through to review step', async ({ page }) => {
@@ -34,6 +34,7 @@ test.describe('Public acquisition funnel', () => {
 
     // Step 1: intent (BUILD/FIX/MODERNIZE toggle buttons, not a form control)
     await page.getByRole('button', { name: /build/i }).click();
+    await page.getByRole('button', { name: /Next/i }).click();
 
     // The wizard is multi-step; this asserts forward progress happens rather than
     // walking every field of every step (that's better covered by frontend unit tests
@@ -44,8 +45,8 @@ test.describe('Public acquisition funnel', () => {
   test('contact form can be submitted successfully', async ({ page }) => {
     await page.goto('/contact');
 
-    await page.getByLabel(/^name$/i).fill('E2E Test User');
-    await page.getByLabel(/^email$/i).fill('e2e-test@example.com');
+    await page.getByLabel("Name", { exact: true }).fill('E2E Test User');
+    await page.getByLabel("Email", { exact: true }).fill('e2e-test@example.com');
     const messageField = page.locator('textarea[formcontrolname="message"], textarea[formcontrolname="scopeDetails"]').first();
     if (await messageField.count()) {
       await messageField.fill('E2E smoke test — please disregard.');
@@ -58,3 +59,8 @@ test.describe('Public acquisition funnel', () => {
     await expect(page.locator('.success, [class*="success"]').first()).toBeVisible({ timeout: 10000 });
   });
 });
+
+
+
+
+
