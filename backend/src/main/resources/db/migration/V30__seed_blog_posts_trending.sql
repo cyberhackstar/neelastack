@@ -6,10 +6,11 @@
 -- =============================================================================
 
 INSERT INTO blog_posts
-    (title, slug, excerpt, content, cover_image_url, author_name, category,
+    (id, title, slug, excerpt, content, cover_image_url, author_name, category,
      meta_title, meta_description, published, published_at)
 VALUES
 (
+    gen_random_uuid(),
     'Java 21 Virtual Threads in Spring Boot 3: Benchmark, Pitfalls, and Pinning',
     'java-21-virtual-threads-spring-boot-benchmarks',
     'Project Loom promises massive concurrency with zero reactive refactoring. Here is what actually happens when you flip the switch on Tomcat in Spring Boot 3, and how to detect thread pinning.',

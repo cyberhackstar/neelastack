@@ -2,6 +2,7 @@
   border-top: 1px solid var(--color-border);
   padding-top: 3.5rem;
   margin-top: 4rem;
+  overflow-x: hidden;
 }
 
 .footer-grid {
@@ -44,6 +45,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  min-width: 0; // prevents long links from forcing column overflow
 
   h3 {
     font-family: var(--font-mono);
@@ -58,6 +60,7 @@
     color: var(--color-text);
     text-decoration: none;
     font-size: 0.88rem;
+    word-break: break-word;
 
     &:hover {
       color: var(--color-teal);
@@ -81,14 +84,80 @@
   }
 }
 
-@media (max-width: 780px) {
+// Large tablets / small laptops: brand column full width, nav cols share a row
+@media (max-width: 960px) {
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+
+    p {
+      max-width: 480px;
+    }
   }
 }
 
-@media (max-width: 500px) {
+// Tablets: two nav columns per row under the brand
+@media (max-width: 780px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 2rem;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+
+    p {
+      max-width: 100%;
+    }
+  }
+}
+
+// Phones: single column, centered brand block, stacked bottom bar
+@media (max-width: 560px) {
+  .site-footer {
+    padding-top: 2.5rem;
+  }
+
   .footer-grid {
     grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .footer-brand {
+    text-align: center;
+
+    p {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    app-logo {
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  .footer-col {
+    text-align: center;
+    align-items: center;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.4rem;
+    padding: 1.25rem 0;
+  }
+}
+
+// Very small phones: trim the sanskrit slogan so it doesn't wrap awkwardly
+@media (max-width: 360px) {
+  .footer-brand .sanskrit-slogan {
+    font-size: 1rem;
   }
 }

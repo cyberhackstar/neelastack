@@ -5,10 +5,11 @@
 -- =============================================================================
 
 INSERT INTO blog_posts
-    (title, slug, excerpt, content, cover_image_url, author_name, category,
+    (id, title, slug, excerpt, content, cover_image_url, author_name, category,
      meta_title, meta_description, published, published_at)
 VALUES
 (
+    gen_random_uuid(),
     'Eliminating N+1 Queries in Spring Boot with JPA Projections and Batch Fetching',
     'spring-boot-jpa-eliminate-n-plus-one-queries',
     'The N+1 query pattern silently degrades API throughput under production concurrency. Here is how we enforce batch fetching, criteria join graphs, and interface-based DTO projections in Hibernate 6.',

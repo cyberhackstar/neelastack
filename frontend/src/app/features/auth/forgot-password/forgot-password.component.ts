@@ -1,15 +1,16 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { SeoService } from '../../../core/services/seo.service';
+import { Component, OnInit, inject, signal } from "@angular/core";
+import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
+import { RouterLink } from "@angular/router";
+import { AuthService } from "../../../core/services/auth.service";
+import { SeoService } from "../../../core/services/seo.service";
+import { LogoComponent } from "../../../shared/components/logo/logo.component";
 
 @Component({
-  selector: 'app-forgot-password',
+  selector: "app-forgot-password",
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
-  templateUrl: './forgot-password.component.html',
-  styleUrl: './forgot-password.component.scss',
+  templateUrl: "./forgot-password.component.html",
+  styleUrl: "./forgot-password.component.scss",
 })
 export class ForgotPasswordComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -20,11 +21,15 @@ export class ForgotPasswordComponent implements OnInit {
   submitted = signal(false);
 
   ngOnInit(): void {
-    this.seo.update({ title: 'Forgot Password', description: 'Reset your Neelastack password.', noindex: true });
+    this.seo.update({
+      title: "Forgot Password",
+      description: "Reset your Neelastack password.",
+      noindex: true,
+    });
   }
 
   form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
+    email: ["", [Validators.required, Validators.email]],
   });
 
   submit(): void {

@@ -480,4 +480,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=known_hosts \
             "$DEPLOY_HOST" \
-            "cd /home/ubuntu/apps/neelastack && test -x ./infra/deploy/deploy.sh && ./infra/deploy/deploy.sh '${{ github.sha }}'"
+            "cd /home/ubuntu/apps/neelastack && git fetch --force origin main && git reset --hard '${{ github.sha }}' && test -x ./infra/deploy/deploy.sh && ./infra/deploy/deploy.sh '${{ github.sha }}'"

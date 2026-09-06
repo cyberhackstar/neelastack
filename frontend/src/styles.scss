@@ -339,3 +339,320 @@ a {
     transition: none !important;
   }
 }
+
+/* ---- Mobile safety net ----
+   Applies everywhere: stops accidental horizontal scroll, keeps form
+   controls from forcing iOS zoom, and gives wide tables/code blocks an
+   escape hatch on narrow screens instead of blowing out the layout. */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* prevents iOS Safari auto-zoom on focus */
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1.1rem;
+  }
+}
+
+/* =====================================================================
+   Auth shell — shared premium layout for every auth page (login,
+   register, forgot/reset/change password, verify email, oauth callback).
+   Split screen on desktop (brand panel + form), single column on mobile.
+   Component templates just drop into these classes; page-specific scss
+   should only add small overrides, not redefine the shell.
+   ===================================================================== */
+.auth-shell {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: stretch;
+}
+
+.auth-shell-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.auth-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 3.5rem 3rem;
+  border-right: 1px solid var(--color-border);
+  position: relative;
+}
+
+.auth-visual h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.auth-visual p {
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 380px;
+}
+
+.auth-visual .system-line {
+  width: 100%;
+  max-width: 220px;
+  margin: 0.25rem 0;
+}
+
+.auth-trust {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.auth-trust li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.auth-trust li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-teal);
+  box-shadow: 0 0 6px var(--color-teal);
+  flex-shrink: 0;
+  transform: translateY(-2px);
+}
+
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 2.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.auth-card h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.55rem;
+  margin: 0;
+}
+
+.auth-card .auth-lede {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  margin: -0.5rem 0 0;
+  line-height: 1.55;
+}
+
+.auth-card .auth-hint {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  margin: -0.4rem 0 0;
+  line-height: 1.55;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+}
+
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.auth-card input {
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auth-card input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.auth-card button[type="submit"] {
+  margin-top: 0.25rem;
+  padding: 0.85rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-amber);
+  color: #1a1200;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.auth-card button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.22);
+}
+
+.auth-card button[type="submit"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth-card .auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  margin: 0.1rem 0;
+}
+
+.auth-card .auth-divider::before,
+.auth-card .auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-card .auth-divider span {
+  padding: 0 0.75rem;
+}
+
+.auth-card .field-error {
+  color: #ff8787;
+  font-size: 0.78rem;
+}
+
+.auth-card .error {
+  color: #ff8787;
+  font-size: 0.85rem;
+  margin: 0;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+}
+
+.auth-card .switch {
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.auth-card .switch a,
+.auth-card .link-btn {
+  color: var(--color-teal);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+}
+
+.auth-card .switch a:hover,
+.auth-card .link-btn:hover {
+  text-decoration: underline;
+}
+
+.auth-card.success {
+  text-align: center;
+  align-items: center;
+}
+
+.auth-card.success p {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  font-size: 0.92rem;
+  margin: 0 0 0.25rem;
+}
+
+@media (max-width: 900px) {
+  .auth-shell-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-visual {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 2.25rem 1.5rem 1.75rem;
+    text-align: left;
+  }
+
+  .auth-visual p,
+  .auth-trust {
+    display: none; /* keep the mobile header compact — logo + heading only */
+  }
+
+  .auth-form-panel {
+    padding: 2rem 1.25rem 3rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .auth-card h1 {
+    font-size: 1.35rem;
+  }
+}

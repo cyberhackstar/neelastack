@@ -3,10 +3,11 @@
 -- Safe to edit or delete afterwards via the admin blog CMS (/admin/content/blog).
 
 INSERT INTO blog_posts
-    (title, slug, excerpt, content, cover_image_url, author_name, category,
+    (id, title, slug, excerpt, content, cover_image_url, author_name, category,
      meta_title, meta_description, published, published_at)
 VALUES
 (
+    gen_random_uuid(),
     'Why We Chose a Modular Monolith Over Microservices',
     'modular-monolith-over-microservices',
     'Microservices are the default advice for "serious" architecture. For a team our size, a well-structured monolith ships faster and breaks less.',

@@ -1,11 +1,25 @@
-<section class="auth-page">
-  <div class="card">
-    @if (status() === 'exchanging') {
-      <h1>Signing you in…</h1>
-    } @else {
-      <h1>Sign-in didn't complete</h1>
-      <p>This link may have expired. Please try signing in again.</p>
-      <a routerLink="/login" class="btn btn-ghost">Back to sign in</a>
-    }
+<section class="auth-shell bg-grid">
+  <div class="auth-shell-inner">
+    <aside class="auth-visual">
+      <span class="eyebrow eyebrow-amber">Single Sign-On</span>
+      <h2>Connecting your account.</h2>
+      <p>
+        Sit tight while we finish authenticating you with your identity
+        provider.
+      </p>
+      <div class="system-line"></div>
+    </aside>
+
+    <div class="auth-form-panel">
+      <div class="auth-card card success">
+        @if (status() === "exchanging") {
+          <h1>Signing you in…</h1>
+        } @else {
+          <h1>Sign-in didn't complete</h1>
+          <p>This link may have expired. Please try signing in again.</p>
+          <a routerLink="/login" class="btn btn-ghost">Back to sign in</a>
+        }
+      </div>
+    </div>
   </div>
 </section>

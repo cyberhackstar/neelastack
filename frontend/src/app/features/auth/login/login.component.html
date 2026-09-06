@@ -1,71 +1,120 @@
-<section class="auth-page">
-  @if (!mfaToken()) {
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <h1>Sign in</h1>
-
-      <app-google-signin-button></app-google-signin-button>
-      <div class="divider"><span>or</span></div>
-
-      <label>
-        Email
-        <input type="email" formControlName="email" autocomplete="email" />
-      </label>
-
-      <label>
-        Password
-        <input type="password" formControlName="password" autocomplete="current-password" />
-      </label>
-
-      @if (errorMessage()) {
-        <p class="error">{{ errorMessage() }}</p>
-      }
-
-      <button type="submit" [disabled]="loading()">
-        {{ loading() ? 'Signing in…' : 'Sign in' }}
-      </button>
-
-      <p class="switch"><a routerLink="/forgot-password">Forgot your password?</a></p>
-      <p class="switch">No account? <a routerLink="/register">Create one</a></p>
-    </form>
-  } @else {
-    <form [formGroup]="mfaForm" (ngSubmit)="submitMfa()" novalidate>
-      <h1>Two-factor verification</h1>
-      <p class="mfa-hint">
-        @if (useRecoveryCode()) {
-          Enter one of your single-use recovery codes.
-        } @else {
-          Enter the 6-digit code from your authenticator app.
-        }
+<section class="auth-shell bg-grid">
+  <div class="auth-shell-inner">
+    <aside class="auth-visual">
+      <!-- <app-logo></app-logo> -->
+      <span class="eyebrow eyebrow-amber">Client Access</span>
+      <h2>Everything your project needs, in one place.</h2>
+      <p>
+        Track delivery milestones, invoices, and architecture reviews for every
+        engagement — secured with enterprise-grade authentication.
       </p>
+      <div class="system-line"></div>
+      <ul class="auth-trust">
+        <li>Multi-factor authentication on every account</li>
+        <li>Encrypted in transit and at rest</li>
+        <li>SOC-ready audit trail on every action</li>
+      </ul>
+    </aside>
 
-      <label>
-        {{ useRecoveryCode() ? 'Recovery code' : 'Authenticator code' }}
-        <input
-          type="text"
-          [attr.inputmode]="useRecoveryCode() ? 'text' : 'numeric'"
-          [maxlength]="useRecoveryCode() ? 20 : 6"
-          [placeholder]="useRecoveryCode() ? 'xxxx-xxxx' : '000000'"
-          formControlName="code"
-          autocomplete="one-time-code"
-          autofocus
-        />
-      </label>
+    <div class="auth-form-panel">
+      @if (!mfaToken()) {
+        <form
+          [formGroup]="form"
+          (ngSubmit)="submit()"
+          novalidate
+          class="auth-card card"
+        >
+          <h1>Sign in</h1>
 
-      @if (mfaError()) {
-        <p class="error">{{ mfaError() }}</p>
+          <app-google-signin-button></app-google-signin-button>
+          <div class="auth-divider"><span>or</span></div>
+
+          <label>
+            Email
+            <input type="email" formControlName="email" autocomplete="email" />
+          </label>
+
+          <label>
+            Password
+            <input
+              type="password"
+              formControlName="password"
+              autocomplete="current-password"
+            />
+          </label>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <button type="submit" [disabled]="loading()">
+            {{ loading() ? "Signing in…" : "Sign in" }}
+          </button>
+
+          <p class="switch">
+            <a routerLink="/forgot-password">Forgot your password?</a>
+          </p>
+          <p class="switch">
+            No account? <a routerLink="/register">Create one</a>
+          </p>
+        </form>
+      } @else {
+        <form
+          [formGroup]="mfaForm"
+          (ngSubmit)="submitMfa()"
+          novalidate
+          class="auth-card card"
+        >
+          <h1>Two-factor verification</h1>
+          <p class="auth-lede">
+            @if (useRecoveryCode()) {
+              Enter one of your single-use recovery codes.
+            } @else {
+              Enter the 6-digit code from your authenticator app.
+            }
+          </p>
+
+          <label>
+            {{ useRecoveryCode() ? "Recovery code" : "Authenticator code" }}
+            <input
+              type="text"
+              [attr.inputmode]="useRecoveryCode() ? 'text' : 'numeric'"
+              [maxlength]="useRecoveryCode() ? 20 : 6"
+              [placeholder]="useRecoveryCode() ? 'xxxx-xxxx' : '000000'"
+              formControlName="code"
+              autocomplete="one-time-code"
+              autofocus
+            />
+          </label>
+
+          @if (mfaError()) {
+            <p class="error">{{ mfaError() }}</p>
+          }
+
+          <button type="submit" [disabled]="mfaForm.invalid || mfaSubmitting()">
+            {{ mfaSubmitting() ? "Verifying…" : "Verify & sign in" }}
+          </button>
+
+          <p class="switch">
+            <button
+              type="button"
+              class="link-btn"
+              (click)="toggleRecoveryCode()"
+            >
+              {{
+                useRecoveryCode()
+                  ? "Use authenticator code instead"
+                  : "Lost your device? Use a recovery code"
+              }}
+            </button>
+          </p>
+          <p class="switch">
+            <button type="button" class="link-btn" (click)="cancelMfa()">
+              Back to sign in
+            </button>
+          </p>
+        </form>
       }
-
-      <button type="submit" [disabled]="mfaForm.invalid || mfaSubmitting()">
-        {{ mfaSubmitting() ? 'Verifying…' : 'Verify & sign in' }}
-      </button>
-
-      <p class="switch">
-        <button type="button" class="link-btn" (click)="toggleRecoveryCode()">
-          {{ useRecoveryCode() ? 'Use authenticator code instead' : "Lost your device? Use a recovery code" }}
-        </button>
-      </p>
-      <p class="switch"><button type="button" class="link-btn" (click)="cancelMfa()">Back to sign in</button></p>
-    </form>
-  }
+    </div>
+  </div>
 </section>
-

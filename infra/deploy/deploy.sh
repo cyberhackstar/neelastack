@@ -108,8 +108,8 @@ smoke_test() {
 deploy_tag() {
   local tag="$1"
   log "Deploying image tag: $tag"
-  IMAGE_TAG="$tag" docker compose -f "$COMPOSE_FILE" pull
-  IMAGE_TAG="$tag" docker compose -f "$COMPOSE_FILE" up -d
+  IMAGE_TAG="$tag" docker compose --env-file .env -f "$COMPOSE_FILE" pull
+  IMAGE_TAG="$tag" docker compose --env-file .env -f "$COMPOSE_FILE" up -d
 }
 
 previous_tag=""

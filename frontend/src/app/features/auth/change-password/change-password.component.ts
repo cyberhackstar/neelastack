@@ -1,13 +1,22 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { SeoService } from '../../../core/services/seo.service';
+import { Component, OnInit, inject, signal } from "@angular/core";
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from "@angular/forms";
+import { Router } from "@angular/router";
+import { AuthService } from "../../../core/services/auth.service";
+import { SeoService } from "../../../core/services/seo.service";
+import { LogoComponent } from "../../../shared/components/logo/logo.component";
 
 function passwordsMatch(control: AbstractControl): ValidationErrors | null {
-  const newPassword = control.get('newPassword')?.value;
-  const confirmPassword = control.get('confirmPassword')?.value;
-  return newPassword && confirmPassword && newPassword !== confirmPassword ? { mismatch: true } : null;
+  const newPassword = control.get("newPassword")?.value;
+  const confirmPassword = control.get("confirmPassword")?.value;
+  return newPassword && confirmPassword && newPassword !== confirmPassword
+    ? { mismatch: true }
+    : null;
 }
 
 /**
@@ -17,11 +26,11 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
  * that account, so this page is the only place such a user can go until they complete it.
  */
 @Component({
-  selector: 'app-change-password',
+  selector: "app-change-password",
   standalone: true,
   imports: [ReactiveFormsModule],
-  templateUrl: './change-password.component.html',
-  styleUrl: './change-password.component.scss',
+  templateUrl: "./change-password.component.html",
+  styleUrl: "./change-password.component.scss",
 })
 export class ChangePasswordComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -34,17 +43,17 @@ export class ChangePasswordComponent implements OnInit {
 
   form = this.fb.nonNullable.group(
     {
-      currentPassword: ['', [Validators.required]],
-      newPassword: ['', [Validators.required, Validators.minLength(12)]],
-      confirmPassword: ['', [Validators.required]],
+      currentPassword: ["", [Validators.required]],
+      newPassword: ["", [Validators.required, Validators.minLength(12)]],
+      confirmPassword: ["", [Validators.required]],
     },
-    { validators: passwordsMatch }
+    { validators: passwordsMatch },
   );
 
   ngOnInit(): void {
     this.seo.update({
-      title: 'Change Password',
-      description: 'Set a new password for your account.',
+      title: "Change Password",
+      description: "Set a new password for your account.",
       noindex: true,
     });
   }
@@ -63,11 +72,13 @@ export class ChangePasswordComponent implements OnInit {
     this.authService.changePassword(currentPassword, newPassword).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/']);
+        this.router.navigate(["/"]);
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Unable to change password. Please try again.');
+        this.errorMessage.set(
+          err?.error?.message ?? "Unable to change password. Please try again.",
+        );
       },
     });
   }

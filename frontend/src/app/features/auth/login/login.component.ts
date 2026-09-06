@@ -1,16 +1,21 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { SeoService } from '../../../core/services/seo.service';
-import { GoogleSigninButtonComponent } from '../../../shared/components/google-signin-button/google-signin-button.component';
+import { Component, OnInit, inject, signal } from "@angular/core";
+import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
+import { Router, RouterLink } from "@angular/router";
+import { AuthService } from "../../../core/services/auth.service";
+import { SeoService } from "../../../core/services/seo.service";
+import { GoogleSigninButtonComponent } from "../../../shared/components/google-signin-button/google-signin-button.component";
+import { LogoComponent } from "../../../shared/components/logo/logo.component";
 
 @Component({
-  selector: 'app-login',
+  selector: "app-login",
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, GoogleSigninButtonComponent],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    GoogleSigninButtonComponent
+  ],
+  templateUrl: "./login.component.html",
+  styleUrl: "./login.component.scss",
 })
 export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -28,18 +33,18 @@ export class LoginComponent implements OnInit {
   useRecoveryCode = signal(false);
 
   form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]],
+    email: ["", [Validators.required, Validators.email]],
+    password: ["", [Validators.required]],
   });
 
   mfaForm = this.fb.nonNullable.group({
-    code: ['', [Validators.required]],
+    code: ["", [Validators.required]],
   });
 
   ngOnInit(): void {
     this.seo.update({
-      title: 'Sign In',
-      description: 'Sign in to your Neelastack account.',
+      title: "Sign In",
+      description: "Sign in to your Neelastack account.",
       noindex: true,
     });
   }
@@ -64,7 +69,9 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Unable to sign in. Please try again.');
+        this.errorMessage.set(
+          err?.error?.message ?? "Unable to sign in. Please try again.",
+        );
       },
     });
   }
@@ -72,7 +79,7 @@ export class LoginComponent implements OnInit {
   toggleRecoveryCode(): void {
     this.useRecoveryCode.set(!this.useRecoveryCode());
     this.mfaError.set(null);
-    this.mfaForm.reset({ code: '' });
+    this.mfaForm.reset({ code: "" });
   }
 
   submitMfa(): void {
@@ -85,22 +92,26 @@ export class LoginComponent implements OnInit {
     this.mfaSubmitting.set(true);
     this.mfaError.set(null);
 
-    this.authService.loginMfa(token, this.mfaForm.controls.code.value, this.useRecoveryCode()).subscribe({
-      next: (res) => {
-        this.mfaSubmitting.set(false);
-        this.routeAfterLogin(res.mustChangePassword);
-      },
-      error: (err) => {
-        this.mfaSubmitting.set(false);
-        this.mfaError.set(err?.error?.message ?? 'That code did not work. Try again.');
-      },
-    });
+    this.authService
+      .loginMfa(token, this.mfaForm.controls.code.value, this.useRecoveryCode())
+      .subscribe({
+        next: (res) => {
+          this.mfaSubmitting.set(false);
+          this.routeAfterLogin(res.mustChangePassword);
+        },
+        error: (err) => {
+          this.mfaSubmitting.set(false);
+          this.mfaError.set(
+            err?.error?.message ?? "That code did not work. Try again.",
+          );
+        },
+      });
   }
 
   cancelMfa(): void {
     this.mfaToken.set(null);
     this.mfaError.set(null);
-    this.mfaForm.reset({ code: '' });
+    this.mfaForm.reset({ code: "" });
   }
 
   /**
@@ -111,6 +122,6 @@ export class LoginComponent implements OnInit {
    * (e.g. loading the admin dashboard) fails with a confusing 403.
    */
   private routeAfterLogin(mustChangePassword: boolean): void {
-    this.router.navigate([mustChangePassword ? '/change-password' : '/']);
+    this.router.navigate([mustChangePassword ? "/change-password" : "/"]);
   }
 }
