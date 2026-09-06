@@ -63,7 +63,7 @@ VALUES
     TRUE,
     now() - INTERVAL '18 days'
 ),
-(
+(gen_random_uuid(),
     'Solving Hydration Mismatches in Angular SSR Applications',
     'solving-hydration-mismatches-angular-ssr',
     'Client-side hydration flickering and DOM state mismatches harm user experience and degrade Google Core Web Vitals. Here is how we build leak-free SSR pipelines in Angular.',
@@ -128,7 +128,7 @@ VALUES
     TRUE,
     now() - INTERVAL '12 days'
 ),
-(
+(gen_random_uuid(),
     'Zero-Downtime Blue-Green Deployments with Docker and Nginx',
     'zero-downtime-deployments-docker-nginx',
     'Deploying application upgrades should never drop active client requests. A guide to running atomic upstream rollouts with Docker Compose, health-check barriers, and Nginx reloads.',
@@ -175,7 +175,7 @@ VALUES
     TRUE,
     now() - INTERVAL '10 days'
 ),
-(
+(gen_random_uuid(),
     'Preventing Double Submissions with Distributed Locks and Redis',
     'preventing-double-submissions-redis-distributed-locks',
     'Network timeouts and repeated clicks can spawn duplicate credit card transactions or double bookings. Here is how we enforce distributed locks in Spring Boot using Redis.',
@@ -229,7 +229,7 @@ VALUES
     TRUE,
     now() - INTERVAL '8 days'
 ),
-(
+(gen_random_uuid(),
     'Structuring Enterprise Spring Boot Projects: Beyond the Standard 3-Tier Layering',
     'spring-boot-clean-modular-monolith-architecture',
     'The standard controller-service-repository hierarchy collapses as domains grow. Here is how we enforce vertical feature slicing and package-private domain boundaries.',
@@ -270,7 +270,7 @@ VALUES
     TRUE,
     now() - INTERVAL '5 days'
 ),
-(
+(gen_random_uuid(),
     'Implementing TOTP Multi-Factor Authentication: RFC 6238 in Practice',
     'implementing-totp-mfa-rfc-6238-spring-boot',
     'Securing administrative control planes requires hardware-backed or software-based time OTP tokens. A step-by-step breakdown of implementing RFC 6238 TOTP with encrypted secret storage.',
@@ -313,7 +313,7 @@ VALUES
     TRUE,
     now() - INTERVAL '2 days'
 ),
-(
+(gen_random_uuid(),
     'Building Search-Engine Friendly Internal Linking Networks in Modern SPAs',
     'building-search-engine-friendly-internal-linking-spa',
     'Search crawlers navigate the web through semantic link graphs, not client-side JavaScript clicks. How we structure programmatic topic clusters and contextual internal links.',

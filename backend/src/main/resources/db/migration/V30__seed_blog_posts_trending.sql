@@ -47,7 +47,7 @@ VALUES
     TRUE,
     now() - INTERVAL '4 days'
 ),
-(
+(gen_random_uuid(),
     'Angular Signals vs RxJS: When to Replace Observables in Production',
     'angular-signals-vs-rxjs-production-guide',
     'Angular Signals offer fine-grained reactivity and zoneless change detection. A practical guide on when to use Signals for state and when to keep RxJS for asynchronous event streams.',
@@ -92,7 +92,7 @@ VALUES
     TRUE,
     now() - INTERVAL '3 days'
 ),
-(
+(gen_random_uuid(),
     'PostgreSQL Indexing Strategies: B-Tree, BRIN, and Partial Indexes Under Load',
     'postgresql-indexing-strategies-btree-brin-partial',
     'Adding indexes blindly slows down writes and bloats table sizes. How to select the right index type for high-volume logs, audit trails, and multi-tenant queries.',
@@ -121,7 +121,7 @@ VALUES
     TRUE,
     now() - INTERVAL '2 days'
 ),
-(
+(gen_random_uuid(),
     'Distributed Tracing in Spring Boot: Micrometer, OpenTelemetry, and Trace IDs',
     'distributed-tracing-spring-boot-opentelemetry',
     'Debugging asynchronous webhooks and microservice failures without contextual trace IDs is impossible. Here is how we enforce request-id propagation across threads and network boundaries.',
@@ -164,7 +164,7 @@ VALUES
     TRUE,
     now() - INTERVAL '1 days'
 ),
-(
+(gen_random_uuid(),
     'Rate Limiting REST APIs: Sliding Window vs Token Bucket with Redis',
     'rate-limiting-rest-apis-sliding-window-redis',
     'Protecting authentication and public estimation endpoints against credential stuffing and DoS attacks. Why sliding-window rate limiters beat fixed windows in production.',
@@ -200,7 +200,7 @@ VALUES
     TRUE,
     now() - INTERVAL '18 hours'
 ),
-(
+(gen_random_uuid(),
     'The Transactional Outbox Pattern: Dual-Write Safety Without Distributed Transactions',
     'transactional-outbox-pattern-dual-write-safety',
     'Updating a database and publishing an external message cannot share an ACID transaction. How the Transactional Outbox pattern prevents ghost payments and dropped events.',

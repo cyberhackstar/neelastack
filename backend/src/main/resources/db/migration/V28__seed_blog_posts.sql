@@ -20,7 +20,7 @@ VALUES
     TRUE,
     now() - INTERVAL '21 days'
 ),
-(
+(gen_random_uuid(),
     'Designing an Idempotent Payment Webhook Handler',
     'idempotent-payment-webhook-handler',
     'Payment gateways retry webhooks. If your handler is not idempotent, a network blip can charge — or credit — a client twice.',
@@ -33,7 +33,7 @@ VALUES
     TRUE,
     now() - INTERVAL '14 days'
 ),
-(
+(gen_random_uuid(),
     'Refresh Token Rotation, Explained Without the Jargon',
     'refresh-token-rotation-explained',
     'Rotating refresh tokens on every use, and revoking the whole session family on replay, closes a quiet but serious hole in JWT auth.',
@@ -46,7 +46,7 @@ VALUES
     TRUE,
     now() - INTERVAL '7 days'
 ),
-(
+(gen_random_uuid(),
     'From Lead to Invoice: Mapping a B2B Revenue Pipeline',
     'lead-to-invoice-revenue-pipeline',
     'Most "contact us" forms end at an email in someone''s inbox. Here is what it looks like to model the entire lead-to-revenue lifecycle instead.',
@@ -59,7 +59,7 @@ VALUES
     TRUE,
     now() - INTERVAL '3 days'
 ),
-(
+(gen_random_uuid(),
     'SSR and SEO for Angular: Getting 404s Right',
     'angular-ssr-seo-404s',
     'A dynamic route that renders "not found" content but still returns HTTP 200 quietly teaches Google that the page exists. Here is the fix.',
