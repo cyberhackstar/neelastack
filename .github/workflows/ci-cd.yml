@@ -435,6 +435,16 @@ jobs:
       # IMPORTANT:
       # Oracle VM is linux/arm64. Build production images specifically
       # for ARM64 so the Oracle deployment can run them natively.
+      #
+      # This runner is x86_64, so cross-building for arm64 needs QEMU user-mode
+      # emulation registered via binfmt_misc *before* buildx runs — otherwise the
+      # RUN steps inside the arm64 build stage (mvn clean package, npm ci/run build)
+      # fail with "exec format error" instead of producing a working image.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

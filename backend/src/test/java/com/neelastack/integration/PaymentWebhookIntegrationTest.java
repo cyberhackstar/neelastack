@@ -16,6 +16,7 @@ import com.neelastack.repository.UserRepository;
 import com.neelastack.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
@@ -24,6 +25,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 
@@ -49,6 +51,7 @@ class PaymentWebhookIntegrationTest extends AbstractIntegrationTest {
     @Autowired private InvoiceRepository invoiceRepository;
     @Autowired private PaymentWebhookEventRepository webhookEventRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private StringRedisTemplate redisTemplate;
 
     private String sign(String payload) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
@@ -85,7 +88,16 @@ class PaymentWebhookIntegrationTest extends AbstractIntegrationTest {
                 .build());
     }
 
-    /** Creates an admin user directly (mirrors AuthorizationIntegrationTest's pattern) and returns a bearer access token for it. */
+    /**
+     * Creates an admin user directly (mirrors AuthorizationIntegrationTest's pattern) and returns
+     * a bearer access token for it.
+     *
+     * The webhook-events replay route (POST /api/v1/admin/payments/**) is a "high-risk mutation"
+     * per StepUpAuthFilter, which requires both (a) MFA enrolled and (b) a *recent* step-up
+     * assertion — a valid JWT alone is not enough. We grant both directly here rather than
+     * driving the full enrollment/TOTP HTTP flow, since exercising that flow is
+     * AuthServiceLoginMfaTest / MfaController's job, not this test's.
+     */
     private String adminAccessToken(String email) throws Exception {
         User admin = User.builder()
                 .fullName("Test Admin")
@@ -94,8 +106,15 @@ class PaymentWebhookIntegrationTest extends AbstractIntegrationTest {
                 .role(Role.ADMIN)
                 .enabled(true)
                 .emailVerified(true)
+                .mfaEnabled(true)
+                .mfaEnrolledAt(LocalDateTime.now())
                 .build();
         userRepository.save(admin);
+
+        // Mirrors MfaService#grantStepUp's private key format ("mfa_step_up:" + userId) —
+        // there's no public API to grant a step-up directly, and driving it through
+        // /api/v1/admin/mfa/verify + /step-up here would just be testing MfaController again.
+        redisTemplate.opsForValue().set("mfa_step_up:" + admin.getId(), "1", Duration.ofMinutes(10));
 
         String loginPayload = """
                 {"email":"%s","password":"%s"}
