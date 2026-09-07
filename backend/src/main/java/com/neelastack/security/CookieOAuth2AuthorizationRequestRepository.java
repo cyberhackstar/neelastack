@@ -3,6 +3,7 @@ package com.neelastack.security;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -10,12 +11,13 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 
 /**
  * Carries the in-flight OAuth2 authorization request (the "state" Spring Security needs to
- * survive the redirect to Google and back) in a short-lived, httpOnly cookie instead of the
+ * survive the redirect to Google and back) via a short-lived, httpOnly cookie instead of the
  * HttpSession.
  *
  * This API is otherwise pure JWT/Bearer and runs {@link org.springframework.security.config.http.SessionCreationPolicy#STATELESS}
@@ -27,22 +29,44 @@ import java.util.Optional;
  * app is configured. Replacing it here removes server-side session state from the picture
  * entirely rather than just cleaning up after it.
  *
- * The cookie holds nothing but the transient authorization-request state (PKCE verifier, the
- * "state" nonce, requested scopes) needed to validate Google's callback; it never carries an
- * authenticated identity and is deleted the moment {@link #removeAuthorizationRequest} runs,
- * which Spring Security calls as soon as the callback is processed — success or failure.
+ * IMPORTANT: the cookie itself never carries the serialized {@link OAuth2AuthorizationRequest}.
+ * It only carries an opaque, unguessable, random {@link OneTimeTokenService} token. The actual
+ * (Java-serialized) authorization request lives server-side in Redis, keyed by that token. This
+ * matters because {@code SerializationUtils.deserialize} runs Java's native object
+ * deserialization, which is unsafe to run over attacker-controlled bytes (arbitrary gadget-chain
+ * RCE). Previously this class fed the raw cookie value — fully controlled by the browser/client —
+ * straight into {@code SerializationUtils.deserialize}, which is a critical vulnerability: anyone
+ * could send a crafted {@code oauth2_auth_request} cookie value to the callback endpoint. By
+ * routing the payload through Redis instead, the bytes that ever reach
+ * {@code SerializationUtils.deserialize} are always ones *we* wrote, never ones the client
+ * supplied — the cookie's random token only proves the caller owns the flow, it can't inject
+ * arbitrary serialized content.
+ *
+ * The cookie holds nothing but a random lookup key for the transient authorization-request state
+ * (PKCE verifier, the "state" nonce, requested scopes) needed to validate Google's callback; it
+ * never carries an authenticated identity, and both the cookie and the Redis entry are deleted the
+ * moment {@link #removeAuthorizationRequest} runs, which Spring Security calls as soon as the
+ * callback is processed — success or failure.
  */
 @Component
+@RequiredArgsConstructor
 public class CookieOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
     static final String COOKIE_NAME = "oauth2_auth_request";
+    private static final String REDIS_NAMESPACE = "oauth2:authreq";
     // Only needs to survive the round trip to Google's consent screen and back.
     private static final int COOKIE_MAX_AGE_SECONDS = 180;
+    private static final Duration REDIS_TTL = Duration.ofSeconds(COOKIE_MAX_AGE_SECONDS);
+
+    private final OneTimeTokenService oneTimeTokenService;
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
+        // Non-destructive read: Spring Security may call this to inspect the in-flight request
+        // (e.g. to validate the "state" param) before later calling removeAuthorizationRequest.
         return readCookie(request)
+                .flatMap(token -> oneTimeTokenService.read(REDIS_NAMESPACE, token))
                 .map(CookieOAuth2AuthorizationRequestRepository::deserialize)
                 .orElse(null);
     }
@@ -54,13 +78,19 @@ public class CookieOAuth2AuthorizationRequestRepository
             deleteCookie(response);
             return;
         }
-        writeCookie(response, request.isSecure(), serialize(authorizationRequest), COOKIE_MAX_AGE_SECONDS);
+        String token = oneTimeTokenService.issue(REDIS_NAMESPACE, serialize(authorizationRequest), REDIS_TTL);
+        writeCookie(response, request.isSecure(), token, COOKIE_MAX_AGE_SECONDS);
     }
 
     @Override
     public OAuth2AuthorizationRequest removeAuthorizationRequest(HttpServletRequest request,
                                                                    HttpServletResponse response) {
-        OAuth2AuthorizationRequest authorizationRequest = loadAuthorizationRequest(request);
+        // Atomic read-then-delete (GETDEL) so the entry can't be replayed even if two requests
+        // race on the same cookie value.
+        OAuth2AuthorizationRequest authorizationRequest = readCookie(request)
+                .flatMap(token -> oneTimeTokenService.consume(REDIS_NAMESPACE, token))
+                .map(CookieOAuth2AuthorizationRequestRepository::deserialize)
+                .orElse(null);
         deleteCookie(response);
         return authorizationRequest;
     }
@@ -97,18 +127,21 @@ public class CookieOAuth2AuthorizationRequestRepository
         writeCookie(response, false, "", 0);
     }
 
+    // These bytes are only ever written to / read from our own Redis instance — never sent to
+    // or accepted from the client — so running them through Java's native (de)serialization here
+    // is safe. The client only ever sees the random lookup token (see class javadoc).
     private static String serialize(OAuth2AuthorizationRequest authorizationRequest) {
         return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(authorizationRequest));
     }
 
-    private static OAuth2AuthorizationRequest deserialize(String cookieValue) {
+    private static OAuth2AuthorizationRequest deserialize(String redisValue) {
         try {
             return (OAuth2AuthorizationRequest) SerializationUtils.deserialize(
-                    Base64.getUrlDecoder().decode(cookieValue));
+                    Base64.getUrlDecoder().decode(redisValue));
         } catch (Exception e) {
-            // Malformed, tampered, or stale (e.g. serialVersionUID mismatch after a deploy)
-            // cookie value — treat exactly like "no authorization request in flight" rather
-            // than 500ing the callback.
+            // Malformed or stale (e.g. serialVersionUID mismatch after a deploy) Redis value —
+            // treat exactly like "no authorization request in flight" rather than 500ing the
+            // callback.
             return null;
         }
     }

@@ -3,10 +3,10 @@ package com.neelastack.controller;
 import com.neelastack.dto.audit.AuditLogDto;
 import com.neelastack.entity.AuditAction;
 import com.neelastack.service.AuditLogService;
+import com.neelastack.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -40,7 +40,7 @@ public class AdminAuditLogController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size) {
-        Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PaginationUtils.safePageable(page, size, 100, Sort.by(Sort.Direction.DESC, "createdAt"));
         return auditLogService.search(actorEmail, action, entityType, entityId, from, to, pageable);
     }
 }

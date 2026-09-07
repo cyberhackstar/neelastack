@@ -45,7 +45,7 @@ public class AdminBootstrapRunner {
     @PostConstruct
     @Transactional
     public void bootstrapAdminIfNeeded() {
-        boolean anyAdminExists = userRepository.existsByRole(Role.ADMIN);
+        boolean anyAdminExists = userRepository.existsByRole(Role.ADMIN) || userRepository.existsByRole(Role.SUPERADMIN);
         if (anyAdminExists) {
             return;
         }
@@ -74,7 +74,12 @@ public class AdminBootstrapRunner {
                 .fullName(bootstrapFullName)
                 .email(bootstrapEmail.trim().toLowerCase(Locale.ROOT))
                 .password(passwordEncoder.encode(bootstrapPassword))
-                .role(Role.ADMIN)
+                // SUPERADMIN, not ADMIN: this is the one account that needs to exist before any
+                // other admin can be provisioned, and SUPERADMIN-only operations (e.g. force-
+                // resetting another admin's MFA) need at least one holder from day one.
+                // SUPERADMIN carries every ADMIN authority too (see User#getAuthorities()), so
+                // nothing else about this account's day-to-day admin access changes.
+                .role(Role.SUPERADMIN)
                 .enabled(true)
                 .emailVerified(true)
                 // Forced true: the operator-supplied bootstrap password is a shared secret by

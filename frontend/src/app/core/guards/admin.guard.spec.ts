@@ -22,6 +22,7 @@ describe('adminGuard', () => {
   };
 
   const clientUser: AuthResponse = { ...adminUser, role: 'CLIENT', email: 'client@example.com' };
+  const superAdminUser: AuthResponse = { ...adminUser, role: 'SUPERADMIN', email: 'superadmin@example.com' };
 
   beforeEach(() => {
     currentUserValue = null;
@@ -45,6 +46,15 @@ describe('adminGuard', () => {
 
   it('allows navigation for a user with the ADMIN role', () => {
     currentUserValue = adminUser;
+
+    const result = runGuard();
+
+    expect(result).toBeTrue();
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('allows navigation for a user with the SUPERADMIN role', () => {
+    currentUserValue = superAdminUser;
 
     const result = runGuard();
 

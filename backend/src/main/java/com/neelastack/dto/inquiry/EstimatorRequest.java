@@ -19,7 +19,7 @@ public record EstimatorRequest(
         @Size(max = 4000) String existingSystem,
         @Size(max = 4000) String scopeDetails,
         @Size(max = 60) String usersScale,
-        List<@Size(max = 60) String> integrations,
+        @Size(max = 20) List<@Size(max = 60) String> integrations,
         @Size(max = 60) String timeline,
         @Size(max = 40) String urgency,
         @Size(max = 60) String budgetRange,

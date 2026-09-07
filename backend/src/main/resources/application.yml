@@ -97,7 +97,7 @@ app:
     base-url: ${SITE_BASE_URL:https://neelastack.com}
     frontend-url: ${FRONTEND_URL:https://neelastack.com}
   mail:
-    from: ${MAIL_FROM:no-reply@neelastack.com}
+    from: ${MAIL_FROM:hello@neelastack.com}
     admin-notification-address: ${MAIL_ADMIN_ADDRESS:admin@neelastack.com}
   sales:
     # Module 2 of the Client Acquisition & High-Ticket Conversion Engine: when a lead
@@ -148,6 +148,16 @@ app:
     # How long a step-up assertion (a recent successful TOTP/recovery-code check) stays
     # valid before high-risk mutation endpoints require re-verification.
     step-up-ttl-minutes: ${MFA_STEP_UP_TTL_MINUTES:10}
+
+logging:
+  level:
+    # We deliberately define our own DaoAuthenticationProvider bean (see SecurityConfig)
+    # instead of letting Spring Boot auto-wire one from the UserDetailsService/PasswordEncoder
+    # beans. That's intentional — it keeps the provider explicit and independently testable —
+    # but it means InitializeUserDetailsBeanManagerConfigurer always logs a WARN saying it's
+    # deferring to our provider instead of building its own. The behavior is correct (our
+    # provider is the one actually used); this only silences the expected, harmless notice.
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
 sentry:
   dsn: ${SENTRY_DSN:}

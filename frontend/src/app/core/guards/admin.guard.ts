@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { isAdminRole } from '../models/user.model';
 
 export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
@@ -8,7 +9,7 @@ export const adminGuard: CanActivateFn = () => {
 
   const user = authService.currentUser();
 
-  if (user && user.role === 'ADMIN') {
+  if (user && isAdminRole(user.role)) {
     return true;
   }
 

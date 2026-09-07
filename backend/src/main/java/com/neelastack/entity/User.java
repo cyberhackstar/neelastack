@@ -102,6 +102,16 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // SUPERADMIN is a superset of ADMIN: grant both authorities so a superadmin still
+        // satisfies every plain "hasRole('ADMIN')" check throughout the app, in addition to the
+        // SUPERADMIN-only checks (e.g. MFA force-reset) that specifically require the higher
+        // authority.
+        if (role == Role.SUPERADMIN) {
+            return List.of(
+                    new SimpleGrantedAuthority("ROLE_SUPERADMIN"),
+                    new SimpleGrantedAuthority("ROLE_ADMIN")
+            );
+        }
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 

@@ -9,7 +9,7 @@ import com.neelastack.service.PaymentWebhookProcessor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import com.neelastack.util.PaginationUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +38,7 @@ public class AdminPaymentWebhookController {
     public Page<PaymentWebhookEventDto> list(@RequestParam(required = false) WebhookEventStatus status,
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "20") int size) {
-        return webhookEventService.list(status, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receivedAt")));
+        return webhookEventService.list(status, PaginationUtils.safePageable(page, size, Sort.by(Sort.Direction.DESC, "receivedAt")));
     }
 
     /**

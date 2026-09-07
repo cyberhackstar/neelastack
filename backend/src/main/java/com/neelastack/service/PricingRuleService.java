@@ -58,7 +58,14 @@ public class PricingRuleService {
                 .stream().findFirst().map(r -> r.getVersion() + 1).orElse(1);
 
         if (request.active()) {
+            // Flush immediately: without this, Hibernate's default flush ordering runs pending
+            // INSERTs before pending UPDATEs in the same flush, which would attempt this new
+            // active row's INSERT before the old row's "deactivate" UPDATE has actually run --
+            // transiently violating the new partial unique index (V31) even though the end
+            // state is correct. Flushing the deactivation first guarantees the old row is
+            // already inactive by the time this method's INSERT executes.
             deactivateOtherVersions(request.serviceKey(), null);
+            pricingRuleRepository.flush();
         }
 
         PricingRule entity = PricingRule.builder()
@@ -75,7 +82,15 @@ public class PricingRuleService {
                 .build();
 
         log.info("Pricing rule created for '{}' (v{}, active={})", request.serviceKey(), nextVersion, request.active());
-        PricingRule saved = pricingRuleRepository.save(entity);
+        PricingRule saved;
+        try {
+            saved = pricingRuleRepository.save(entity);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            // Belt-and-braces: only reachable if another admin's transaction activated the same
+            // service_key between this method's deactivation flush and this INSERT.
+            throw new com.neelastack.exception.BadRequestException(
+                    "Another active pricing rule for '" + request.serviceKey() + "' was just created — reload and try again.");
+        }
         auditLogService.recordBestEffort(AuditAction.PRICING_RULE_UPDATED, "PricingRule", saved.getId().toString(),
                 Map.of("op", "create", "serviceKey", saved.getServiceKey(), "version", String.valueOf(saved.getVersion()), "active", String.valueOf(saved.isActive())));
         return toDto(saved);
@@ -88,7 +103,11 @@ public class PricingRuleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pricing rule not found: " + id));
 
         if (request.active()) {
+            // See create()'s comment: flush the deactivation before this method's own UPDATE
+            // (which may flip this same row active) so the new partial unique index (V31) never
+            // transiently sees two active rows for the same service_key.
             deactivateOtherVersions(request.serviceKey(), id);
+            pricingRuleRepository.flush();
         }
 
         entity.setServiceKey(request.serviceKey());
@@ -102,7 +121,13 @@ public class PricingRuleService {
         entity.setNotes(request.notes());
 
         log.info("Pricing rule {} updated for '{}' (active={})", id, request.serviceKey(), request.active());
-        PricingRule saved = pricingRuleRepository.save(entity);
+        PricingRule saved;
+        try {
+            saved = pricingRuleRepository.save(entity);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw new com.neelastack.exception.BadRequestException(
+                    "Another active pricing rule for '" + request.serviceKey() + "' was just created — reload and try again.");
+        }
         auditLogService.recordBestEffort(AuditAction.PRICING_RULE_UPDATED, "PricingRule", saved.getId().toString(),
                 Map.of("op", "update", "serviceKey", saved.getServiceKey(), "version", String.valueOf(saved.getVersion()), "active", String.valueOf(saved.isActive())));
         return toDto(saved);
@@ -119,8 +144,10 @@ public class PricingRuleService {
     }
 
     /**
-     * Only one active rule per service key is meaningful at a time (see the migration
-     * comment) — enforced here rather than a DB constraint so drafts can be staged.
+     * Only one active rule per service key is meaningful at a time. Application-layer check —
+     * this is what gives a clean, immediate "which rows to deactivate" list; the DB-level
+     * partial unique index (V31 migration) is what actually guarantees the invariant can't be
+     * violated by a concurrent write slipping past this application logic.
      */
     private void deactivateOtherVersions(String serviceKey, UUID exceptId) {
         pricingRuleRepository.findByServiceKeyOrderByVersionDesc(serviceKey).stream()

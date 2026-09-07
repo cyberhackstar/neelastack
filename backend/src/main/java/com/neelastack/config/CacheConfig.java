@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -38,6 +39,20 @@ import java.time.Duration;
 @Slf4j
 public class CacheConfig implements CachingConfigurer {
 
+    /**
+     * Bump this whenever a @Cacheable return type's serialized shape changes in a way that
+     * isn't safely readable by the new code (a field rename/removal, a DTO restructure, etc.).
+     * Every cache key gets this baked into its prefix, so a deploy that bumps it makes every
+     * previously-cached entry simply invisible to the new code — no explicit FLUSHDB needed
+     * (which would be unsafe here anyway, since Redis in this deployment also holds
+     * authentication/security state such as MFA step-up markers, one-time tokens, and rate-limit
+     * counters that must NOT be wiped alongside the content cache). The old, orphaned keys just
+     * expire on their own TTL and are never read again. Overridable via CACHE_SCHEMA_VERSION for
+     * an out-of-band bump without a code change if ever needed.
+     */
+    @Value("${app.cache.schema-version:v2}")
+    private String cacheSchemaVersion;
+
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         // activateDefaultTyping lives on ObjectMapper, not on
@@ -67,7 +82,12 @@ public class CacheConfig implements CachingConfigurer {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
                 .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                // See cacheSchemaVersion's javadoc: namespaces every key by a schema version so a
+                // deploy that changes a cached DTO's shape can't hand old-format bytes to new
+                // code (previously the only defense was the fail-open error handler below
+                // catching the resulting deserialization exception per-request).
+                .computePrefixWith(cacheName -> "neelastack:" + cacheSchemaVersion + ":" + cacheName + "::");
 
         return builder -> builder.cacheDefaults(defaultConfig);
     }

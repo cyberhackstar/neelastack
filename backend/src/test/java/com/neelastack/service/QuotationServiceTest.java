@@ -22,6 +22,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class QuotationServiceTest {
@@ -157,12 +159,31 @@ class QuotationServiceTest {
     void respondToQuotation_validAcceptance_succeeds() {
         Quotation sent = quotation(QuotationStatus.SENT, LocalDate.now().plusDays(5));
         when(quotationRepository.findByPublicToken(sent.getPublicToken())).thenReturn(Optional.of(sent));
+        when(quotationRepository.respondIfSent(eq(sent.getPublicToken()), eq(QuotationStatus.ACCEPTED),
+                any(), any(), any(), any())).thenReturn(1);
 
         var dto = quotationService.respondToQuotation(sent.getPublicToken(), true, null);
 
         assertThat(dto.status()).isEqualTo(QuotationStatus.ACCEPTED);
         assertThat(sent.getRespondedAt()).isNotNull();
         verify(emailService).sendQuotationResponseNotice(sent, true, null);
+    }
+
+    @Test
+    void respondToQuotation_racingSecondResponse_losesCleanly() {
+        Quotation sent = quotation(QuotationStatus.SENT, LocalDate.now().plusDays(5));
+        when(quotationRepository.findByPublicToken(sent.getPublicToken())).thenReturn(Optional.of(sent));
+        // Simulates a concurrent request having already flipped the row's status in the DB
+        // between this call's SENT check and its UPDATE -- respondIfSent's WHERE clause then
+        // matches zero rows even though the in-memory `sent` object still looks like SENT.
+        when(quotationRepository.respondIfSent(eq(sent.getPublicToken()), any(), any(), any(), any(), any()))
+                .thenReturn(0);
+
+        assertThatThrownBy(() -> quotationService.respondToQuotation(sent.getPublicToken(), true, null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("already been responded to");
+
+        verify(emailService, never()).sendQuotationResponseNotice(any(), anyBoolean(), any());
     }
 
     // --- nightly sweep ---

@@ -15,8 +15,8 @@ import java.util.List;
  * InquiryService" requirement.
  */
 public record AuditUnlockRequest(
-        @NotEmpty List<@Size(max = 60) String> techStack,
-        @NotEmpty List<@Size(max = 60) String> bottlenecks,
+        @NotEmpty @Size(max = 20) List<@Size(max = 60) String> techStack,
+        @NotEmpty @Size(max = 20) List<@Size(max = 60) String> bottlenecks,
 
         @NotBlank @Size(max = 120) String name,
         @NotBlank @Email @Size(max = 180) String email,

@@ -180,28 +180,45 @@ public class QuotationService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        quotation.setStatus(accept ? QuotationStatus.ACCEPTED : QuotationStatus.REJECTED);
+        QuotationStatus newStatus = accept ? QuotationStatus.ACCEPTED : QuotationStatus.REJECTED;
+        LocalDateTime acceptedAt = accept ? now : null;
+        LocalDateTime rejectedAt = accept ? null : now;
+
+        // Atomic conditional UPDATE (not the read-then-write this replaced): two concurrent
+        // responses on the same public link could previously both observe status == SENT before
+        // either commit, letting one accept and the other reject the same quotation (last write
+        // wins) and potentially fire the notification email twice. respondIfSent's
+        // "WHERE status = SENT" makes exactly one of any racing calls win.
+        int updated = quotationRepository.respondIfSent(token, newStatus, reason, now, acceptedAt, rejectedAt);
+        if (updated == 0) {
+            // Lost the race to a concurrent response on the same token (or it expired between
+            // the check above and this UPDATE) -- don't send a duplicate notice.
+            throw new BadRequestException("This quotation has already been responded to, or was never sent");
+        }
+
+        // The UPDATE above is a bulk JPQL statement and bypasses the persistence context, so
+        // it does NOT update the already-loaded `quotation` instance in place. Reflect the same
+        // values here now that we know the atomic update won this race, rather than re-querying
+        // (which would risk handing back the stale first-level-cached copy instead of the fresh
+        // row) or leaving the in-memory entity inconsistent with what's now in the database.
+        quotation.setStatus(newStatus);
         quotation.setResponseReason(reason);
         quotation.setRespondedAt(now);
-        if (accept) {
-            quotation.setAcceptedAt(now);
-        } else {
-            quotation.setRejectedAt(now);
-        }
-        Quotation saved = quotationRepository.save(quotation);
+        quotation.setAcceptedAt(acceptedAt);
+        quotation.setRejectedAt(rejectedAt);
 
         // sendQuotationResponseNotice is @Async and runs on a separate thread with no
         // Hibernate session, so any lazy association it touches must already be loaded
         // before we hand the entity off — force-initializing the lazy Inquiry proxy here,
         // while we're still inside this method's transaction, avoids a
         // LazyInitializationException in the async thread.
-        Hibernate.initialize(saved.getInquiry());
-        emailService.sendQuotationResponseNotice(saved, accept, reason);
+        Hibernate.initialize(quotation.getInquiry());
+        emailService.sendQuotationResponseNotice(quotation, accept, reason);
 
-        auditLogService.recordBestEffort(AuditAction.QUOTATION_RESPONDED, "Quotation", saved.getId().toString(),
+        auditLogService.recordBestEffort(AuditAction.QUOTATION_RESPONDED, "Quotation", quotation.getId().toString(),
                 Map.of("accepted", accept, "reason", reason == null ? "" : reason));
 
-        return toPublicDto(saved);
+        return toPublicDto(quotation);
     }
 
     @Transactional
@@ -262,6 +279,12 @@ public class QuotationService {
         return dto;
     }
 
+    // Read-only transaction so the Hibernate session stays open through toDto()'s access to
+    // the lazy `lineItems` @ElementCollection below -- with spring.jpa.open-in-view=false, an
+    // untransactional read here would close the session before mapping runs and throw
+    // LazyInitializationException, exactly like the BlogPost.tags bug this pattern previously
+    // caused.
+    @Transactional(readOnly = true)
     public List<QuotationDto> listForInquiry(UUID inquiryId) {
         return quotationRepository.findByInquiryIdOrderByCreatedAtDesc(inquiryId)
                 .stream().map(this::toDto).toList();

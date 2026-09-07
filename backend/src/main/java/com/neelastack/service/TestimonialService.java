@@ -13,15 +13,18 @@ import com.neelastack.entity.TestimonialRequestStatus;
 import com.neelastack.entity.User;
 import com.neelastack.exception.BadRequestException;
 import com.neelastack.exception.ResourceNotFoundException;
+import com.neelastack.repository.InvoiceRepository;
 import com.neelastack.repository.ProjectRepository;
 import com.neelastack.repository.ReviewRepository;
 import com.neelastack.repository.TestimonialRequestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,6 +51,7 @@ public class TestimonialService {
     private final TestimonialRequestRepository testimonialRequestRepository;
     private final ReviewRepository reviewRepository;
     private final ProjectRepository projectRepository;
+    private final InvoiceRepository invoiceRepository;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
 
@@ -86,7 +90,7 @@ public class TestimonialService {
 
             TestimonialRequest saved = testimonialRequestRepository.save(request);
 
-            emailService.sendTestimonialRequest(saved, invoice);
+            attemptSend(saved, invoice);
 
             auditLogService.recordBestEffort(AuditAction.TESTIMONIAL_REQUEST_QUEUED, "Invoice", invoice.getId().toString(),
                     Map.of("testimonialRequestId", saved.getId().toString(), "clientEmail", client.getEmail()));
@@ -95,6 +99,75 @@ public class TestimonialService {
             // of a payment event, never allowed to compromise the payment transaction that
             // triggered it. See InvoiceService#verifyAndConfirmPayment / #markPaidFromWebhook.
             log.error("Failed to queue testimonial request for invoice {}: {}", invoice.getId(), ex.getMessage());
+        }
+    }
+
+    /** Max send attempts (initial + retries) before a testimonial invite is given up on. */
+    private static final int MAX_EMAIL_ATTEMPTS = 6;
+    private static final int RETRY_BATCH_SIZE = 50;
+
+    /**
+     * One synchronous send attempt. Records the outcome on the row either way (sent timestamp
+     * on success; attempt count, error, and next-retry backoff on failure) so the outcome is
+     * never silently lost the way it previously was behind {@code @Async} + a swallowed
+     * exception. Never throws -- both the initial call from {@link #queueRequestForInvoice}
+     * and the scheduled retry worker need this to be a pure best-effort operation.
+     */
+    private void attemptSend(TestimonialRequest request, Invoice invoice) {
+        try {
+            emailService.sendTestimonialRequestOrThrow(request, invoice);
+            request.setEmailSentAt(LocalDateTime.now());
+            request.setLastEmailError(null);
+        } catch (Exception ex) {
+            request.setEmailAttempts(request.getEmailAttempts() + 1);
+            request.setLastEmailError(truncate(ex.getMessage(), 500));
+            request.setNextEmailAttemptAt(LocalDateTime.now().plusMinutes(backoffMinutes(request.getEmailAttempts())));
+            log.warn("Testimonial invite email attempt {} failed for request {}: {}",
+                    request.getEmailAttempts(), request.getId(), ex.getMessage());
+        }
+        testimonialRequestRepository.save(request);
+    }
+
+    /** 2, 4, 8, 16, 32, 64 minutes -- caps the last (6th) attempt's wait at a bit over an hour. */
+    private long backoffMinutes(int attemptNumber) {
+        return 1L << Math.min(attemptNumber, 6);
+    }
+
+    private String truncate(String value, int max) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() <= max ? value : value.substring(0, max);
+    }
+
+    /**
+     * Outbox-style retry sweep for testimonial invite emails that failed their initial send
+     * (transient SMTP outage, provider rate limit, etc.) — see V32 migration and
+     * {@link #attemptSend}. Runs frequently and cheaply: each row not yet due for retry is
+     * simply skipped by the repository query, and a row that has exhausted MAX_EMAIL_ATTEMPTS
+     * is no longer returned as a candidate at all (it stays PENDING/un-sent, visible to an
+     * admin via the testimonial-requests admin view, rather than silently retried forever).
+     */
+    @Scheduled(fixedDelay = 5 * 60 * 1000) // every 5 minutes
+    @Transactional
+    public void retryFailedTestimonialEmails() {
+        List<TestimonialRequest> candidates = testimonialRequestRepository.findRetryCandidates(
+                MAX_EMAIL_ATTEMPTS, LocalDateTime.now(), org.springframework.data.domain.PageRequest.of(0, RETRY_BATCH_SIZE));
+
+        for (TestimonialRequest request : candidates) {
+            Invoice invoice = invoiceRepository.findById(request.getInvoiceId()).orElse(null);
+            if (invoice == null) {
+                // Shouldn't happen (invoices aren't deleted), but don't let a missing parent
+                // row spin this request's retry counter forever.
+                log.warn("Testimonial request {} references missing invoice {} -- skipping retry",
+                        request.getId(), request.getInvoiceId());
+                continue;
+            }
+            attemptSend(request, invoice);
+        }
+
+        if (!candidates.isEmpty()) {
+            log.info("Testimonial email retry sweep: attempted {} request(s)", candidates.size());
         }
     }
 

@@ -9,10 +9,10 @@ import com.neelastack.service.BlogPostService;
 import com.neelastack.service.ProjectService;
 import com.neelastack.service.ServiceContentService;
 import com.neelastack.service.TechStackPageService;
+import com.neelastack.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
@@ -62,7 +62,9 @@ public class PublicContentController {
                                           @RequestParam(defaultValue = "9") int size,
                                           @RequestParam(required = false) String q,
                                           @RequestParam(required = false) String tag) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "publishedAt"));
+        // Public, unauthenticated endpoint -- clamp hard (max 50/page) so ?size=500000 or a
+        // negative page/size can't force an oversized DB read/response.
+        Pageable pageable = PaginationUtils.safePageable(page, size, 50, Sort.by(Sort.Direction.DESC, "publishedAt"));
         if ((q != null && !q.isBlank()) || (tag != null && !tag.isBlank())) {
             return blogPostService.search(q, tag, pageable);
         }

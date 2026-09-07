@@ -36,4 +36,22 @@ public interface TestimonialRequestRepository extends JpaRepository<TestimonialR
                           @Param("status") TestimonialRequestStatus status,
                           @Param("respondedAt") LocalDateTime respondedAt,
                           @Param("reviewId") UUID reviewId);
+
+    /**
+     * Outbox-style retry candidates: still PENDING, the invite email hasn't been confirmed
+     * sent yet, this row hasn't already exhausted its retry budget, and its backoff window has
+     * elapsed. Bounded with a fetch limit via Pageable at the call site so one scheduler tick
+     * can't pull an unbounded backlog into memory at once.
+     */
+    @Query("""
+            SELECT t FROM TestimonialRequest t
+            WHERE t.status = com.neelastack.entity.TestimonialRequestStatus.PENDING
+              AND t.emailSentAt IS NULL
+              AND t.emailAttempts < :maxAttempts
+              AND t.nextEmailAttemptAt <= :cutoff
+            ORDER BY t.nextEmailAttemptAt ASC
+            """)
+    java.util.List<TestimonialRequest> findRetryCandidates(@Param("maxAttempts") int maxAttempts,
+                                                             @Param("cutoff") LocalDateTime cutoff,
+                                                             org.springframework.data.domain.Pageable pageable);
 }

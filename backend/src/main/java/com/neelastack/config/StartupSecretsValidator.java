@@ -46,6 +46,35 @@ public class StartupSecretsValidator {
     @Value("${app.mfa.encryption-key:}")
     private String mfaEncryptionKey;
 
+    // --- Feature-dependency credentials -------------------------------------------------
+    // These previously had NO startup check at all: the app would start and report healthy
+    // on `prod` while, say, Cloudinary uploads or the Google OAuth login button silently
+    // failed the first time a real user touched that feature. Since none of these fully
+    // disable a route (the app doesn't know at startup which features an operator intends
+    // to actually use), missing ones are reported as WARNINGS rather than startup-blocking
+    // errors — visible in the logs immediately rather than discovered from a user's bug
+    // report days later.
+    @Value("${spring.security.oauth2.client.registration.google.client-id:}")
+    private String googleClientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret:}")
+    private String googleClientSecret;
+
+    @Value("${app.cloudinary.cloud-name:}")
+    private String cloudinaryCloudName;
+
+    @Value("${app.cloudinary.api-key:}")
+    private String cloudinaryApiKey;
+
+    @Value("${app.razorpay.key-id:}")
+    private String razorpayKeyId;
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${spring.mail.password:}")
+    private String mailPassword;
+
     private static final String DEV_JWT_DEFAULT =
             "change-this-to-a-long-random-secret-in-production-min-256-bits";
     private static final String DEV_DB_PASSWORD_DEFAULT = "neelastack";
@@ -95,7 +124,36 @@ public class StartupSecretsValidator {
             throw new IllegalStateException(message);
         }
 
+        checkFeatureCredentials();
+
         log.info("Startup secret validation passed for profile 'prod'.");
+    }
+
+    /**
+     * Feature-scoped credentials: missing ones don't block startup (see field-level
+     * javadoc above) but are logged loudly as warnings so "the app started fine" and
+     * "every feature actually works" stop being silently different claims.
+     */
+    private void checkFeatureCredentials() {
+        List<String> warnings = new ArrayList<>();
+
+        if (isBlank(googleClientId) || isBlank(googleClientSecret)) {
+            warnings.add("Google OAuth (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) is not fully configured — \"Sign in with Google\" will fail for every user");
+        }
+        if (isBlank(cloudinaryCloudName) || isBlank(cloudinaryApiKey) || isBlank(cloudinaryApiSecret)) {
+            warnings.add("Cloudinary (CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET) is not fully configured — file/image uploads will fail");
+        }
+        if (isBlank(razorpayKeyId) || isBlank(razorpayKeySecret)) {
+            warnings.add("Razorpay (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET) is not fully configured — payment collection will fail");
+        }
+        if (isBlank(mailUsername) || isBlank(mailPassword)) {
+            warnings.add("SMTP credentials (MAIL_USERNAME / MAIL_PASSWORD) are not configured — transactional emails (invoices, quotations, testimonial invites, MFA, etc.) will fail to send");
+        }
+
+        if (!warnings.isEmpty()) {
+            log.warn("Startup secret validation passed, but {} feature credential(s) look incomplete for profile 'prod':\n  - {}",
+                    warnings.size(), String.join("\n  - ", warnings));
+        }
     }
 
     private boolean isBlank(String value) {

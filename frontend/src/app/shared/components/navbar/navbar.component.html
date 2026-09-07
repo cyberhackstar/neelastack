@@ -14,7 +14,7 @@
     <nav class="account-nav" aria-label="Account">
       @if (auth.currentUser(); as user) {
         <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
-        @if (user.role === 'ADMIN') {
+        @if (isAdminRole(user.role)) {
           <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
           <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>
         }
@@ -69,7 +69,7 @@
 
         @if (auth.currentUser(); as user) {
           <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
-          @if (user.role === 'ADMIN') {
+          @if (isAdminRole(user.role)) {
             <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin Dashboard</a>
             <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>
           }

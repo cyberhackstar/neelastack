@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import com.neelastack.util.PaginationUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +34,7 @@ public class AdminInquiryController {
     @GetMapping("/inquiries")
     public Page<InquiryDto> listInquiries(@RequestParam(defaultValue = "0") int page,
                                            @RequestParam(defaultValue = "20") int size) {
-        return inquiryService.list(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return inquiryService.list(PaginationUtils.safePageable(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     @GetMapping("/inquiries/{id}")

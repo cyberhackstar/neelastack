@@ -96,6 +96,11 @@ const NO_CACHE_PATH_PREFIXES = [
   "/verify-email",
   "/oauth-callback",
   "/quote",
+  // Token-scoped, client-specific SSR page (see TestimonialService / /testimonial/:token
+  // route) — must never be served from a shared/public cache the way ordinary public content
+  // below is, since it renders one specific client's name/project data keyed by their
+  // one-time token.
+  "/testimonial",
 ];
 
 /**

@@ -90,12 +90,39 @@ public class SeoController {
     private void addUrl(StringBuilder xml, String loc, String priority, String changefreq,
                          LocalDateTime lastmod) {
         xml.append("  <url>\n")
-           .append("    <loc>").append(loc).append("</loc>\n");
+           .append("    <loc>").append(escapeXml(loc)).append("</loc>\n");
         if (lastmod != null) {
             xml.append("    <lastmod>").append(lastmod.format(LASTMOD_FORMAT)).append("</lastmod>\n");
         }
         xml.append("    <changefreq>").append(changefreq).append("</changefreq>\n")
            .append("    <priority>").append(priority).append("</priority>\n")
            .append("  </url>\n");
+    }
+
+    /**
+     * Slugs are admin-authored, not public input, but a slug containing an XML-sensitive
+     * character (&, <, >, ', ") would still either produce malformed sitemap XML that crawlers
+     * reject, or -- if a slug were ever attacker-influenced (e.g. via a future integration) --
+     * inject markup into the response. Escaping unconditionally costs nothing and removes the
+     * assumption entirely rather than relying on slug-format validation elsewhere staying correct
+     * forever.
+     */
+    private static String escapeXml(String value) {
+        if (value == null) {
+            return "";
+        }
+        StringBuilder out = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '&' -> out.append("&amp;");
+                case '<' -> out.append("&lt;");
+                case '>' -> out.append("&gt;");
+                case '\'' -> out.append("&apos;");
+                case '"' -> out.append("&quot;");
+                default -> out.append(c);
+            }
+        }
+        return out.toString();
     }
 }

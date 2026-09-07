@@ -7,6 +7,7 @@ import com.neelastack.security.OAuth2LoginSuccessHandler;
 import com.neelastack.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -69,6 +70,11 @@ public class SecurityConfig {
                         // without a valid token.
                         .requestMatchers("/api/v1/auth/change-password").authenticated()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        // Must be listed before the broad "/api/v1/admin/**" rule below: forcing
+                        // another admin's MFA off is one of the highest-risk operations in the
+                        // app (see MfaService#forceReset) and is restricted to a distinct
+                        // SUPERADMIN authority rather than any ROLE_ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/mfa/*/force-reset").hasRole("SUPERADMIN")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

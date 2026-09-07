@@ -16,6 +16,7 @@ import {
   MilestoneStatus,
   ProjectFile,
 } from '../../../core/models/content.model';
+import { isAdminRole } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-dashboard-detail',
@@ -61,7 +62,7 @@ export class DashboardDetailComponent implements OnInit {
   });
 
   get isAdmin(): boolean {
-    return this.authService.currentUser()?.role === 'ADMIN';
+    return isAdminRole(this.authService.currentUser()?.role);
   }
 
   private engagementId!: string;

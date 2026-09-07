@@ -89,7 +89,7 @@ public class EngagementService {
 
         User current = currentUserProvider.get();
         boolean isOwner = engagement.getClient().getId().equals(current.getId());
-        boolean isAdmin = current.getRole() == Role.ADMIN;
+        boolean isAdmin = current.getRole() == Role.ADMIN || current.getRole() == Role.SUPERADMIN;
 
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("You do not have access to this engagement");

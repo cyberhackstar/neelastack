@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { LogoComponent } from '../logo/logo.component';
 import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
+import { isAdminRole, UserRole } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-navbar',
@@ -22,6 +23,11 @@ export class NavbarComponent {
 
   menuOpen = signal(false);
   scrolled = signal(false);
+
+  /** ADMIN and SUPERADMIN both see the admin nav links — see isAdminRole()'s doc comment. */
+  isAdminRole(role: UserRole | undefined | null): boolean {
+    return isAdminRole(role);
+  }
 
   @ViewChild('menuToggleBtn') private menuToggleBtn?: ElementRef<HTMLButtonElement>;
   @ViewChild('mobilePanel') private mobilePanel?: ElementRef<HTMLElement>;

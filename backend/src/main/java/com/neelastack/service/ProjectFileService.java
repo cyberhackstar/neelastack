@@ -27,6 +27,11 @@ public class ProjectFileService {
     private final CurrentUserProvider currentUserProvider;
     private final AuditLogService auditLogService;
 
+    // Read-only transaction: toDto() below reads f.getUploadedBy().getFullName(), and
+    // ProjectFile.uploadedBy is @ManyToOne(LAZY). With open-in-view=false, an untransactional
+    // read here throws LazyInitializationException the moment traffic actually hits this path —
+    // same class of bug as the Quotation/Invoice fixes above.
+    @Transactional(readOnly = true)
     public List<ProjectFileDto> list(UUID engagementId) {
         engagementService.getEntityWithAccessCheck(engagementId);
         return projectFileRepository.findByEngagementIdOrderByCreatedAtDesc(engagementId)

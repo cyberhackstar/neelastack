@@ -258,9 +258,14 @@ public class EmailService {
      * Sent immediately after an invoice is confirmed PAID (module 4 of the Client
      * Acquisition & High-Ticket Conversion Engine). One-time link — the token is
      * consumed atomically by TestimonialService#submit on first successful use.
+     *
+     * Deliberately NOT {@code @Async} and deliberately does NOT swallow exceptions like the
+     * private {@link #send} helper used elsewhere — TestimonialService needs to know whether
+     * this specific send actually succeeded so it can record the outcome and schedule a retry
+     * on failure (see TestimonialService's outbox-style retry). Throws the underlying
+     * {@link org.springframework.mail.MailException} on any send failure.
      */
-    @Async
-    public void sendTestimonialRequest(com.neelastack.entity.TestimonialRequest request, com.neelastack.entity.Invoice invoice) {
+    public void sendTestimonialRequestOrThrow(com.neelastack.entity.TestimonialRequest request, com.neelastack.entity.Invoice invoice) {
         String link = frontendUrl + "/testimonial/" + request.getToken();
 
         String body = """
@@ -283,7 +288,12 @@ public class EmailService {
                 link
         );
 
-        send(request.getClientEmail(), "Quick favor — how was your project with Neelastack?", body);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(request.getClientEmail());
+        message.setSubject("Quick favor — how was your project with Neelastack?");
+        message.setText(body);
+        mailSender.send(message);
     }
 
     private void send(String to, String subject, String body) {

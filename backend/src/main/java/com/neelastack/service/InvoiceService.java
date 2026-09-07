@@ -327,6 +327,12 @@ public class InvoiceService {
         });
     }
 
+    // Read-only transaction: pdfInvoiceService.generate() below reaches through the lazy
+    // invoice.engagement (@ManyToOne(LAZY)) to engagement.getClient().getFullName(). With
+    // spring.jpa.open-in-view=false, generating outside a transaction let the session close
+    // before that access ran, throwing LazyInitializationException in production traffic —
+    // same root cause as the original BlogPost.tags bug.
+    @Transactional(readOnly = true)
     public byte[] generatePdf(UUID invoiceId) {
         Invoice invoice = getInvoiceWithAccessCheck(invoiceId);
         return pdfInvoiceService.generate(invoice);

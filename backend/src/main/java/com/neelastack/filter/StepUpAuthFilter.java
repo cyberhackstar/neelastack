@@ -1,5 +1,6 @@
 package com.neelastack.filter;
 
+import com.neelastack.entity.User;
 import com.neelastack.repository.UserRepository;
 import com.neelastack.service.MfaService;
 import jakarta.servlet.FilterChain;
@@ -30,10 +31,15 @@ import java.util.regex.Pattern;
  *
  * Deliberately only gates mutations (POST/PUT/PATCH/DELETE) on the specific high-risk
  * route list below -- the same list the audit-logging call sites target, for
- * consistency -- not every admin GET. And only for accounts that have MFA enabled:
- * this codebase doesn't currently force MFA enrollment for every admin, so an
- * unenrolled admin isn't step-up-gated (they simply aren't protected by MFA yet,
- * which is a real gap but a different one from this filter's job).
+ * consistency -- not every admin GET.
+ *
+ * An admin with MFA *disabled* is DENIED these high-risk mutations outright, not waved
+ * through: "no MFA enrolled" must never be a softer security posture than "MFA enrolled
+ * but no recent step-up", or MFA becomes something an attacker (or a careless admin) can
+ * bypass simply by never turning it on. The only routes exempt from this filter entirely
+ * are the account-setup routes themselves (mfa/setup, /verify, /step-up -- see
+ * MfaController; none of them match HIGH_RISK_PATTERNS), so an unenrolled admin can
+ * always reach enrollment/step-up without a chicken-and-egg lockout.
  */
 @Component
 @RequiredArgsConstructor
@@ -70,29 +76,45 @@ public class StepUpAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        Optional<UUID> userId = userRepository.findByEmail(auth.getName())
-                .filter(u -> u.isMfaEnabled())
-                .map(u -> u.getId());
+        Optional<User> maybeUser = userRepository.findByEmail(auth.getName());
 
-        if (userId.isEmpty()) {
-            // Either the user record is gone (shouldn't happen post-auth) or MFA isn't
-            // enabled on this account yet — see class javadoc for why that's not blocked here.
-            filterChain.doFilter(request, response);
+        if (maybeUser.isEmpty()) {
+            // User record is gone -- shouldn't happen post-auth, but fail closed rather than
+            // silently letting a high-risk mutation through.
+            denyStepUpRequired(response);
             return;
         }
 
-        if (!mfaService.hasActiveStepUp(userId.get())) {
+        User user = maybeUser.get();
+
+        if (!user.isMfaEnabled()) {
+            // MFA not enrolled is NOT a bypass for high-risk operations -- see class javadoc.
             response.setStatus(403);
             response.setContentType("application/json");
             response.getWriter().write(
-                    "{\"status\":403,\"error\":\"Step-up required\","
-                            + "\"message\":\"This action requires a recent MFA verification. "
-                            + "POST your TOTP code to /api/v1/admin/mfa/step-up and retry.\"}"
+                    "{\"status\":403,\"error\":\"MFA required\","
+                            + "\"message\":\"This action requires MFA to be enabled on your account. "
+                            + "POST to /api/v1/admin/mfa/setup to enroll, then retry.\"}"
             );
             return;
         }
 
+        if (!mfaService.hasActiveStepUp(user.getId())) {
+            denyStepUpRequired(response);
+            return;
+        }
+
         filterChain.doFilter(request, response);
+    }
+
+    private void denyStepUpRequired(HttpServletResponse response) throws IOException {
+        response.setStatus(403);
+        response.setContentType("application/json");
+        response.getWriter().write(
+                "{\"status\":403,\"error\":\"Step-up required\","
+                        + "\"message\":\"This action requires a recent MFA verification. "
+                        + "POST your TOTP code to /api/v1/admin/mfa/step-up and retry.\"}"
+        );
     }
 
     private boolean isHighRiskMutation(HttpServletRequest request) {

@@ -12,6 +12,6 @@ import java.util.List;
  * gated step that actually creates a lead.
  */
 public record AuditPreviewRequest(
-        @NotEmpty List<@Size(max = 60) String> techStack,
-        @NotEmpty List<@Size(max = 60) String> bottlenecks
+        @NotEmpty @Size(max = 20) List<@Size(max = 60) String> techStack,
+        @NotEmpty @Size(max = 20) List<@Size(max = 60) String> bottlenecks
 ) {}

@@ -62,11 +62,10 @@ public class MfaController {
 
     /**
      * Out-of-band recovery for an admin locked out of their own MFA (lost device, no
-     * recovery codes). See MfaService#forceReset for the caveat: this codebase has no
-     * separate superadmin role yet, so today this is reachable by any ROLE_ADMIN, not
-     * just a superadmin — the endpoint is still step-up gated and audit logged, but the
-     * role restriction itself is a follow-up, not something this pass could safely add
-     * without touching the whole authorization model.
+     * recovery codes). Restricted to ROLE_SUPERADMIN (see SecurityConfig, which matches
+     * this exact path before the general /api/v1/admin/** -> ROLE_ADMIN rule) since it
+     * lets one admin strip another admin's MFA protection entirely; it's also step-up
+     * gated (StepUpAuthFilter) and audit logged on top of that role restriction.
      */
     @PostMapping("/{userId}/force-reset")
     public ResponseEntity<Void> forceReset(@PathVariable UUID userId) {

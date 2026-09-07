@@ -68,6 +68,22 @@ public class TestimonialRequest {
     @Column(name = "review_id")
     private UUID reviewId;
 
+    /** Set once the testimonial-invite email is confirmed sent — null means still
+     *  pending/retrying. See TestimonialService's outbox-style retry worker. */
+    @Column(name = "email_sent_at")
+    private LocalDateTime emailSentAt;
+
+    @Column(name = "email_attempts", nullable = false)
+    @Builder.Default
+    private int emailAttempts = 0;
+
+    @Column(name = "last_email_error", length = 500)
+    private String lastEmailError;
+
+    @Column(name = "next_email_attempt_at", nullable = false)
+    @Builder.Default
+    private LocalDateTime nextEmailAttemptAt = LocalDateTime.now();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

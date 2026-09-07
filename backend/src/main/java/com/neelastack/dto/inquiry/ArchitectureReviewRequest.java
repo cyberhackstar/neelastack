@@ -19,7 +19,7 @@ public record ArchitectureReviewRequest(
         @Size(max = 120) String company,
         @Size(max = 300) String applicationUrl,
         @NotBlank @Size(max = 4000) String currentStack,
-        List<@Size(max = 60) String> primaryConcerns,
+        @Size(max = 20) List<@Size(max = 60) String> primaryConcerns,
         @Size(max = 4000) String notes,
 
         @Size(max = 120) String utmSource,
