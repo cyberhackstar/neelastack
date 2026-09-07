@@ -47,6 +47,6 @@
 
 .status-onboarding { color: var(--color-amber); }
 .status-in_progress { color: var(--color-teal); }
-.status-review { color: #58a6ff; }
-.status-completed { color: #3fb950; }
-.status-on_hold { color: #8B949E; }
+.status-review { color: var(--color-info); }
+.status-completed { color: var(--color-success); }
+.status-on_hold { color: var(--color-text-muted); }

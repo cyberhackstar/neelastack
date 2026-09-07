@@ -5,11 +5,12 @@ import { Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { LogoComponent } from '../logo/logo.component';
+import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, LogoComponent],
+  imports: [RouterLink, RouterLinkActive, LogoComponent, ThemeToggleComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })

@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { EngagementService } from '../../../core/services/engagement.service';
 import { Engagement } from '../../../core/models/content.model';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-dashboard-list',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, TiltDirective],
   templateUrl: './dashboard-list.component.html',
   styleUrl: './dashboard-list.component.scss',
 })

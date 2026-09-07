@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,23 +27,27 @@ public class BlogPostService {
     private final BlogPostRepository blogPostRepository;
     private final IndexNowService indexNowService;
 
+    @Transactional(readOnly = true)
     public Page<BlogPostSummaryDto> listPublished(Pageable pageable) {
         return blogPostRepository.findByPublishedTrueOrderByPublishedAtDesc(pageable)
                 .map(this::toSummaryDto);
     }
 
     /** Includes drafts — used by the admin CMS, never exposed publicly. */
+    @Transactional(readOnly = true)
     public List<BlogPostSummaryDto> listAllForAdmin() {
         return blogPostRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
                 .stream().map(this::toSummaryDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public BlogPostDto getById(UUID id) {
         return blogPostRepository.findById(id)
                 .map(this::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found: " + id));
     }
 
+    @Transactional(readOnly = true)
     public Page<BlogPostSummaryDto> search(String query, String tag, Pageable pageable) {
         String normalizedQuery = (query == null || query.isBlank()) ? null : query.trim();
         String normalizedTag = (tag == null || tag.isBlank()) ? null : tag.trim();
@@ -50,12 +55,14 @@ public class BlogPostService {
     }
 
     @Cacheable("blogPostBySlug")
+    @Transactional(readOnly = true)
     public BlogPostDto getBySlug(String slug) {
         return blogPostRepository.findBySlugAndPublishedTrue(slug)
                 .map(this::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found: " + slug));
     }
 
+    @Transactional(readOnly = true)
     public List<BlogPostSummaryDto> getRelated(String slug) {
         BlogPost post = blogPostRepository.findBySlugAndPublishedTrue(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Article not found: " + slug));
@@ -149,7 +156,7 @@ public class BlogPostService {
                 .coverImageUrl(p.getCoverImageUrl())
                 .authorName(p.getAuthorName())
                 .category(p.getCategory())
-                .tags(p.getTags())
+                .tags(p.getTags() == null ? List.of() : new ArrayList<>(p.getTags()))
                 .published(p.isPublished())
                 .publishedAt(p.getPublishedAt())
                 .build();
@@ -165,7 +172,7 @@ public class BlogPostService {
                 .coverImageUrl(p.getCoverImageUrl())
                 .authorName(p.getAuthorName())
                 .category(p.getCategory())
-                .tags(p.getTags())
+                .tags(p.getTags() == null ? List.of() : new ArrayList<>(p.getTags()))
                 .metaTitle(p.getMetaTitle())
                 .metaDescription(p.getMetaDescription())
                 .publishedAt(p.getPublishedAt())

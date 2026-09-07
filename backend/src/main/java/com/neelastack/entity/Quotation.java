@@ -3,8 +3,11 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,9 +17,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+// See BlogPost/Engagement for why @Data is avoided here: `inquiry` is a lazy @ManyToOne
+// and `lineItems` is a lazy @ElementCollection -- @Data's generated
+// toString()/equals()/hashCode() would touch both. This is the same class of bug that
+// QuotationService's async email methods already had to work around with explicit
+// Hibernate.initialize() calls -- an accidental log.debug("{}", quotation) or a
+// Set<Quotation> would have reintroduced it here.
 @Entity
 @Table(name = "quotations")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"inquiry", "lineItems"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +36,7 @@ public class Quotation {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -11,29 +11,29 @@
 
 .link {
   fill: none;
-  stroke: #2A3140;
+  stroke: var(--color-border);
   stroke-width: 1.5;
 }
 
 .node rect {
-  fill: #161B22;
-  stroke: #2A3140;
+  fill: var(--color-panel);
+  stroke: var(--color-border);
   stroke-width: 1.5;
 }
 
 .node text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  fill: #8B949E;
+  fill: var(--color-text-muted);
 }
 
 .node-primary rect {
-  stroke: #2DD4BF;
+  stroke: var(--color-teal);
   stroke-width: 2;
 }
 
 .node-primary text {
-  fill: #E6EDF3;
+  fill: var(--color-text);
 }
 
 .packet {
@@ -61,23 +61,23 @@
 
 @keyframes node-glow-amber {
   0%, 92%, 100% {
-    stroke: #2A3140;
+    stroke: var(--color-border);
     filter: none;
   }
   95% {
-    stroke: #F5A623;
-    filter: drop-shadow(0 0 5px rgba(245, 166, 35, 0.65));
+    stroke: var(--color-amber);
+    filter: drop-shadow(0 0 5px rgba(var(--color-amber-rgb), 0.65));
   }
 }
 
 @keyframes node-glow-teal {
   0%, 92%, 100% {
-    stroke: #2A3140;
+    stroke: var(--color-border);
     filter: none;
   }
   95% {
-    stroke: #2DD4BF;
-    filter: drop-shadow(0 0 5px rgba(45, 212, 191, 0.65));
+    stroke: var(--color-teal);
+    filter: drop-shadow(0 0 5px rgba(var(--color-teal-rgb), 0.65));
   }
 }
 
@@ -87,30 +87,30 @@
 
 @keyframes node-glow-amber-primary {
   0%, 92%, 100% {
-    stroke: #2DD4BF;
+    stroke: var(--color-teal);
     filter: none;
   }
   95% {
-    stroke: #F5A623;
-    filter: drop-shadow(0 0 6px rgba(245, 166, 35, 0.7));
+    stroke: var(--color-amber);
+    filter: drop-shadow(0 0 6px rgba(var(--color-amber-rgb), 0.7));
   }
 }
 
 .packet-amber {
-  fill: #F5A623;
-  color: #F5A623;
+  fill: var(--color-amber);
+  color: var(--color-amber);
 }
 
 .packet-teal {
-  fill: #2DD4BF;
-  color: #2DD4BF;
+  fill: var(--color-teal);
+  color: var(--color-teal);
 }
 
 .layer-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 8px;
   letter-spacing: 0.08em;
-  fill: #8B949E;
+  fill: var(--color-text-muted);
   opacity: 0.55;
 }
 

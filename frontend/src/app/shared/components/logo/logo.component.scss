@@ -7,7 +7,7 @@
 }
 
 .mark {
-  height: 51px;
+  height: 56px;
   width: auto;
   flex-shrink: 0;
   transition:
@@ -25,13 +25,7 @@
 
 @media (max-width: 480px) {
   .mark {
-    height: 34px;
-  }
-}
-
-@media (max-width: 360px) {
-  .mark {
-    height: 30px;
+    height: 45px;
   }
 }
 

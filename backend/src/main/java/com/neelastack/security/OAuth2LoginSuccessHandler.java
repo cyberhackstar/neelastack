@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -56,6 +57,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .orElseGet(() -> createUserFromGoogle(email, name, Boolean.TRUE.equals(emailVerifiedAttr)));
 
         String code = oneTimeTokenService.issue(EXCHANGE_NAMESPACE, user.getId().toString(), Duration.ofSeconds(60));
+
+        // Defense in depth, not load-bearing: SecurityConfig runs SessionCreationPolicy.STATELESS,
+        // so nothing persists the SecurityContext across requests in the first place (no session
+        // is ever created for this handshake — see CookieOAuth2AuthorizationRequestRepository).
+        // Clearing it here just means this thread can't carry the Google-authenticated principal
+        // (whose getName() is the numeric "sub" claim, not our User's email) into whatever runs
+        // next, if that policy ever regresses.
+        SecurityContextHolder.clearContext();
+
         response.sendRedirect(frontendUrl + "/oauth-callback?code=" + code);
     }
 

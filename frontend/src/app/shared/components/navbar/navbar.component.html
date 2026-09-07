@@ -28,6 +28,8 @@
       }
     </nav>
 
+    <app-theme-toggle class="navbar-theme-toggle"></app-theme-toggle>
+
     <button
       #menuToggleBtn
       type="button"
@@ -79,6 +81,11 @@
           <a routerLink="/login" routerLinkActive="active" ariaCurrentWhenActive="page">Sign in</a>
           <a routerLink="/contact" class="btn btn-primary mobile-cta">Get a quote</a>
         }
+
+        <div class="mobile-theme-row">
+          <span>Theme</span>
+          <app-theme-toggle></app-theme-toggle>
+        </div>
       </nav>
     </div>
   }

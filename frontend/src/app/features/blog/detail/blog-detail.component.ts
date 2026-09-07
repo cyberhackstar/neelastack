@@ -7,11 +7,12 @@ import { SchemaBuilderService } from '../../../core/services/schema-builder.serv
 import { NotFoundService } from '../../../core/services/not-found.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { BlogPost, BlogPostSummary } from '../../../core/models/content.model';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-blog-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, BreadcrumbComponent],
+  imports: [RouterLink, DatePipe, BreadcrumbComponent, TiltDirective],
   templateUrl: './blog-detail.component.html',
   styleUrl: './blog-detail.component.scss',
 })

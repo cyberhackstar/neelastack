@@ -1,7 +1,8 @@
 .navbar {
   border-bottom: 1px solid transparent;
-  background: rgba(13, 17, 23, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(var(--color-bg-rgb), 0.7);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -9,24 +10,50 @@
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+// A hairline edge in the accent color rather than a flat border — reads as
+// a fine bronze inlay separating the bar from the page instead of a plain
+// stroke. Sits under .navbar so the scrolled state's stronger shadow still
+// reads as the dominant depth cue.
+.navbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--color-amber-rgb), 0.35) 50%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
 .navbar.scrolled {
-  background: rgba(13, 17, 23, 0.92);
-  backdrop-filter: blur(14px);
+  background: rgba(var(--color-bg-rgb), 0.92);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
   border-bottom-color: var(--color-border);
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+.navbar.scrolled::after {
+  opacity: 1;
 }
 
 .navbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.1rem 1.5rem;
+  padding: 0.4rem 1.5rem;
   gap: 1.5rem;
   transition: padding 0.25s ease;
 }
 
 .navbar.scrolled .navbar-inner {
-  padding: 0.8rem 1.5rem;
+  padding: 0.3rem 1.5rem;
 }
 
 app-logo {
@@ -44,27 +71,33 @@ app-logo {
     text-decoration: none;
     color: var(--color-text-muted);
     font-size: 0.92rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     padding-bottom: 4px;
+    transition: color 0.2s ease;
 
     &::after {
       content: '';
       position: absolute;
-      left: 0;
-      right: 100%;
+      left: 50%;
       bottom: 0;
+      width: 100%;
       height: 2px;
       border-radius: 2px;
       background: var(--color-teal);
-      box-shadow: 0 0 6px rgba(45, 212, 191, 0.6);
-      transition: right 0.2s ease;
+      box-shadow: 0 0 6px rgba(var(--color-teal-rgb), 0.6);
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: center;
+      transition: transform 0.25s ease;
     }
 
     &.active {
       color: var(--color-text);
+      font-weight: 600;
 
       &::after {
-        right: 0;
+        transform: translateX(-50%) scaleX(1);
       }
     }
 
@@ -72,7 +105,7 @@ app-logo {
       color: var(--color-teal);
 
       &::after {
-        right: 0;
+        transform: translateX(-50%) scaleX(1);
       }
     }
   }
@@ -87,14 +120,39 @@ app-logo {
 .account-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.1rem;
   flex-shrink: 0;
 
   a:not(.btn) {
     text-decoration: none;
     color: var(--color-text-muted);
     font-size: 0.92rem;
+    font-weight: 500;
     white-space: nowrap;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--color-text);
+    }
+  }
+
+  // A fine vertical rule between "Sign in" and the primary CTA — a small
+  // structural cue that they're two different kinds of action, not two
+  // links of equal weight.
+  a.btn {
+    position: relative;
+    margin-left: 0.6rem;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 18px;
+      background: var(--color-border);
+    }
   }
 
   .user {
@@ -111,7 +169,28 @@ app-logo {
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-teal);
+      color: var(--color-teal);
+    }
   }
+}
+
+.primary-nav a:focus-visible,
+.account-nav a:not(.btn):focus-visible,
+.account-nav button:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+// Visible in the top bar on desktop only. On mobile it's hidden here and
+// shown instead inside the hamburger dropdown (see .mobile-theme-row) so
+// there's a single toggle, not two.
+.navbar-theme-toggle {
+  flex-shrink: 0;
 }
 
 // ---- Mobile hamburger ----
@@ -129,6 +208,16 @@ app-logo {
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-amber-dim);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-amber);
+    outline-offset: 2px;
+  }
 
   span {
     display: block;
@@ -137,6 +226,10 @@ app-logo {
     background: var(--color-text);
     border-radius: 2px;
     transition: transform 0.25s ease, opacity 0.2s ease;
+  }
+
+  &.open {
+    border-color: var(--color-amber-dim);
   }
 
   &.open span:nth-child(1) {
@@ -169,8 +262,10 @@ app-logo {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--color-panel);
-  border-top: 1px solid var(--color-border);
+  background: rgba(var(--color-panel-rgb));
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-top: 1px solid rgba(var(--color-amber-rgb), 0.25);
   border-bottom: 1px solid var(--color-border);
   z-index: 45;
   padding: 1.25rem 1.5rem;
@@ -203,15 +298,43 @@ app-logo {
     text-decoration: none;
     color: var(--color-text);
     font-size: 1rem;
+    font-weight: 500;
     padding: 0.85rem 0.25rem;
     border-bottom: 1px solid var(--color-border);
     min-height: 44px;
     display: flex;
     align-items: center;
+    animation: link-in 0.3s ease-out both;
 
     &.active {
       color: var(--color-teal);
     }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-amber);
+      outline-offset: -2px;
+    }
+  }
+
+  // A brief stagger down the list on open — one orchestrated reveal for the
+  // whole panel, not a per-item hover effect, so it reads as a considered
+  // entrance rather than scattered motion.
+  a:nth-child(1) { animation-delay: 0.02s; }
+  a:nth-child(2) { animation-delay: 0.06s; }
+  a:nth-child(3) { animation-delay: 0.1s; }
+  a:nth-child(4) { animation-delay: 0.14s; }
+  a:nth-child(5) { animation-delay: 0.18s; }
+  a:nth-child(6) { animation-delay: 0.22s; }
+}
+
+@keyframes link-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -251,6 +374,21 @@ app-logo {
   min-height: 48px;
 }
 
+.mobile-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 0.25rem 0.25rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+
+  span {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+}
+
 // Cut over to the hamburger well before the desktop nav would visually
 // squeeze — five links + account nav + logo needs real breathing room.
 // A raw max-width alone under-covers landscape phones/small foldables, so
@@ -259,6 +397,13 @@ app-logo {
 @media (max-width: 920px), (max-height: 420px) {
   .primary-nav,
   .account-nav {
+    display: none;
+  }
+
+  // On mobile the toggle now lives only inside the hamburger dropdown
+  // (.mobile-theme-row) — hide the top-bar copy so there's just one,
+  // instead of a redundant toggle sitting next to the hamburger too.
+  .navbar-theme-toggle {
     display: none;
   }
 
@@ -299,8 +444,12 @@ app-logo {
   .mobile-panel {
     animation: none;
   }
+  .mobile-links a {
+    animation: none;
+  }
   .navbar,
-  .navbar-inner {
+  .navbar-inner,
+  .navbar::after {
     transition: none;
   }
 }

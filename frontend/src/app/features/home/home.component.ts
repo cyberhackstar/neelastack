@@ -6,11 +6,12 @@ import { BrowserMockupComponent } from '../../shared/components/browser-mockup/b
 import { ContentService } from '../../core/services/content.service';
 import { SeoService } from '../../core/services/seo.service';
 import { Project, ServiceItem } from '../../core/models/content.model';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, ArchitectureDiagramComponent, BrowserMockupComponent],
+  imports: [RouterLink, ArchitectureDiagramComponent, BrowserMockupComponent, TiltDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

@@ -41,7 +41,7 @@ input, textarea {
 }
 
 .error {
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
   margin: 0;
 }
@@ -97,7 +97,7 @@ input, textarea {
     font-size: 0.85rem;
   }
 
-  &.risk-critical .score-number { color: #ff6b6b; }
+  &.risk-critical .score-number { color: var(--color-danger); }
   &.risk-high .score-number { color: var(--color-amber); }
   &.risk-moderate .score-number { color: var(--color-teal); }
   &.risk-low .score-number { color: var(--color-teal); }

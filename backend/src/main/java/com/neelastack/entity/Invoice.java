@@ -3,8 +3,11 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,9 +16,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+// See BlogPost/Engagement for why @Data is avoided here: `engagement` is a lazy
+// @ManyToOne, and @Data's generated toString()/equals()/hashCode() would touch it.
 @Entity
 @Table(name = "invoices")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "engagement")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +31,7 @@ public class Invoice {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

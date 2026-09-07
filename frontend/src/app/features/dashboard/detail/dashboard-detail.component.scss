@@ -99,7 +99,7 @@
   }
 }
 
-.milestone-done .dot { background: #3fb950; }
+.milestone-done .dot { background: var(--color-success); }
 .milestone-in_progress .dot { background: var(--color-teal); }
 .milestone-pending .dot { background: var(--color-amber); }
 
@@ -165,7 +165,7 @@
 }
 
 .error {
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
 }
 
@@ -209,8 +209,8 @@
     cursor: pointer;
 
     &:hover {
-      border-color: #ff6b6b;
-      color: #ff6b6b;
+      border-color: var(--color-danger);
+      color: var(--color-danger);
     }
   }
 }
@@ -273,6 +273,6 @@
 }
 
 .status-pending { color: var(--color-amber); }
-.status-paid { color: #3fb950; }
-.status-failed { color: #ff6b6b; }
-.status-cancelled { color: #8B949E; }
+.status-paid { color: var(--color-success); }
+.status-failed { color: var(--color-danger); }
+.status-cancelled { color: var(--color-text-muted); }

@@ -22,8 +22,8 @@
 }
 
 .error-banner {
-  color: #ff6b6b;
-  border: 1px solid #ff6b6b;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
   border-radius: 6px;
   padding: 0.6rem 0.9rem;
   font-size: 0.85rem;
@@ -113,8 +113,8 @@ td {
 }
 
 .tag.published {
-  color: #3fb950;
-  border-color: #3fb950;
+  color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .actions {
@@ -134,7 +134,7 @@ td {
 }
 
 .link-btn.danger {
-  color: #ff6b6b;
+  color: var(--color-danger);
 }
 
 @media (max-width: 640px) {

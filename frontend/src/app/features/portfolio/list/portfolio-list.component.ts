@@ -6,11 +6,12 @@ import { SchemaBuilderService } from '../../../core/services/schema-builder.serv
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { BrowserMockupComponent } from '../../../shared/components/browser-mockup/browser-mockup.component';
 import { Project } from '../../../core/models/content.model';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-portfolio-list',
   standalone: true,
-  imports: [RouterLink, BrowserMockupComponent, BreadcrumbComponent],
+  imports: [RouterLink, BrowserMockupComponent, BreadcrumbComponent, TiltDirective],
   templateUrl: './portfolio-list.component.html',
   styleUrl: './portfolio-list.component.scss',
 })

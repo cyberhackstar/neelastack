@@ -1,7 +1,7 @@
 <a routerLink="/" class="logo" [class.logo-footer]="variant === 'footer'" aria-label="Neelastack — home">
   <img
     class="mark"
-    src="https://res.cloudinary.com/ddrt7emvo/image/upload/v1788147833/neelastack-logo_ddudpm.webp"
+    [src]="logoSrc()"
     alt=""
     width="700"
     height="356"

@@ -35,7 +35,7 @@
   grid-column: span 2;
   background: var(--color-panel-raised);
   border-color: var(--color-teal);
-  box-shadow: 0 20px 48px -24px rgba(45, 212, 191, 0.25);
+  box-shadow: 0 20px 48px -24px rgba(var(--color-teal-rgb), 0.25);
 
   h2 {
     font-size: 1.4rem;

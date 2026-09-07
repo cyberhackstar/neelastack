@@ -46,9 +46,9 @@ td {
 
 .status-new { color: var(--color-amber); }
 .status-quoted { color: var(--color-teal); }
-.status-won { color: #3fb950; }
-.status-lost { color: #8B949E; }
+.status-won { color: var(--color-success); }
+.status-lost { color: var(--color-text-muted); }
 
-.lead-hot { color: #ff6b6b; font-family: var(--font-mono); font-size: 0.8rem; }
+.lead-hot { color: var(--color-danger); font-family: var(--font-mono); font-size: 0.8rem; }
 .lead-warm { color: var(--color-amber); font-family: var(--font-mono); font-size: 0.8rem; }
 .lead-nurture { color: var(--color-text-muted); font-family: var(--font-mono); font-size: 0.8rem; }

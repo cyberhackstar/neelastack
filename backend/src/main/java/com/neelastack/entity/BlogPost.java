@@ -3,17 +3,28 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+// Plain @Data would generate toString()/equals()/hashCode() over every field, including
+// the lazy `tags` @ElementCollection below -- so logging a BlogPost, or putting one in a
+// Set/Map, outside an open Hibernate session would throw the exact LazyInitializationException
+// this codebase already had to fix once in BlogPostService's DTO mapping. Excluding `tags`
+// from @ToString, and basing equals()/hashCode() on just the id, removes that risk.
 @Entity
 @Table(name = "blog_posts")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "tags")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,6 +32,7 @@ public class BlogPost {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(nullable = false, length = 200)

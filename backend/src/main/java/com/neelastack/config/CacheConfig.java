@@ -1,5 +1,6 @@
 package com.neelastack.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import lombok.extern.slf4j.Slf4j;
@@ -44,9 +45,22 @@ public class CacheConfig implements CachingConfigurer {
         // (the builder has no such method) — build the mapper first, then call it on
         // the built instance, which mutates it in place and returns `this` for
         // chaining.
+        //
+        // Must use the 3-arg overload with JsonTypeInfo.As.PROPERTY (an embedded "@class"
+        // field), not the 2-arg overload's WRAPPER_ARRAY default. Several of our @Cacheable
+        // methods (ServiceContentService#listPublished, ProjectService#listFeatured) cache a
+        // bare top-level List<Dto>. Spring's RedisCache deserializes cache hits with no type
+        // hint of its own — GenericJackson2JsonRedisSerializer has to recover the type purely
+        // from what's embedded in the stored JSON. WRAPPER_ARRAY on a top-level List doesn't
+        // round-trip reliably through that path (the reader ends up expecting a type-id token
+        // and finding a nested array instead), so every read fails and falls through to the DB.
+        // PROPERTY-style typing — what GenericJackson2JsonRedisSerializer's own built-in mapper
+        // uses — sidesteps this: it tags individual JSON objects with "@class" and simply
+        // doesn't tag the outer array, which is fine since a List's own declared element type
+        // is enough to deserialize its contents.
         ObjectMapper mapper = Jackson2ObjectMapperBuilder.json().build();
         mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL);
+                ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(mapper);
 

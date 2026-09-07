@@ -3,8 +3,11 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,9 +19,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+// User has no lazy relations of its own, so it wasn't at risk of the
+// LazyInitializationException the other entities in this package were fixed for -- but
+// plain @Data would still put `password` (a bcrypt hash) and `totpSecret` (AES-GCM
+// ciphertext) into the generated toString(), so any accidental log.debug("{}", user) or
+// exception message built from `"" + user` would leak credential material into logs.
+// Excluding them here is defense in depth even though neither is plaintext.
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"password", "totpSecret"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,6 +38,7 @@ public class User implements UserDetails {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(nullable = false, length = 120)

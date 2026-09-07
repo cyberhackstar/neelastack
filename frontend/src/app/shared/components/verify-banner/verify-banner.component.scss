@@ -1,5 +1,5 @@
 .verify-banner {
-  background: rgba(245, 166, 35, 0.12);
+  background: rgba(var(--color-amber-rgb), 0.12);
   border-bottom: 1px solid var(--color-amber-dim);
 }
 

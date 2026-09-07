@@ -6,11 +6,12 @@ import { SeoService } from '../../../core/services/seo.service';
 import { SchemaBuilderService } from '../../../core/services/schema-builder.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { BlogPostSummary } from '../../../core/models/content.model';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-blog-list',
   standalone: true,
-  imports: [RouterLink, FormsModule, BreadcrumbComponent],
+  imports: [RouterLink, FormsModule, BreadcrumbComponent, TiltDirective],
   templateUrl: './blog-list.component.html',
   styleUrl: './blog-list.component.scss',
 })

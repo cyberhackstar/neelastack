@@ -94,8 +94,8 @@ td {
 }
 
 .tag.published {
-  color: #3fb950;
-  border-color: #3fb950;
+  color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .actions {
@@ -114,7 +114,7 @@ td {
 }
 
 .link-btn.danger {
-  color: #ff6b6b;
+  color: var(--color-danger);
 }
 
 @media (max-width: 640px) {

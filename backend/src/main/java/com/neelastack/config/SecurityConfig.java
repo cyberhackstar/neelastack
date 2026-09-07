@@ -1,5 +1,6 @@
 package com.neelastack.config;
 
+import com.neelastack.security.CookieOAuth2AuthorizationRequestRepository;
 import com.neelastack.security.JwtAuthFilter;
 import com.neelastack.security.OAuth2LoginFailureHandler;
 import com.neelastack.security.OAuth2LoginSuccessHandler;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
     private final PasswordEncoder passwordEncoder;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
@@ -50,16 +52,20 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
-                // IF_REQUIRED (not STATELESS): the JWT-authenticated API never creates a session,
-                // but Google's OAuth2 authorization-code flow needs one briefly to track the
-                // "state" parameter across the redirect to Google and back.
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                // STATELESS: this API never creates an HttpSession, for the JWT-authenticated
+                // routes or for the OAuth2 login handshake. Google's authorization-code flow
+                // still needs somewhere to keep its "state"/PKCE parameters across the redirect
+                // to Google and back, but that's handled by
+                // CookieOAuth2AuthorizationRequestRepository below (a short-lived httpOnly
+                // cookie) rather than a session — see that class's javadoc for why the session-
+                // based default is unsafe to mix with a stateless, JWT-only API.
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Must be listed before the broad "/api/v1/auth/**" permitAll below --
                         // Spring Security evaluates matchers in order and the first match wins.
                         // Every other /api/v1/auth/** route is intentionally unauthenticated
                         // (login, register, password-reset request, etc.), but change-password
-                        // acts on the *current* session's own user and must not be reachable
+                        // acts on the *current* JWT's own user and must not be reachable
                         // without a valid token.
                         .requestMatchers("/api/v1/auth/change-password").authenticated()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
@@ -68,6 +74,8 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository))
                         .successHandler(oAuth2LoginSuccessHandler)
                         .failureHandler(oAuth2LoginFailureHandler)
                 )

@@ -3,8 +3,11 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,9 +15,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+// @Data's generated toString()/equals()/hashCode() would touch the three lazy @ManyToOne
+// associations below (client, inquiry, project) -- risking a LazyInitializationException
+// the moment one of them is uninitialized and this entity gets logged, or is compared via
+// equals()/hashCode() outside an open session. Excluding them from @ToString and basing
+// equality on just the id avoids that.
 @Entity
 @Table(name = "engagements")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"client", "inquiry", "project"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +33,7 @@ public class Engagement {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

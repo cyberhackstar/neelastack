@@ -22,6 +22,7 @@ import com.neelastack.repository.QuotationRepository;
 import com.neelastack.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -143,7 +145,7 @@ public class QuotationService {
                 .slug(project.getSlug())
                 .summary(project.getSummary())
                 .coverImageUrl(project.getCoverImageUrl())
-                .keyMetrics(project.getKeyMetrics())
+                .keyMetrics(project.getKeyMetrics() == null ? List.of() : new ArrayList<>(project.getKeyMetrics()))
                 .averageRating(averageRating != null ? Math.round(averageRating * 10) / 10.0 : null)
                 .reviewCount((int) reviewCount)
                 .build();
@@ -188,6 +190,12 @@ public class QuotationService {
         }
         Quotation saved = quotationRepository.save(quotation);
 
+        // sendQuotationResponseNotice is @Async and runs on a separate thread with no
+        // Hibernate session, so any lazy association it touches must already be loaded
+        // before we hand the entity off — force-initializing the lazy Inquiry proxy here,
+        // while we're still inside this method's transaction, avoids a
+        // LazyInitializationException in the async thread.
+        Hibernate.initialize(saved.getInquiry());
         emailService.sendQuotationResponseNotice(saved, accept, reason);
 
         auditLogService.recordBestEffort(AuditAction.QUOTATION_RESPONDED, "Quotation", saved.getId().toString(),
@@ -276,6 +284,11 @@ public class QuotationService {
         inquiry.setStatus(InquiryStatus.QUOTED);
         inquiryRepository.save(inquiry);
 
+        // sendQuotation is @Async and runs on a separate thread with no Hibernate session,
+        // so the lazy lineItems collection it iterates must be force-initialized here first
+        // — otherwise it throws a LazyInitializationException on that thread instead of
+        // sending the email (see also the Inquiry initialization in respondToQuotation()).
+        Hibernate.initialize(saved.getLineItems());
         emailService.sendQuotation(saved);
 
         auditLogService.recordBestEffort(AuditAction.QUOTATION_DISPATCHED, "Quotation", saved.getId().toString(), null);

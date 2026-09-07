@@ -5,6 +5,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { SchemaBuilderService } from '../../core/services/schema-builder.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../shared/components/breadcrumb/breadcrumb.component';
 import { ServiceItem } from '../../core/models/content.model';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 
 interface Faq {
   question: string;
@@ -14,7 +15,7 @@ interface Faq {
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent],
+  imports: [RouterLink, BreadcrumbComponent, TiltDirective],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
 })

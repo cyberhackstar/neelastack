@@ -3,8 +3,11 @@ package com.neelastack.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,9 +15,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+// See BlogPost for why @Data is avoided here: techStack, serviceCategories, and
+// keyMetrics are all lazy @ElementCollections, and @Data's generated
+// toString()/equals()/hashCode() would touch all three.
 @Entity
 @Table(name = "projects")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"techStack", "serviceCategories", "keyMetrics"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +31,7 @@ public class Project {
 
     @Id
     @GeneratedValue
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(nullable = false, length = 160)

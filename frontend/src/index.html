@@ -5,6 +5,27 @@
 
     <meta charset="utf-8" />
 
+    <!-- Applies the visitor's saved theme (or their OS preference) before
+         any CSS/JS loads, so there's no flash of the wrong theme on first
+         paint. Kept tiny and inline on purpose — this has to run
+         synchronously, before the stylesheet below is applied. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('neelastack_theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+
     <title>
       Neelastack — Enterprise-grade Web Applications | Spring Boot & Angular
     </title>
@@ -15,7 +36,7 @@
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0D1117" />
+    <meta name="theme-color" content="#0C0C0D" />
     <meta name="robots" content="index, follow" />
 
     <meta property="og:site_name" content="Neelastack" />

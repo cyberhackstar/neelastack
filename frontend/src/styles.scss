@@ -2,20 +2,47 @@
    a blocking chain (fetch CSS -> parse -> discover @import -> fetch again)
    instead of letting the browser fetch fonts in parallel with this stylesheet. */
 
-:root {
+/* =====================================================================
+   Theme tokens — "ink & bone" with a bronze accent.
+   Dark is the default (matches the SSR-rendered shell so there's no
+   flash before the inline bootstrap script in index.html applies the
+   visitor's saved preference). [data-theme="light"] overrides every
+   token below it. Every color a component needs lives in one of these
+   two blocks — components should never hardcode a hex value.
+   ===================================================================== */
+:root,
+[data-theme="dark"] {
   /* ---- Palette ---- */
-  --color-bg: #0d1117;
-  --color-panel: #161b22;
-  --color-panel-raised: #1c2330;
-  --color-border: #2a3140;
-  --color-text: #e6edf3;
-  --color-text-muted: #8b949e;
-  --color-amber: #f5a623;
-  --color-amber-dim: #8a5f18;
-  --color-teal: #2dd4bf;
+  --color-bg: #0c0c0d;
+  --color-panel: #151517;
+  --color-panel-raised: #1a1a1c;
+  --color-border: #232326;
+  --color-text: #f2efe8;
+  --color-text-muted: #b0ada2;
+  --color-amber: #c9a227;
+  --color-amber-dim: #8c6e1e;
+  --color-teal: #6fa89c;
   /* Used extremely sparingly — informational states/links only, never as a third
      "brand" color. See design notes: amber = action, teal = engineering. */
-  --color-info: #4f8cff;
+  --color-info: #6c8fbf;
+  --color-danger: #ff8a80;
+  --color-success: #7fbf8f;
+  /* Always-dark text laid on top of the accent color (buttons, badges) —
+     stays the same in both themes because the accent itself never gets
+     light enough to need light-on-accent text. */
+  --color-ink: #0c0c0d;
+
+  /* RGB triplets for rgba() glows/overlays that need to track the theme. */
+  --color-bg-rgb: 12, 12, 13;
+  --color-amber-rgb: 201, 162, 39;
+  --color-teal-rgb: 111, 168, 156;
+  --color-panel-rgb: 21, 21, 23;
+  --color-border-rgb: 35, 35, 38;
+  --color-text-muted-rgb: 176, 173, 162;
+  --color-text-rgb: 242, 239, 232;
+  --color-danger-rgb: 255, 138, 128;
+
+  color-scheme: dark;
 
   /* ---- Type ---- */
   --font-display: "Space Grotesk", sans-serif;
@@ -26,6 +53,53 @@
   /* ---- Layout ---- */
   --max-width: 1160px;
   --radius: 10px;
+
+  /* ---- Elevation ----
+     Layered shadows (a tight dark core + a soft diffuse spread) rather than
+     one flat blur — this is what makes a raised surface read as "premium"
+     instead of just "has a shadow". Dark theme can lean on pure black;
+     bronze-tinted glow is reserved for interactive/accent surfaces so it
+     doesn't get noisy on every card. */
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 14px 32px -10px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 26px 52px -14px rgba(0, 0, 0, 0.65), 0 8px 20px rgba(0, 0, 0, 0.4);
+  --shadow-glow-amber: 0 10px 26px rgba(var(--color-amber-rgb), 0.3), 0 3px 8px rgba(0, 0, 0, 0.35);
+  --shadow-glow-teal: 0 12px 28px -6px rgba(var(--color-teal-rgb), 0.25);
+}
+
+[data-theme="light"] {
+  --color-bg: #faf9f6;
+  --color-panel: #f0eee7;
+  --color-panel-raised: #eae7de;
+  --color-border: #e5e2d9;
+  --color-text: #111110;
+  --color-text-muted: #63605a;
+  --color-amber: #9c7a1b;
+  --color-amber-dim: #c2a25c;
+  --color-teal: #3f6b64;
+  --color-info: #4a6fa5;
+  --color-danger: #c0392b;
+  --color-success: #2f7a46;
+  --color-ink: #0c0c0d;
+
+  --color-bg-rgb: 250, 249, 246;
+  --color-amber-rgb: 156, 122, 27;
+  --color-teal-rgb: 63, 107, 100;
+  --color-panel-rgb: 240, 238, 231;
+  --color-border-rgb: 229, 226, 217;
+  --color-text-muted-rgb: 99, 96, 90;
+  --color-text-rgb: 17, 17, 16;
+  --color-danger-rgb: 192, 57, 43;
+
+  color-scheme: light;
+
+  /* Same layered structure, but warm ink at low opacity instead of pure
+     black — a black shadow on a bone background reads muddy, not premium. */
+  --shadow-sm: 0 2px 10px rgba(17, 17, 16, 0.07);
+  --shadow-md: 0 16px 34px -12px rgba(17, 17, 16, 0.14), 0 4px 10px rgba(17, 17, 16, 0.07);
+  --shadow-lg: 0 28px 54px -16px rgba(17, 17, 16, 0.16), 0 8px 20px rgba(17, 17, 16, 0.08);
+  --shadow-glow-amber: 0 10px 24px rgba(var(--color-amber-rgb), 0.2), 0 3px 8px rgba(17, 17, 16, 0.1);
+  --shadow-glow-teal: 0 12px 26px -6px rgba(var(--color-teal-rgb), 0.18);
 }
 
 * {
@@ -43,6 +117,68 @@ body {
   font-synthesis: none; /* avoid the browser fabricating bold/italic styles for the
                             fallback font, which changes metrics again once the real
                             font arrives and contributes to layout shift */
+}
+
+/* ---- Ambient page backdrop ----
+   Outside the hero and the CTA band, every section sat on a single flat
+   --color-bg fill — that's the "dull" flat color. This puts the same
+   restrained engineering-grid-plus-glow signature used there (see .bg-grid
+   further down) permanently behind the *whole* app instead of two isolated
+   patches, fixed to the viewport so it doesn't tile or jump on scroll.
+   Deliberately low-opacity and z-index: -1, pointer-events: none — solid
+   surfaces (.card, .navbar, footer, form fields) still sit on top of it
+   looking clean; it only shows through the empty space between them. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(var(--color-text-muted-rgb), 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--color-text-muted-rgb), 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+body::after {
+  background:
+    radial-gradient(720px circle at 12% 0%, rgba(var(--color-amber-rgb), 0.08), transparent 60%),
+    radial-gradient(760px circle at 88% 30%, rgba(var(--color-teal-rgb), 0.1), transparent 60%),
+    radial-gradient(680px circle at 50% 100%, rgba(var(--color-amber-rgb), 0.05), transparent 65%);
+}
+
+/* Smooth, deliberate cross-fade whenever the theme flips — applied narrowly
+   so it never fights the many purpose-built transitions elsewhere (button
+   hovers, card tilts, etc). Skipped entirely for reduced-motion users. */
+body,
+.card,
+.tag,
+.stat-block,
+.navbar,
+.mobile-panel,
+.auth-visual,
+.auth-card input {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .card,
+  .tag,
+  .stat-block,
+  .navbar,
+  .mobile-panel,
+  .auth-visual,
+  .auth-card input {
+    transition: none;
+  }
 }
 
 a {
@@ -106,12 +242,29 @@ a {
 
 .btn-primary {
   background: var(--color-amber);
-  color: #1a1200;
+  color: var(--color-ink);
+  box-shadow: 0 4px 14px rgba(var(--color-amber-rgb), 0.18);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.25);
+  box-shadow: var(--shadow-glow-amber);
+}
+
+/* Light theme: the raw amber reads as a plain yellow button on the bone
+   background instead of "bronze accent". Invert to ink-on-bone instead —
+   it's higher contrast, stays on-brand (ink is a core theme token), and
+   keeps a thin bronze glow on hover so the accent color still shows up. */
+[data-theme="light"] .btn-primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: 0 4px 14px rgba(var(--color-text-rgb), 0.18);
+}
+
+[data-theme="light"] .btn-primary:hover {
+  box-shadow:
+    0 10px 26px rgba(var(--color-amber-rgb), 0.3),
+    0 4px 12px rgba(var(--color-text-rgb), 0.25);
 }
 
 .btn-ghost {
@@ -147,14 +300,26 @@ a {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
   transition:
     transform 0.25s ease,
-    border-color 0.25s ease;
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Static fallback for keyboard focus, touch, and prefers-reduced-motion.
+   Desktop pointers get a live cursor-tracking version of this same tilt —
+   see shared/directives/tilt.directive.ts, which sets a stronger transform
+   as an inline style on mousemove and removes it again on mouseleave, so
+   this rule is what's left underneath either way. */
 .card-tilt:hover {
   transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
   border-color: var(--color-teal);
+  box-shadow: var(--shadow-lg);
 }
 
 .tag {
@@ -181,8 +346,8 @@ a {
   inset: 0;
   z-index: -2;
   background-image:
-    linear-gradient(rgba(139, 148, 158, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 148, 158, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(var(--color-text-muted-rgb), 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--color-text-muted-rgb), 0.06) 1px, transparent 1px);
   background-size: 42px 42px;
   mask-image: radial-gradient(
     ellipse 80% 60% at 50% 0%,
@@ -204,12 +369,12 @@ a {
   background:
     radial-gradient(
       480px circle at 18% 8%,
-      rgba(245, 166, 35, 0.08),
+      rgba(var(--color-amber-rgb), 0.08),
       transparent 60%
     ),
     radial-gradient(
       560px circle at 85% 20%,
-      rgba(45, 212, 191, 0.1),
+      rgba(var(--color-teal-rgb), 0.1),
       transparent 60%
     );
 }
@@ -219,9 +384,10 @@ a {
    CTA, featured case study). Everything else stays a solid .card so the glass
    effect reads as intentional hierarchy, not a global theme. */
 .glass-panel {
-  background: rgba(22, 27, 34, 0.55);
-  border: 1px solid rgba(42, 49, 64, 0.8);
+  background: rgba(var(--color-panel-rgb), 0.55);
+  border: 1px solid rgba(var(--color-border-rgb), 0.8);
   border-radius: 14px;
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -274,7 +440,14 @@ a {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-panel);
+  box-shadow: var(--shadow-sm);
   min-width: 108px;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.stat-block:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .stat-block .stat-value {
@@ -529,7 +702,7 @@ textarea {
 .auth-card input:focus {
   outline: none;
   border-color: var(--color-teal);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--color-teal-rgb), 0.15);
 }
 
 .auth-card button[type="submit"] {
@@ -538,7 +711,7 @@ textarea {
   border-radius: 8px;
   border: none;
   background: var(--color-amber);
-  color: #1a1200;
+  color: var(--color-ink);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -550,7 +723,7 @@ textarea {
 
 .auth-card button[type="submit"]:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.22);
+  box-shadow: var(--shadow-glow-amber);
 }
 
 .auth-card button[type="submit"]:disabled {
@@ -579,16 +752,16 @@ textarea {
 }
 
 .auth-card .field-error {
-  color: #ff8787;
+  color: var(--color-danger);
   font-size: 0.78rem;
 }
 
 .auth-card .error {
-  color: #ff8787;
+  color: var(--color-danger);
   font-size: 0.85rem;
   margin: 0;
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.25);
+  background: rgba(var(--color-danger-rgb), 0.08);
+  border: 1px solid rgba(var(--color-danger-rgb), 0.25);
   border-radius: 6px;
   padding: 0.6rem 0.75rem;
 }
@@ -654,5 +827,88 @@ textarea {
 @media (max-width: 420px) {
   .auth-card h1 {
     font-size: 1.35rem;
+  }
+}
+
+/* =====================================================================
+   Theme toggle — see app/shared/components/theme-toggle for the component.
+   Styles live globally so the toggle can drop into the navbar, mobile
+   panel, and footer without duplicating markup-specific CSS per host.
+   ===================================================================== */
+.theme-toggle {
+  --toggle-w: 52px;
+  --toggle-h: 28px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: var(--toggle-w);
+  height: var(--toggle-h);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-raised);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--color-amber);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+.theme-toggle__track-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  color: var(--color-text-muted);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.theme-toggle__track-icon--sun {
+  left: 5px;
+}
+
+.theme-toggle__track-icon--moon {
+  right: 5px;
+}
+
+.theme-toggle__thumb {
+  position: relative;
+  z-index: 1;
+  width: calc(var(--toggle-h) - 6px);
+  height: calc(var(--toggle-h) - 6px);
+  border-radius: 50%;
+  background: linear-gradient(155deg, var(--color-amber), var(--color-amber-dim));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink);
+  transform: translateX(0);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="light"] .theme-toggle__thumb {
+  transform: translateX(calc(var(--toggle-w) - var(--toggle-h)));
+}
+
+.theme-toggle__thumb svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle__thumb {
+    transition: none;
   }
 }

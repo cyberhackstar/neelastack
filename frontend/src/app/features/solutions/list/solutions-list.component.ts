@@ -5,11 +5,12 @@ import { SeoService } from '../../../core/services/seo.service';
 import { SchemaBuilderService } from '../../../core/services/schema-builder.service';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { TechStackPage } from '../../../core/models/content.model';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-solutions-list',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent],
+  imports: [RouterLink, BreadcrumbComponent, TiltDirective],
   templateUrl: './solutions-list.component.html',
   styleUrl: './solutions-list.component.scss',
 })

@@ -119,7 +119,7 @@
     flex: 1;
   }
 
-  .lead-hot { color: #ff6b6b; }
+  .lead-hot { color: var(--color-danger); }
   .lead-warm { color: var(--color-amber); }
   .lead-nurture { color: var(--color-text-muted); }
 }
@@ -135,7 +135,7 @@
 }
 
 .error-text {
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
   margin: 0 0 0.75rem;
 }

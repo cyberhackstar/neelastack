@@ -20,12 +20,17 @@
     display: flex;
     flex-direction: column;
 
-    .line:last-child {
+    /* Solid, fully-opaque text — no gradient/clip-to-transparent trick.
+       That used to fade "holds up." toward a muted teal via
+       `-webkit-text-fill-color: transparent`, which read as washed-out on
+       a dark background. Matches the reference: crisp bone text with a
+       clean bronze underline hugging just the accented phrase. */
+    .line-accent {
+      display: inline-block;
+      align-self: flex-start;
       color: var(--color-text);
-      background: linear-gradient(90deg, var(--color-text) 60%, var(--color-teal));
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      border-bottom: 3px solid var(--color-amber);
+      padding-bottom: 0.05em;
     }
   }
 
