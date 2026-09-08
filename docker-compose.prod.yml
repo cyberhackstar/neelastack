@@ -192,6 +192,7 @@ services:
     environment:
       PORT: 4000
       INTERNAL_API_URL: http://backend:8080
+      NG_ALLOWED_HOSTS: ${NG_ALLOWED_HOSTS:-neelastack.com,www.neelastack.com,localhost,127.0.0.1}
 
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/ >/dev/null"]

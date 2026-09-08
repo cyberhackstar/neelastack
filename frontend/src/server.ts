@@ -33,7 +33,22 @@ const browserDistFolder = resolve(serverDistFolder, "../browser");
  */
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const allowedHosts = (
+  process.env["NG_ALLOWED_HOSTS"] ??
+  "neelastack.com,www.neelastack.com,localhost,127.0.0.1"
+)
+  .split(",")
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts,
+  trustProxyHeaders: [
+    "x-forwarded-for",
+    "x-forwarded-host",
+    "x-forwarded-proto",
+  ],
+});
 
 /**
  * -----------------------------------------------------------------------------
