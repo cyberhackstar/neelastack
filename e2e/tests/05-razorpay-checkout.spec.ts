@@ -1,46 +1,10 @@
 import { test, expect, APIRequestContext } from "@playwright/test";
 import * as crypto from "crypto";
-
-function generateTotpCode(secret: string): string {
-  const base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  const normalized = secret.replace(/\s+/g, "").toUpperCase();
-
-  let bits = "";
-  for (const char of normalized) {
-    const value = base32Alphabet.indexOf(char);
-    if (value === -1) {
-      continue;
-    }
-    bits += value.toString(2).padStart(5, "0");
-  }
-
-  const bytes: number[] = [];
-  for (let i = 0; i + 7 < bits.length; i += 8) {
-    bytes.push(parseInt(bits.slice(i, i + 8), 2));
-  }
-
-  const key = Buffer.from(bytes);
-  let counter = Math.floor(Date.now() / 1000 / 30);
-  const buffer = Buffer.alloc(8);
-
-  for (let i = 7; i >= 0; i--) {
-    buffer[i] = counter & 0xff;
-    // eslint-disable-next-line no-bitwise
-    counter = Math.floor(counter / 256);
-  }
-
-  const hmac = crypto.createHmac("sha1", key).update(buffer).digest();
-  const offset = hmac[hmac.length - 1] & 0x0f;
-  // eslint-disable-next-line no-bitwise
-  const binary =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff);
-
-  const otp = binary % 1000000;
-  return otp.toString().padStart(6, "0");
-}
+import {
+  loginAdminWithStepUp,
+  authHeader as adminAuthHeader,
+  requireEnv,
+} from "./helpers/admin-auth";
 
 /**
  * Journey 5 (master prompt, Section 3): client pays an invoice through the Razorpay
@@ -49,13 +13,19 @@ function generateTotpCode(secret: string): string {
  *
  * "Mock Razorpay checkout" means exactly that -- this suite never talks to Razorpay's
  * real API or checkout.js.
+ *
+ * Admin invoice/engagement creation are high-risk mutations gated by
+ * MustChangePasswordFilter + StepUpAuthFilter (see MfaService). This suite does NOT
+ * disable or bypass that security model to make tests pass -- it exercises the real
+ * bootstrap-password-change -> MFA-enrollment -> TOTP-step-up flow via
+ * tests/helpers/admin-auth.ts, exactly as a real admin would have to. Enrollment
+ * happens once in global-setup.ts; every fixture here calls stepUp() again
+ * immediately before each high-risk call rather than assuming an earlier step-up is
+ * still within its TTL (default 10 minutes) -- see review item #24.
  */
 
 const API_BASE_URL = process.env["API_BASE_URL"] ?? "http://localhost:8080";
 const RAZORPAY_KEY_SECRET = process.env["RAZORPAY_KEY_SECRET"] ?? "placeholder";
-const ADMIN_EMAIL = process.env["E2E_ADMIN_EMAIL"] ?? "admin@neelastack.test";
-
-const ADMIN_PASSWORD = process.env["E2E_ADMIN_PASSWORD"] ?? "";
 
 interface Fixture {
   clientEmail: string;
@@ -64,84 +34,14 @@ interface Fixture {
   invoiceId: string;
 }
 
-async function apiLogin(
-  request: APIRequestContext,
-  email: string,
-  password: string,
-): Promise<string> {
-  const res = await request.post(`${API_BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-
-  expect(
-    res.ok(),
-    `login failed for ${email}: ${res.status()} ${await res.text()}`,
-  ).toBeTruthy();
-
-  const body = await res.json();
-
-  return body.accessToken as string;
-}
-
-/**
- * Invoice creation (POST /api/v1/admin/invoices) is a StepUpAuthFilter
- * "high-risk" mutation: an admin with MFA disabled is denied outright (not
- * waved through), and even an MFA-enrolled admin needs a *recent* step-up
- * assertion. The CI admin bootstrap account starts with MFA disabled, so
- * this suite has to enroll it (or just step up, if a previous run in the
- * same container already enrolled it) before it can build the fixture.
- */
-async function ensureAdminMfaStepUp(
-  request: APIRequestContext,
-  authHeader: Record<string, string>,
-): Promise<void> {
-  const statusRes = await request.get(
-    `${API_BASE_URL}/api/v1/admin/mfa/status`,
-    { headers: authHeader },
+/** Logs in the admin with a fresh step-up, ready for one high-risk mutation. */
+async function adminTokenWithStepUp(request: APIRequestContext): Promise<string> {
+  return loginAdminWithStepUp(
+    request,
+    requireEnv("E2E_ADMIN_EMAIL"),
+    requireEnv("E2E_ADMIN_PASSWORD"),
+    requireEnv("E2E_ADMIN_TOTP_SECRET"),
   );
-
-  expect(
-    statusRes.ok(),
-    `mfa status check failed: ${statusRes.status()} ${await statusRes.text()}`,
-  ).toBeTruthy();
-
-  const status = await statusRes.json();
-
-  if (!status.mfaEnabled) {
-    const setupRes = await request.post(
-      `${API_BASE_URL}/api/v1/admin/mfa/setup`,
-      { headers: authHeader },
-    );
-
-    expect(
-      setupRes.ok(),
-      `mfa setup failed: ${setupRes.status()} ${await setupRes.text()}`,
-    ).toBeTruthy();
-
-    const { manualEntrySecret } = await setupRes.json();
-
-    const verifyRes = await request.post(
-      `${API_BASE_URL}/api/v1/admin/mfa/verify`,
-      {
-        headers: authHeader,
-        data: { code: generateTotpCode(manualEntrySecret) },
-      },
-    );
-
-    expect(
-      verifyRes.ok(),
-      `mfa verify failed: ${verifyRes.status()} ${await verifyRes.text()}`,
-    ).toBeTruthy();
-
-    // verify() already grants a step-up assertion server-side — nothing more to do.
-    return;
-  }
-
-  // Already enrolled (e.g. a previous run against a persistent DB) — we don't have
-  // the secret, so a fresh /step-up isn't possible here. hasActiveStepUp may already
-  // be true from a recent verify/step-up within the TTL; if not, invoice creation
-  // below will fail with a clear "Step-up required" error rather than this silently
-  // no-op'ing.
 }
 
 async function buildFixture(request: APIRequestContext): Promise<Fixture> {
@@ -166,13 +66,9 @@ async function buildFixture(request: APIRequestContext): Promise<Fixture> {
     `register failed: ${registerRes.status()} ${await registerRes.text()}`,
   ).toBeTruthy();
 
-  const adminToken = await apiLogin(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+  const adminToken = await adminTokenWithStepUp(request);
 
-  const authHeader = {
-    Authorization: `Bearer ${adminToken}`,
-  };
-
-  await ensureAdminMfaStepUp(request, authHeader);
+  const authHeader = adminAuthHeader(adminToken);
 
   const engagementRes = await request.post(
     `${API_BASE_URL}/api/v1/admin/engagements`,
@@ -289,9 +185,7 @@ test.describe("Razorpay checkout (mocked)", () => {
             options.handler({
               razorpay_order_id: options.order_id,
               razorpay_payment_id: "pay_e2e_mock_" + Date.now(),
-              razorpay_signature: isInvalid
-                ? "e2e-invalid-signature"
-                : "e2e-valid-signature",
+              razorpay_signature: isInvalid ? "e2e-invalid-signature" : "e2e-valid-signature",
             });
           }, 10);
         };
@@ -469,14 +363,12 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     const request = await page.context().request;
 
-    const adminToken = await apiLogin(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+    const adminToken = await adminTokenWithStepUp(request);
 
     const invoiceRes = await request.post(
       `${API_BASE_URL}/api/v1/admin/invoices`,
       {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
+        headers: adminAuthHeader(adminToken),
         data: {
           engagementId: fixture.engagementId,
 
@@ -570,3 +462,6 @@ test.describe("Razorpay checkout (mocked)", () => {
     await expect(invoiceRow.locator(".tag")).not.toHaveText("PAID");
   });
 });
+
+
+

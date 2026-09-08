@@ -170,12 +170,13 @@ public class MfaService {
     }
 
     /**
-     * Superadmin-only in intent (master prompt: "an admin locked out ... needs an
-     * out-of-band reset path"). This codebase currently has only ROLE_ADMIN, not a
-     * separate superadmin role — that's a real gap, flagged rather than silently
-     * assumed away: until a superadmin role exists, this is reachable by any
-     * ROLE_ADMIN account (still step-up gated, still audit logged), which is weaker
-     * than the master prompt's "superadmin-only" intent.
+     * Superadmin-only (master prompt: "an admin locked out ... needs an out-of-band
+     * reset path"). Enforced at the SecurityConfig layer via
+     * {@code .hasRole("SUPERADMIN")} on this exact path, matched before the general
+     * {@code /api/v1/admin/**} -> ROLE_ADMIN rule — see Role.SUPERADMIN. Still
+     * step-up gated (StepUpAuthFilter) and audit logged on top of that role
+     * restriction, so a compromised SUPERADMIN session still needs a recent MFA
+     * assertion to use this.
      */
     @Transactional
     public void forceReset(UUID targetUserId, User actingAdmin) {

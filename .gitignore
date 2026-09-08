@@ -23,6 +23,9 @@ test-results/
 e2e/node_modules/
 e2e/playwright-report/
 e2e/test-results/
+# Cached admin TOTP secret for local re-runs against a persisted Postgres volume
+# (see e2e/global-setup.ts) -- never commit a real account's MFA secret.
+e2e/.e2e-admin-mfa-secret.json
 
 # Logs
 *.log

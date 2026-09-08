@@ -91,7 +91,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       MANAGEMENT_HEALTH_MAIL_ENABLED: ${MANAGEMENT_HEALTH_MAIL_ENABLED:-true}
     ports:
-      - "8080:8080"
+      - "8500:8080"
 
   frontend:
     build:
@@ -110,4 +110,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-

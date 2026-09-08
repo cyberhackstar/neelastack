@@ -84,6 +84,13 @@ nano .env   # fill in every value — see the checklist below
   problem in one app's data layer can't affect another's.
 - `GITHUB_REPOSITORY_OWNER` — your GitHub username/org, lowercase, matching what
   `.github/workflows/ci-cd.yml` pushes to on GHCR.
+- `GHCR_USERNAME` / `GHCR_PAT` — required if the `neelastack-backend`/
+  `neelastack-frontend` GHCR packages are private (they are, by default, for a new
+  repo). CI's GHCR login lives only on the GitHub Actions runner — it never reaches
+  this VM — so `infra/deploy/deploy.sh` logs in here itself using these on every
+  deploy. `GHCR_PAT` should be a GitHub PAT scoped to `read:packages` only. Leave both
+  blank only if the packages are public or you've already run `docker login ghcr.io`
+  by hand on this box with a credential you're maintaining yourself.
 - `JWT_SECRET` — `openssl rand -base64 48` or similar, 256-bit minimum.
 - `MFA_ENCRYPTION_KEY` — `openssl rand -base64 32` (must decode to exactly 32 bytes).
 - `CLOUDINARY_AUTH_TOKEN_KEY` — any long random string; enable "Token-based
@@ -144,17 +151,26 @@ header comment).
   Postgres at all. Static JS/CSS/images get long-lived immutable cache headers from
   the Angular build output already.
 - **Reliable**: `deploy.sh` won't leave a broken version live — it gates on container
-  health *and* an HTTP smoke test (both local and public), and rolls back automatically
-  if either fails. `restart: unless-stopped` on every service means a VM reboot brings
-  everything back without manual intervention.
+  health *and* a local HTTP smoke test, and rolls back automatically if either fails.
+  A separate public smoke test (through Cloudflare) runs too but is logged only, never
+  gating — an external Cloudflare/DNS blip can't trigger a rollback of an otherwise
+  healthy deploy (see that script's `public_smoke_test()` comment). `restart:
+  unless-stopped` on every service means a VM reboot brings everything back without
+  manual intervention. Note: rollback only reverts the application image, never the
+  database schema — see `docs/DATABASE-MIGRATIONS.md` for the expand/contract policy
+  that keeps that combination safe.
 - **Secure**: nginx sets HSTS/CSP/frame/nosniff headers; the app's containers publish
   no ports except nginx's, and that one only on loopback — nothing here is reachable
   except through the Cloudflare Tunnel, mirroring how the other apps on this box are
   already set up. Secrets live only in `.env` (never committed) and container env vars,
   never baked into images.
 
-## Known gaps carried over from IMPLEMENTATION-STATUS.md
+## Known gaps
 
-Deploying doesn't fix these — they're still open and worth tracking separately: no
-frontend MFA UI, no login-time TOTP challenge, no superadmin force-reset role,
-incomplete Playwright E2E coverage.
+- **Infrastructure image tags are mutable** (`postgres:16-alpine`, `redis:7-alpine`,
+  `nginx:1.27-alpine` in `docker-compose.prod.yml`) — a future deploy could pull an
+  unexpectedly newer image under the same tag. Not urgent, but worth pinning to
+  digests eventually; see `infra/deploy/pin-images.sh`.
+- **Database migrations aren't rolled back** when an app rollback happens — see
+  `docs/DATABASE-MIGRATIONS.md` for the expand/contract policy this requires of every
+  migration.
