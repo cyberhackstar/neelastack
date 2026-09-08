@@ -1,6 +1,4 @@
 # Local development stack: Postgres + Redis + backend + frontend
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -85,7 +83,10 @@ services:
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
       RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
-      RAZORPAY_MOCK_ENABLED: ${RAZORPAY_MOCK_ENABLED:-false}
+      # This compose file is the disposable E2E stack, not production. Keep Razorpay
+      # mocked unconditionally so a developer's production .env cannot make E2E call
+      # the real Razorpay API with live/placeholder credentials.
+      RAZORPAY_MOCK_ENABLED: "true"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}

@@ -17,10 +17,13 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 export default defineConfig({
   testDir: "./tests",
   globalSetup: require.resolve("./global-setup.ts"),
-  fullyParallel: true,
+  // Keep the suite deterministic locally and in CI. Four or more concurrent
+  // Chromium sessions can overwhelm the small SSR/test stack and create false
+  // navigation/render failures even when the API is healthy.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: Number.parseInt(process.env.E2E_WORKERS ?? "2", 10),
   reporter: [["html", { open: "never" }], ["list"]],
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:4000",

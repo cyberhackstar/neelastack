@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -61,7 +62,7 @@ public class TestimonialService {
      * payment flow — a failure here must never fail, roll back, or retry a
      * successful payment confirmation.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void queueRequestForInvoice(Invoice invoice) {
         try {
             if (testimonialRequestRepository.existsByInvoiceId(invoice.getId())) {

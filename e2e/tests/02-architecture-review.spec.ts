@@ -17,9 +17,19 @@ test.describe('Architecture review submission', () => {
       'Django + React monolith, ~5 years old, slow admin panel, no automated tests.',
     );
 
+    const architectureResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/v1/public/architecture-review') &&
+        response.request().method() === 'POST',
+      { timeout: 20000 },
+    );
+
     await page.getByRole('button', { name: /submit|request|get.*review/i }).click();
 
-    await expect(page.locator('.card.success, [class*="success"]').first()).toBeVisible({ timeout: 10000 });
+    const architectureResponse = await architectureResponsePromise;
+    expect(architectureResponse.status()).toBe(201);
+
+    await expect(page.getByRole('heading', { name: /request received/i })).toBeVisible({ timeout: 5000 });
   });
 
   test('rejects submission with missing required fields', async ({ page }) => {

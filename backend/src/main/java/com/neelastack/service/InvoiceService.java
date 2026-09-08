@@ -241,7 +241,7 @@ public class InvoiceService {
                 attempt.setStatus(PaymentAttemptStatus.SUCCEEDED);
                 paymentAttemptRepository.save(attempt);
             });
-            testimonialService.queueRequestForInvoice(invoice);
+            queueTestimonialBestEffort(invoice);
             return dto;
         }
 
@@ -295,7 +295,7 @@ public class InvoiceService {
         // automated testimonial request now that this invoice has genuinely transitioned
         // to PAID. Best-effort inside TestimonialService — never allowed to affect this
         // (already-committed-in-intent) payment confirmation.
-        testimonialService.queueRequestForInvoice(invoice);
+        queueTestimonialBestEffort(invoice);
 
         return dto;
     }
@@ -322,9 +322,24 @@ public class InvoiceService {
                 log.info("Invoice {} marked PAID via {}", invoice.getInvoiceNumber(), source);
                 auditLogService.recordBestEffort(AuditAction.PAYMENT_MARKED_PAID, "Invoice", invoice.getId().toString(),
                         Map.of("source", source.name(), "razorpayPaymentId", razorpayPaymentId == null ? "" : razorpayPaymentId));
-                testimonialService.queueRequestForInvoice(invoice);
+                queueTestimonialBestEffort(invoice);
             }
         });
+    }
+
+    /**
+     * Testimonial requests are a downstream marketing side-effect of payment confirmation.
+     * They run in their own transaction, and any transactional-proxy failure (including
+     * UnexpectedRollbackException when that transaction is marked rollback-only) is swallowed
+     * here so it can never turn a successful payment into a rolled-back payment.
+     */
+    private void queueTestimonialBestEffort(Invoice invoice) {
+        try {
+            testimonialService.queueRequestForInvoice(invoice);
+        } catch (Exception ex) {
+            log.error("Testimonial side-effect failed after payment for invoice {}: {}",
+                    invoice.getInvoiceNumber(), ex.getMessage(), ex);
+        }
     }
 
     // Read-only transaction: pdfInvoiceService.generate() below reaches through the lazy

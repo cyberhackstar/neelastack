@@ -119,9 +119,9 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         if (useRecoveryCode) {
-            mfaService.consumeRecoveryCode(user, code); // throws BadRequestException on an invalid/used code
+            mfaService.verifyLoginRecoveryCode(user, code); // throws BadRequestException on an invalid/used code
         } else {
-            mfaService.stepUp(user, code); // throws BadRequestException on an invalid code; also grants a fresh step-up assertion
+            mfaService.verifyLoginTotp(user, code); // login MFA authenticates the session; step-up remains separate
         }
 
         oneTimeTokenService.invalidate(LOGIN_MFA_NAMESPACE, mfaToken);

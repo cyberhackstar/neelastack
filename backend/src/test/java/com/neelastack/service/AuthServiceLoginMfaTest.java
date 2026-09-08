@@ -103,7 +103,7 @@ class AuthServiceLoginMfaTest {
 
         AuthResponse response = authService.completeMfaLogin("challenge-token-123", "123456", false);
 
-        verify(mfaService).stepUp(admin, "123456");
+        verify(mfaService).verifyLoginTotp(admin, "123456");
         verify(mfaService, never()).consumeRecoveryCode(any(), anyString());
         verify(oneTimeTokenService).invalidate(LOGIN_MFA_NAMESPACE, "challenge-token-123");
         assertThat(response.mfaRequired()).isFalse();
@@ -123,8 +123,8 @@ class AuthServiceLoginMfaTest {
 
         authService.completeMfaLogin("challenge-token-123", "abcd-1234", true);
 
-        verify(mfaService).consumeRecoveryCode(admin, "abcd-1234");
-        verify(mfaService, never()).stepUp(any(), anyString());
+        verify(mfaService).verifyLoginRecoveryCode(admin, "abcd-1234");
+        verify(mfaService, never()).verifyLoginTotp(any(), anyString());
         verify(oneTimeTokenService).invalidate(LOGIN_MFA_NAMESPACE, "challenge-token-123");
     }
 
@@ -135,7 +135,7 @@ class AuthServiceLoginMfaTest {
         when(oneTimeTokenService.read(LOGIN_MFA_NAMESPACE, "challenge-token-123"))
                 .thenReturn(Optional.of(userId.toString()));
         when(userRepository.findById(userId)).thenReturn(Optional.of(admin));
-        doThrow(new BadRequestException("Invalid code.")).when(mfaService).stepUp(admin, "000000");
+        doThrow(new BadRequestException("Invalid code.")).when(mfaService).verifyLoginTotp(admin, "000000");
 
         assertThatThrownBy(() -> authService.completeMfaLogin("challenge-token-123", "000000", false))
                 .isInstanceOf(BadRequestException.class);

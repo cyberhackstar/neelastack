@@ -38,6 +38,7 @@ public class InquiryService {
     private final EmailService emailService;
     private final LeadScoringService leadScoringService;
     private final EstimateCalculatorService estimateCalculatorService;
+    private final ExecutiveReportDispatchService executiveReportDispatchService;
     private final ExecutiveReportPdfService executiveReportPdfService;
     private final AuditLogService auditLogService;
     private final ArchitectureRiskScoringService architectureRiskScoringService;
@@ -123,7 +124,7 @@ public class InquiryService {
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
-        sendExecutiveReportSafely(saved);
+        executiveReportDispatchService.dispatch(saved);
 
         return EstimatorResponseDto.builder()
                 .inquiry(toDto(saved))
@@ -165,7 +166,7 @@ public class InquiryService {
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
-        sendExecutiveReportSafely(saved);
+        executiveReportDispatchService.dispatch(saved);
 
         return toDto(saved);
     }
@@ -215,7 +216,7 @@ public class InquiryService {
 
         emailService.sendInquiryConfirmation(saved);
         emailService.sendAdminNewInquiryAlert(saved);
-        sendExecutiveReportSafely(saved);
+        executiveReportDispatchService.dispatch(saved);
 
         List<AuditFindingDto> findings = report.findings().stream()
                 .map(f -> AuditFindingDto.builder()
@@ -244,22 +245,6 @@ public class InquiryService {
         sb.append("Flagged concerns: ").append(String.join(", ", request.bottlenecks())).append("\n");
         sb.append("Submitted via the /audit-preview lead magnet.");
         return sb.toString();
-    }
-
-    /**
-     * Generates and emails the executive PDF brief for Estimator/Architecture Review leads.
-     * Generation runs synchronously (it's fast, in-memory, and needs the saved entity), but
-     * the send itself is {@code @Async} inside {@link EmailService} — either way, a PDF or
-     * SMTP failure here must never fail the inquiry submission that triggered it.
-     */
-    private void sendExecutiveReportSafely(Inquiry inquiry) {
-        try {
-            byte[] pdf = executiveReportPdfService.generate(inquiry);
-            String fileName = "neelastack-executive-brief-" + inquiry.getId() + ".pdf";
-            emailService.sendExecutiveReport(inquiry, pdf, fileName);
-        } catch (Exception ex) {
-            log.error("Failed to generate/send executive report for inquiry {}: {}", inquiry.getId(), ex.getMessage());
-        }
     }
 
     private String buildArchitectureReviewSummary(ArchitectureReviewRequest request) {

@@ -30,6 +30,11 @@ const RAZORPAY_FIXTURE_CACHE_PATH = path.resolve(
   ".e2e-razorpay-fixture.json",
 );
 
+const ADMIN_STORAGE_STATE_PATH = path.resolve(
+  __dirname,
+  ".e2e-admin-storage-state.json",
+);
+
 interface AuthResponseLike {
   accessToken?: string;
   mustChangePassword?: boolean;
@@ -102,9 +107,7 @@ function saveCachedRazorpayFixture(fixture: RazorpayFixture): void {
 
 async function buildRazorpayFixture(
   context: any,
-  adminEmail: string,
-  adminPassword: string,
-  adminTotpSecret: string,
+  adminToken: string,
 ): Promise<RazorpayFixture> {
   const clientEmail = `e2e-payer-${Date.now()}@example.com`;
   const clientPassword = "E2eTestPassword!23";
@@ -125,58 +128,6 @@ async function buildRazorpayFixture(
   if (!registerRes.ok()) {
     throw new Error(
       `global-setup: register failed: ${registerRes.status()} ${await registerRes.text()}`,
-    );
-  }
-
-  // Login admin with step-up
-  const adminLoginRes = await context.post(
-    `${API_BASE_URL}/api/v1/auth/login`,
-    {
-      data: { email: adminEmail, password: adminPassword },
-    },
-  );
-
-  if (!adminLoginRes.ok()) {
-    throw new Error(
-      `global-setup: admin login failed: ${adminLoginRes.status()} ${await adminLoginRes.text()}`,
-    );
-  }
-
-  const adminLoginBody = await adminLoginRes.json();
-
-  if (!adminLoginBody.mfaRequired) {
-    throw new Error("global-setup: admin login did not trigger MFA challenge");
-  }
-
-  // Complete MFA challenge
-  const mfaRes = await context.post(`${API_BASE_URL}/api/v1/auth/login/mfa`, {
-    data: {
-      mfaToken: adminLoginBody.mfaToken,
-      code: currentTotpCode(adminTotpSecret),
-      useRecoveryCode: false,
-    },
-  });
-
-  if (!mfaRes.ok()) {
-    throw new Error(
-      `global-setup: MFA login failed: ${mfaRes.status()} ${await mfaRes.text()}`,
-    );
-  }
-
-  const adminToken = (await mfaRes.json()).accessToken;
-
-  // Step-up before high-risk mutations
-  const stepUpRes = await context.post(
-    `${API_BASE_URL}/api/v1/admin/mfa/step-up`,
-    {
-      headers: { Authorization: `Bearer ${adminToken}` },
-      data: { code: currentTotpCode(adminTotpSecret) },
-    },
-  );
-
-  if (!stepUpRes.ok()) {
-    throw new Error(
-      `global-setup: MFA step-up failed: ${stepUpRes.status()} ${await stepUpRes.text()}`,
     );
   }
 
@@ -242,11 +193,10 @@ async function buildRazorpayFixture(
  *  2. Log in with bootstrap credentials.
  *  3. Change the bootstrap password when required.
  *  4. Ensure MFA is enrolled.
- *  5. Build Razorpay e2e fixture (engagement + invoice).
+ *  5. Persist the authenticated browser session and build the Razorpay fixture.
  *
- * Deliberately does not perform MFA step-up here because the step-up TTL is
- * intentionally short. Individual fixtures perform step-up immediately before
- * high-risk mutations.
+ * Authenticates the admin once for browser storage state, then performs explicit
+ * step-up only immediately before high-risk fixture creation.
  */
 export default async function globalSetup(): Promise<void> {
   if (!BOOTSTRAP_PASSWORD) {
@@ -467,16 +417,86 @@ export default async function globalSetup(): Promise<void> {
     process.env["E2E_ADMIN_TOTP_SECRET"] = totpSecret;
 
     // -----------------------------------------------------------------------
-    // 4. Build Razorpay fixture (engagement + invoice)
+    // 4. Authenticate the admin once, persist browser state, then perform one
+    // explicit step-up for the fixture creation. Test workers reuse this browser
+    // session instead of racing the account-level MFA limiter.
     // -----------------------------------------------------------------------
-    console.log("global-setup: Building Razorpay e2e fixture...");
-
-    const razorpayFixture = await buildRazorpayFixture(
-      context,
-      BOOTSTRAP_EMAIL,
-      workingPassword,
-      totpSecret,
+    const adminLoginRes = await context.post(
+      `${API_BASE_URL}/api/v1/auth/login`,
+      { data: { email: BOOTSTRAP_EMAIL, password: workingPassword } },
     );
+
+    if (!adminLoginRes.ok()) {
+      throw new Error(
+        `global-setup: final admin login failed: ${adminLoginRes.status()} ${await adminLoginRes.text()}`,
+      );
+    }
+
+    const adminLoginBody: AuthResponseLike = await adminLoginRes.json();
+    if (!adminLoginBody.mfaRequired || !adminLoginBody.mfaToken) {
+      throw new Error(
+        "global-setup: final admin login did not trigger MFA challenge",
+      );
+    }
+
+    const mfaRes = await context.post(`${API_BASE_URL}/api/v1/auth/login/mfa`, {
+      data: {
+        mfaToken: adminLoginBody.mfaToken,
+        code: currentTotpCode(totpSecret),
+        useRecoveryCode: false,
+      },
+    });
+
+    if (!mfaRes.ok()) {
+      throw new Error(
+        `global-setup: final MFA login failed: ${mfaRes.status()} ${await mfaRes.text()}`,
+      );
+    }
+
+    const adminAuthBody = await mfaRes.json();
+    const adminToken = adminAuthBody.accessToken as string | undefined;
+    const adminRefreshToken = adminAuthBody.refreshToken as string | undefined;
+    if (!adminToken || !adminRefreshToken) {
+      throw new Error("global-setup: final MFA login returned no session tokens");
+    }
+
+    process.env["E2E_ADMIN_ACCESS_TOKEN"] = adminToken;
+    process.env["E2E_ADMIN_REFRESH_TOKEN"] = adminRefreshToken;
+
+    fs.writeFileSync(
+      ADMIN_STORAGE_STATE_PATH,
+      JSON.stringify({
+        cookies: [],
+        origins: [
+          {
+            origin: new URL(
+              process.env["BASE_URL"] ?? "http://localhost:4000",
+            ).origin,
+            localStorage: [
+              { name: "neelastack_access_token", value: adminToken },
+              { name: "neelastack_refresh_token", value: adminRefreshToken },
+              { name: "neelastack_user", value: JSON.stringify(adminAuthBody) },
+            ],
+          },
+        ],
+      }, null, 2),
+    );
+
+    const stepUpRes = await context.post(
+      `${API_BASE_URL}/api/v1/admin/mfa/step-up`,
+      {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: { code: currentTotpCode(totpSecret) },
+      },
+    );
+    if (!stepUpRes.ok()) {
+      throw new Error(
+        `global-setup: MFA step-up failed: ${stepUpRes.status()} ${await stepUpRes.text()}`,
+      );
+    }
+
+    console.log("global-setup: Building Razorpay e2e fixture...");
+    const razorpayFixture = await buildRazorpayFixture(context, adminToken);
 
     saveCachedRazorpayFixture(razorpayFixture);
 

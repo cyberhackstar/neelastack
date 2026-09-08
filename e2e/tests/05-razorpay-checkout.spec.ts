@@ -1,12 +1,7 @@
 // e2e/tests/05-razorpay-checkout.spec.ts
 import { test, expect, APIRequestContext } from "@playwright/test";
 import * as crypto from "crypto";
-import {
-  loginAdminWithStepUp,
-  authHeader as adminAuthHeader,
-  requireEnv,
-  stepUp,
-} from "./helpers/admin-auth";
+import { authHeader as adminAuthHeader, requireEnv, stepUp } from "./helpers/admin-auth";
 
 /**
  * Journey 5 (master prompt, Section 3): client pays an invoice through the Razorpay
@@ -28,6 +23,31 @@ import {
 
 const API_BASE_URL = process.env["API_BASE_URL"] ?? "http://localhost:8080";
 const RAZORPAY_KEY_SECRET = process.env["RAZORPAY_KEY_SECRET"] ?? "placeholder";
+
+async function createFreshCheckoutInvoice(request: APIRequestContext, engagementId: string): Promise<{ id: string; description: string }> {
+  const adminToken = requireEnv("E2E_ADMIN_ACCESS_TOKEN");
+  const totpSecret = requireEnv("E2E_ADMIN_TOTP_SECRET");
+
+  // The admin invoice endpoint is step-up protected. Perform the step-up immediately
+  // before the mutation, then give the happy-path test its own never-before-used invoice.
+  await stepUp(request, adminToken, totpSecret);
+
+  const description = `E2E test invoice — checkout journey ${Date.now()}`;
+  const response = await request.post(`${API_BASE_URL}/api/v1/admin/invoices`, {
+    headers: adminAuthHeader(adminToken),
+    data: {
+      engagementId,
+      description,
+      amount: 999,
+      currency: "INR",
+    },
+  });
+
+  expect(response.ok()).toBeTruthy();
+  const invoice = await response.json();
+  expect(invoice.id).toBeTruthy();
+  return { id: invoice.id as string, description };
+}
 
 interface Fixture {
   clientEmail: string;
@@ -119,10 +139,13 @@ test.describe("Razorpay checkout (mocked)", () => {
       }
     });
 
+    const request = await page.context().request;
+    const checkoutInvoice = await createFreshCheckoutInvoice(request, fixture.engagementId);
+
     await page.goto(`/dashboard/${fixture.engagementId}`);
 
     const invoiceRow = page.locator(".invoices li").filter({
-      hasText: "checkout journey",
+      hasText: checkoutInvoice.description,
     });
 
     await expect(invoiceRow).toBeVisible({
@@ -131,7 +154,18 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     await expect(invoiceRow.locator(".tag")).toHaveText("PENDING");
 
+    const verifyResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/v1/client/invoices/${checkoutInvoice.id}/verify`) &&
+        response.request().method() === "POST",
+      { timeout: 10000 },
+    );
+
     await invoiceRow.getByRole("button", { name: /pay now/i }).click();
+
+    const verifyResponse = await verifyResponsePromise;
+    const verifyStatus = verifyResponse.status();
+    expect(verifyStatus, `Payment verification returned HTTP ${verifyStatus}`).toBe(200);
 
     await expect(invoiceRow.locator(".tag")).toHaveText("PAID", {
       timeout: 15000,
@@ -161,11 +195,11 @@ test.describe("Razorpay checkout (mocked)", () => {
     });
 
     const request = await page.context().request;
+    const adminToken = requireEnv("E2E_ADMIN_ACCESS_TOKEN");
 
-    const adminToken = await loginAdminWithStepUp(
+    await stepUp(
       request,
-      requireEnv("E2E_ADMIN_EMAIL"),
-      requireEnv("E2E_ADMIN_PASSWORD"),
+      adminToken,
       requireEnv("E2E_ADMIN_TOTP_SECRET"),
     );
 

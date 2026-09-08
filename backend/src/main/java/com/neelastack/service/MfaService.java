@@ -117,7 +117,7 @@ public class MfaService {
     /** Confirms the first code from the freshly-scanned QR, enrolling the account and issuing recovery codes shown exactly once. */
     @Transactional
     public MfaVerifyResponse verify(User user, String code) {
-        enforceRateLimit(user.getId());
+        enforceRateLimit(user.getId(), "enroll");
 
         String pendingSecret = redisTemplate.opsForValue().get(pendingSecretKey(user.getId()));
         if (pendingSecret == null) {
@@ -150,7 +150,7 @@ public class MfaService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("Incorrect password.");
         }
-        enforceRateLimit(user.getId());
+        enforceRateLimit(user.getId(), "disable");
         if (!codeVerifier.isValidCode(totpEncryptionService.decrypt(user.getTotpSecret()), code)) {
             throw new BadRequestException("Invalid code.");
         }
@@ -198,24 +198,57 @@ public class MfaService {
     }
 
     /**
+     * Verifies a TOTP code during login. A successful login MFA challenge authenticates
+     * the session, but it does not create an independent step-up assertion. High-risk
+     * mutations must still call /admin/mfa/step-up immediately before the mutation.
+     */
+    public void verifyLoginTotp(User user, String code) {
+        if (!user.isMfaEnabled()) {
+            throw new BadRequestException("MFA is not enabled on this account.");
+        }
+        enforceRateLimit(user.getId(), "login");
+        if (!codeVerifier.isValidCode(totpEncryptionService.decrypt(user.getTotpSecret()), code)) {
+            throw new BadRequestException("Invalid code.");
+        }
+    }
+
+    /**
+     * Verifies and consumes a recovery code during login without granting step-up.
+     * Login authentication and step-up authorization are intentionally separate security
+     * events.
+     */
+    @Transactional
+    public void verifyLoginRecoveryCode(User user, String rawCode) {
+        if (!user.isMfaEnabled()) {
+            throw new BadRequestException("MFA is not enabled on this account.");
+        }
+        enforceRateLimit(user.getId(), "login");
+        consumeRecoveryCodeInternal(user, rawCode);
+    }
+
+    /**
      * Consumes one single-use recovery code; on success it counts as a step-up assertion
      * (equivalent to a successful TOTP challenge).
      *
      * Fixed race: matching candidates in Java (bcrypt hashes aren't queryable) then deleting
      * unconditionally meant two concurrent requests presenting the same code could both match
      * before either delete landed. Now the delete itself is the atomic claim — see
-     * MfaRecoveryCodeRepository#deleteByIdAtomic — and a caller that loses the race falls
-     * through to the next candidate (in the rare case bcrypt somehow matched more than one
-     * row) or ultimately gets the same "invalid or already-used" error a legitimate replay
-     * would get.
+     * MfaRecoveryCodeRepository#deleteByIdAtomic.
      */
     @Transactional
     public void consumeRecoveryCode(User user, String rawCode) {
         if (!user.isMfaEnabled()) {
             throw new BadRequestException("MFA is not enabled on this account.");
         }
-        enforceRateLimit(user.getId());
+        enforceRateLimit(user.getId(), "step-up");
+        consumeRecoveryCodeInternal(user, rawCode);
+        grantStepUp(user.getId());
 
+        auditLogService.recordBestEffort(AuditAction.MFA_MODIFIED, "User", user.getId().toString(),
+                Map.of("op", "recovery-code-consumed"));
+    }
+
+    private void consumeRecoveryCodeInternal(User user, String rawCode) {
         List<MfaRecoveryCode> candidates = recoveryCodeRepository.findByUserId(user.getId()).stream()
                 .filter(c -> passwordEncoder.matches(rawCode, c.getCodeHash()))
                 .toList();
@@ -226,26 +259,19 @@ public class MfaService {
                 consumed = true;
                 break;
             }
-            // deleteByIdAtomic returned 0: a concurrent request already claimed this exact
-            // row between our SELECT and this DELETE — try the next candidate, if any.
         }
 
         if (!consumed) {
             throw new BadRequestException("Invalid or already-used recovery code.");
         }
-
-        grantStepUp(user.getId());
-
-        auditLogService.recordBestEffort(AuditAction.MFA_MODIFIED, "User", user.getId().toString(),
-                Map.of("op", "recovery-code-consumed"));
     }
 
-    /** Refreshes the step-up assertion for an already-enrolled user ahead of a high-risk mutation. See StepUpAuthFilter. */
+    /** Refreshes the step-up assertion for an already-enrolled user ahead of a high-risk mutation. */
     public void stepUp(User user, String code) {
         if (!user.isMfaEnabled()) {
             throw new BadRequestException("MFA is not enabled on this account.");
         }
-        enforceRateLimit(user.getId());
+        enforceRateLimit(user.getId(), "step-up");
         if (!codeVerifier.isValidCode(totpEncryptionService.decrypt(user.getTotpSecret()), code)) {
             throw new BadRequestException("Invalid code.");
         }
@@ -279,8 +305,8 @@ public class MfaService {
         return List.of(raw);
     }
 
-    private void enforceRateLimit(UUID userId) {
-        String key = "mfa_attempts:" + userId;
+    private void enforceRateLimit(UUID userId, String operation) {
+        String key = "mfa_attempts:" + operation + ":" + userId;
         try {
             Long count = redisTemplate.opsForValue().increment(key);
             if (count != null && count == 1L) {

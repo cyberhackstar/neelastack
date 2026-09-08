@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { currentTotpCode, requireEnv } from "./helpers/admin-auth";
+import * as path from "path";
 
 /**
  * Journey 4 (master prompt, Section 3): admin login -> the Section 1 "Admin Sales
@@ -15,40 +15,19 @@ import { currentTotpCode, requireEnv } from "./helpers/admin-auth";
  *    *structure* renders correctly in both the populated and empty cases rather than
  *    assuming specific numbers will be present.
  *
- * V24 removed the seeded admin@neelastack.com / ChangeMe@123 fixture. The account this
- * suite now uses is created by AdminBootstrapRunner from ADMIN_BOOTSTRAP_EMAIL/PASSWORD
- * (see ci-cd.yml's e2e job) and starts with mustChangePassword=true. global-setup.ts runs
- * once before any spec, completes that mandatory change via the API AND enrolls MFA on
- * the account (see MfaService) -- by the time this file's workers start,
- * E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD are the final, change-complete credentials and
- * E2E_ADMIN_TOTP_SECRET is that account's confirmed TOTP secret. Because MFA is now
- * enrolled, a plain email+password submit no longer lands on '/' directly -- LoginComponent
- * shows its "Two-factor verification" step (see login.component.html) first, which this
- * fixture completes with a freshly-generated code before continuing.
+ * V24 removed the seeded admin fixture. global-setup.ts now performs the
+ * bootstrap password change, MFA enrollment and one real login, then writes a
+ * Playwright storageState containing that authenticated admin session. This suite reuses
+ * that state instead of making every worker race the account-level MFA rate limiter.
  */
 test.describe("Admin sales management dashboard", () => {
-  const adminEmail = requireEnv("E2E_ADMIN_EMAIL");
-  const adminPassword = requireEnv("E2E_ADMIN_PASSWORD");
-  const adminTotpSecret = requireEnv("E2E_ADMIN_TOTP_SECRET");
+  test.use({
+    storageState: path.resolve(__dirname, "../.e2e-admin-storage-state.json"),
+  });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email", { exact: true }).fill(adminEmail);
-    await page.locator('input[formcontrolname="password"]').fill(adminPassword);
-    await page.getByRole("button", { name: /sign in/i }).click();
-
-    // MFA challenge step -- LoginComponent swaps in the code-entry form once /login
-    // responds with mfaRequired=true (see login.component.ts's mfaToken signal).
-    await page
-      .locator('input[formcontrolname="code"]')
-      .fill(currentTotpCode(adminTotpSecret));
-    await page.getByRole("button", { name: /verify.*sign in/i }).click();
-
-    // LoginComponent#routeAfterLogin always navigates to '/' on success regardless of
-    // role (confirmed in login.component.ts -- it does not branch on ADMIN vs CLIENT),
-    // so wait for that redirect, then navigate to /admin explicitly.
-    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
     await page.goto("/admin");
+    await expect(page).toHaveURL(/\/admin/);
   });
 
   test("summary stats, sales intelligence and proposal intelligence render", async ({
@@ -142,6 +121,9 @@ test.describe("Admin sales management dashboard", () => {
 
   test("non-admin cannot reach the admin dashboard", async ({ page }) => {
     const email = `e2e-nonadmin-${Date.now()}@example.com`;
+    await page.goto("/");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
     await page.goto("/register");
     await page
       .locator('input[formcontrolname="fullName"]')
