@@ -1,9 +1,11 @@
+// e2e/tests/05-razorpay-checkout.spec.ts
 import { test, expect, APIRequestContext } from "@playwright/test";
 import * as crypto from "crypto";
 import {
   loginAdminWithStepUp,
   authHeader as adminAuthHeader,
   requireEnv,
+  stepUp,
 } from "./helpers/admin-auth";
 
 /**
@@ -34,143 +36,6 @@ interface Fixture {
   invoiceId: string;
 }
 
-/** Logs in the admin with a fresh step-up, ready for one high-risk mutation. */
-async function adminTokenWithStepUp(request: APIRequestContext): Promise<string> {
-  return loginAdminWithStepUp(
-    request,
-    requireEnv("E2E_ADMIN_EMAIL"),
-    requireEnv("E2E_ADMIN_PASSWORD"),
-    requireEnv("E2E_ADMIN_TOTP_SECRET"),
-  );
-}
-
-async function buildFixture(request: APIRequestContext): Promise<Fixture> {
-  const clientEmail = `e2e-payer-${Date.now()}@example.com`;
-
-  const clientPassword = "E2eTestPassword!23";
-
-  const registerRes = await request.post(
-    `${API_BASE_URL}/api/v1/auth/register`,
-    {
-      data: {
-        fullName: "E2E Payer",
-        email: clientEmail,
-        password: clientPassword,
-        phone: "",
-      },
-    },
-  );
-
-  expect(
-    registerRes.ok(),
-    `register failed: ${registerRes.status()} ${await registerRes.text()}`,
-  ).toBeTruthy();
-
-  const adminToken = await adminTokenWithStepUp(request);
-
-  const authHeader = adminAuthHeader(adminToken);
-
-  const engagementRes = await request.post(
-    `${API_BASE_URL}/api/v1/admin/engagements`,
-    {
-      headers: authHeader,
-      data: {
-        clientEmail,
-        title: "E2E Checkout Fixture Project",
-        description:
-          "Created by the Playwright e2e suite (journey 5) for a checkout test.",
-      },
-    },
-  );
-
-  expect(
-    engagementRes.ok(),
-    `engagement create failed: ${engagementRes.status()} ${await engagementRes.text()}`,
-  ).toBeTruthy();
-
-  const engagement = await engagementRes.json();
-
-  const invoiceRes = await request.post(
-    `${API_BASE_URL}/api/v1/admin/invoices`,
-    {
-      headers: authHeader,
-      data: {
-        engagementId: engagement.id,
-        description: "E2E test invoice — checkout journey",
-        amount: 999,
-        currency: "INR",
-      },
-    },
-  );
-
-  expect(
-    invoiceRes.ok(),
-    `invoice create failed: ${invoiceRes.status()} ${await invoiceRes.text()}`,
-  ).toBeTruthy();
-
-  const invoice = await invoiceRes.json();
-
-  return {
-    clientEmail,
-    clientPassword,
-    engagementId: engagement.id,
-    invoiceId: invoice.id,
-  };
-}
-
-/**
- * Fake checkout.js.
- */
-function fakeRazorpayScript(keySecret: string): string {
-  return `
-    window.Razorpay = function(options) {
-      this.options = options;
-
-      this.open = async function() {
-        const encoder = new TextEncoder();
-
-        const key = await crypto.subtle.importKey(
-          'raw',
-          encoder.encode(${JSON.stringify(keySecret)}),
-          { name: 'HMAC', hash: 'SHA-256' },
-          false,
-          ['sign']
-        );
-
-        const paymentId =
-          'pay_e2e_mock_' + Date.now();
-
-        const signed =
-          await crypto.subtle.sign(
-            'HMAC',
-            key,
-            encoder.encode(
-              this.options.order_id + '|' + paymentId
-            )
-          );
-
-        const signature =
-          Array.from(new Uint8Array(signed))
-            .map((b) =>
-              b.toString(16).padStart(2, '0')
-            )
-            .join('');
-
-        this.options.handler({
-          razorpay_order_id:
-            this.options.order_id,
-
-          razorpay_payment_id:
-            paymentId,
-
-          razorpay_signature:
-            signature,
-        });
-      };
-    };
-  `;
-}
-
 test.describe("Razorpay checkout (mocked)", () => {
   let fixture: Fixture;
 
@@ -185,7 +50,9 @@ test.describe("Razorpay checkout (mocked)", () => {
             options.handler({
               razorpay_order_id: options.order_id,
               razorpay_payment_id: "pay_e2e_mock_" + Date.now(),
-              razorpay_signature: isInvalid ? "e2e-invalid-signature" : "e2e-valid-signature",
+              razorpay_signature: isInvalid
+                ? "e2e-invalid-signature"
+                : "e2e-valid-signature",
             });
           }, 10);
         };
@@ -193,23 +60,17 @@ test.describe("Razorpay checkout (mocked)", () => {
     }, invalid);
   });
 
-  test.beforeAll(async ({ playwright }) => {
-    const request = await playwright.request.newContext();
-
-    fixture = await buildFixture(request);
-
-    await request.dispose();
+  test.beforeAll(async () => {
+    // Load fixture created by global-setup.ts
+    fixture = {
+      clientEmail: requireEnv("E2E_RAZORPAY_CLIENT_EMAIL"),
+      clientPassword: requireEnv("E2E_RAZORPAY_CLIENT_PASSWORD"),
+      engagementId: requireEnv("E2E_RAZORPAY_ENGAGEMENT_ID"),
+      invoiceId: requireEnv("E2E_RAZORPAY_INVOICE_ID"),
+    };
   });
 
   test("client pays a pending invoice end to end", async ({ page }) => {
-    /**
-     * ---------------------------------------------------------------------
-     * Diagnostics
-     * ---------------------------------------------------------------------
-     *
-     * These listeners are intentionally diagnostic only.
-     * They do not alter application behavior.
-     */
     page.on("console", (msg) => {
       console.log(`[BROWSER ${msg.type()}] ${msg.text()}`);
     });
@@ -239,35 +100,8 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     await page.waitForURL("/", { timeout: 10000 });
 
-    /**
-     * ---------------------------------------------------------------------
-     * LOGIN STATE DIAGNOSTICS
-     * ---------------------------------------------------------------------
-     */
     console.log("AFTER LOGIN URL:", page.url());
 
-    console.log(
-      "ACCESS TOKEN PRESENT:",
-      await page.evaluate(
-        () => !!localStorage.getItem("neelastack_access_token"),
-      ),
-    );
-
-    console.log(
-      "STORED USER PRESENT:",
-      await page.evaluate(() => !!localStorage.getItem("neelastack_user")),
-    );
-
-    console.log(
-      "ACCESS TOKEN LENGTH:",
-      await page.evaluate(
-        () => localStorage.getItem("neelastack_access_token")?.length ?? 0,
-      ),
-    );
-
-    /**
-     * Capture all API requests made by this page.
-     */
     page.on("request", (request) => {
       if (request.url().includes("/api/")) {
         console.log("[API REQUEST]", request.method(), request.url());
@@ -287,38 +121,6 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     await page.goto(`/dashboard/${fixture.engagementId}`);
 
-    /**
-     * ---------------------------------------------------------------------
-     * DASHBOARD NAVIGATION DIAGNOSTICS
-     * ---------------------------------------------------------------------
-     */
-    console.log("AFTER DASHBOARD NAVIGATION URL:", page.url());
-
-    console.log(
-      "ACCESS TOKEN AFTER DASHBOARD:",
-      await page.evaluate(
-        () => !!localStorage.getItem("neelastack_access_token"),
-      ),
-    );
-
-    console.log(
-      "STORED USER AFTER DASHBOARD:",
-      await page.evaluate(() => !!localStorage.getItem("neelastack_user")),
-    );
-
-    /**
-     * Dump visible page information so a redirect/error page is obvious.
-     */
-    console.log("DASHBOARD PAGE TITLE:", await page.title());
-
-    console.log(
-      "DASHBOARD BODY TEXT:",
-      (await page.locator("body").innerText()).slice(0, 3000),
-    );
-
-    /**
-     * Existing functional assertion.
-     */
     const invoiceRow = page.locator(".invoices li").filter({
       hasText: "checkout journey",
     });
@@ -341,9 +143,6 @@ test.describe("Razorpay checkout (mocked)", () => {
   test("an invalid signature is rejected and the invoice is marked FAILED", async ({
     page,
   }) => {
-    /**
-     * Diagnostic browser listeners.
-     */
     page.on("console", (msg) => {
       console.log(`[BROWSER ${msg.type()}] ${msg.text()}`);
     });
@@ -363,7 +162,12 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     const request = await page.context().request;
 
-    const adminToken = await adminTokenWithStepUp(request);
+    const adminToken = await loginAdminWithStepUp(
+      request,
+      requireEnv("E2E_ADMIN_EMAIL"),
+      requireEnv("E2E_ADMIN_PASSWORD"),
+      requireEnv("E2E_ADMIN_TOTP_SECRET"),
+    );
 
     const invoiceRes = await request.post(
       `${API_BASE_URL}/api/v1/admin/invoices`,
@@ -371,9 +175,7 @@ test.describe("Razorpay checkout (mocked)", () => {
         headers: adminAuthHeader(adminToken),
         data: {
           engagementId: fixture.engagementId,
-
           description: "E2E test invoice — bad signature",
-
           amount: 500,
           currency: "INR",
         },
@@ -394,21 +196,6 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     await page.waitForURL("/", { timeout: 10000 });
 
-    /**
-     * Login diagnostics.
-     */
-    console.log("SECOND TEST - AFTER LOGIN URL:", page.url());
-
-    console.log(
-      "SECOND TEST - ACCESS TOKEN PRESENT:",
-      await page.evaluate(
-        () => !!localStorage.getItem("neelastack_access_token"),
-      ),
-    );
-
-    /**
-     * API diagnostics.
-     */
     page.on("request", (req) => {
       if (req.url().includes("/api/")) {
         console.log("[SECOND TEST API REQUEST]", req.method(), req.url());
@@ -428,23 +215,6 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     await page.goto(`/dashboard/${fixture.engagementId}`);
 
-    /**
-     * Dashboard diagnostics.
-     */
-    console.log("SECOND TEST - AFTER DASHBOARD URL:", page.url());
-
-    console.log(
-      "SECOND TEST - ACCESS TOKEN AFTER DASHBOARD:",
-      await page.evaluate(
-        () => !!localStorage.getItem("neelastack_access_token"),
-      ),
-    );
-
-    console.log(
-      "SECOND TEST - BODY TEXT:",
-      (await page.locator("body").innerText()).slice(0, 3000),
-    );
-
     const invoiceRow = page.locator(".invoices li").filter({
       hasText: "bad signature",
     });
@@ -462,6 +232,3 @@ test.describe("Razorpay checkout (mocked)", () => {
     await expect(invoiceRow.locator(".tag")).not.toHaveText("PAID");
   });
 });
-
-
-

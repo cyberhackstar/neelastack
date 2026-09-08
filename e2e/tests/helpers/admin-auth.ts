@@ -94,15 +94,29 @@ export async function loginAdmin(
  * step-up performed earlier in the test run to still be within its TTL window (default
  * 10 minutes, MFA_STEP_UP_TTL_MINUTES) -- see review item #24 on beforeAll-shared state.
  */
+// In e2e/tests/helpers/admin-auth.ts
+
 export async function stepUp(
   request: APIRequestContext,
   accessToken: string,
   totpSecret: string,
+  retryCount = 0,
 ): Promise<void> {
   const res = await request.post(`${API_BASE_URL}/api/v1/admin/mfa/step-up`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     data: { code: currentTotpCode(totpSecret) },
   });
+
+  if (!res.ok() && res.status() === 400) {
+    const body = await json(res);
+    if (body.message?.includes("Too many MFA attempts") && retryCount < 3) {
+      // Wait with exponential backoff: 10s, 20s, 40s
+      const delayMs = (retryCount + 1) * 10000;
+      console.log(`MFA rate limited, retrying in ${delayMs}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return stepUp(request, accessToken, totpSecret, retryCount + 1);
+    }
+  }
 
   expect(
     res.ok(),

@@ -1,3 +1,4 @@
+// e2e/global-setup.ts
 import { request as playwrightRequest } from "@playwright/test";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
@@ -19,14 +20,14 @@ const BOOTSTRAP_PASSWORD =
 const FINAL_ADMIN_PASSWORD =
   process.env["E2E_FINAL_ADMIN_PASSWORD"] ?? "E2ePostBootstrap!Passw0rd23";
 
-// Persisted only on the machine running the suite (gitignored), so a local dev
-// environment whose Postgres volume survives between runs doesn't hit
-// "MFA is already enabled" on the second run with no way to recover the secret it
-// enrolled the first time. In CI the Postgres volume is created fresh every run, so
-// this file is simply absent and a new secret gets enrolled + persisted every time.
 const MFA_SECRET_CACHE_PATH = path.resolve(
   __dirname,
   ".e2e-admin-mfa-secret.json",
+);
+
+const RAZORPAY_FIXTURE_CACHE_PATH = path.resolve(
+  __dirname,
+  ".e2e-razorpay-fixture.json",
 );
 
 interface AuthResponseLike {
@@ -34,6 +35,13 @@ interface AuthResponseLike {
   mustChangePassword?: boolean;
   mfaRequired?: boolean;
   mfaToken?: string;
+}
+
+interface RazorpayFixture {
+  clientEmail: string;
+  clientPassword: string;
+  engagementId: string;
+  invoiceId: string;
 }
 
 function currentTotpCode(base32Secret: string): string {
@@ -75,6 +83,155 @@ function saveCachedSecret(email: string, secret: string): void {
   fs.writeFileSync(MFA_SECRET_CACHE_PATH, JSON.stringify(cache, null, 2));
 }
 
+function loadCachedRazorpayFixture(): RazorpayFixture | undefined {
+  try {
+    return JSON.parse(
+      fs.readFileSync(RAZORPAY_FIXTURE_CACHE_PATH, "utf-8"),
+    ) as RazorpayFixture;
+  } catch {
+    return undefined;
+  }
+}
+
+function saveCachedRazorpayFixture(fixture: RazorpayFixture): void {
+  fs.writeFileSync(
+    RAZORPAY_FIXTURE_CACHE_PATH,
+    JSON.stringify(fixture, null, 2),
+  );
+}
+
+async function buildRazorpayFixture(
+  context: any,
+  adminEmail: string,
+  adminPassword: string,
+  adminTotpSecret: string,
+): Promise<RazorpayFixture> {
+  const clientEmail = `e2e-payer-${Date.now()}@example.com`;
+  const clientPassword = "E2eTestPassword!23";
+
+  // Register client
+  const registerRes = await context.post(
+    `${API_BASE_URL}/api/v1/auth/register`,
+    {
+      data: {
+        fullName: "E2E Payer",
+        email: clientEmail,
+        password: clientPassword,
+        phone: "",
+      },
+    },
+  );
+
+  if (!registerRes.ok()) {
+    throw new Error(
+      `global-setup: register failed: ${registerRes.status()} ${await registerRes.text()}`,
+    );
+  }
+
+  // Login admin with step-up
+  const adminLoginRes = await context.post(
+    `${API_BASE_URL}/api/v1/auth/login`,
+    {
+      data: { email: adminEmail, password: adminPassword },
+    },
+  );
+
+  if (!adminLoginRes.ok()) {
+    throw new Error(
+      `global-setup: admin login failed: ${adminLoginRes.status()} ${await adminLoginRes.text()}`,
+    );
+  }
+
+  const adminLoginBody = await adminLoginRes.json();
+
+  if (!adminLoginBody.mfaRequired) {
+    throw new Error("global-setup: admin login did not trigger MFA challenge");
+  }
+
+  // Complete MFA challenge
+  const mfaRes = await context.post(`${API_BASE_URL}/api/v1/auth/login/mfa`, {
+    data: {
+      mfaToken: adminLoginBody.mfaToken,
+      code: currentTotpCode(adminTotpSecret),
+      useRecoveryCode: false,
+    },
+  });
+
+  if (!mfaRes.ok()) {
+    throw new Error(
+      `global-setup: MFA login failed: ${mfaRes.status()} ${await mfaRes.text()}`,
+    );
+  }
+
+  const adminToken = (await mfaRes.json()).accessToken;
+
+  // Step-up before high-risk mutations
+  const stepUpRes = await context.post(
+    `${API_BASE_URL}/api/v1/admin/mfa/step-up`,
+    {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: { code: currentTotpCode(adminTotpSecret) },
+    },
+  );
+
+  if (!stepUpRes.ok()) {
+    throw new Error(
+      `global-setup: MFA step-up failed: ${stepUpRes.status()} ${await stepUpRes.text()}`,
+    );
+  }
+
+  // Create engagement
+  const engagementRes = await context.post(
+    `${API_BASE_URL}/api/v1/admin/engagements`,
+    {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: {
+        clientEmail,
+        title: "E2E Checkout Fixture Project",
+        description:
+          "Created by the Playwright e2e suite (journey 5) for a checkout test.",
+      },
+    },
+  );
+
+  if (!engagementRes.ok()) {
+    throw new Error(
+      `global-setup: engagement create failed: ${engagementRes.status()} ${await engagementRes.text()}`,
+    );
+  }
+
+  const engagement = await engagementRes.json();
+
+  // Create invoice
+  const invoiceRes = await context.post(
+    `${API_BASE_URL}/api/v1/admin/invoices`,
+    {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: {
+        engagementId: engagement.id,
+        description: "E2E test invoice — checkout journey",
+        amount: 999,
+        currency: "INR",
+      },
+    },
+  );
+
+  if (!invoiceRes.ok()) {
+    throw new Error(
+      `global-setup: invoice create failed: ${invoiceRes.status()} ${await invoiceRes.text()}`,
+    );
+  }
+
+  const invoice = await invoiceRes.json();
+
+  return {
+    clientEmail,
+    clientPassword,
+    engagementId: engagement.id,
+    invoiceId: invoice.id,
+  };
+}
+
 /**
  * Global setup for the whole suite.
  *
@@ -85,6 +242,7 @@ function saveCachedSecret(email: string, secret: string): void {
  *  2. Log in with bootstrap credentials.
  *  3. Change the bootstrap password when required.
  *  4. Ensure MFA is enrolled.
+ *  5. Build Razorpay e2e fixture (engagement + invoice).
  *
  * Deliberately does not perform MFA step-up here because the step-up TTL is
  * intentionally short. Individual fixtures perform step-up immediately before
@@ -307,6 +465,28 @@ export default async function globalSetup(): Promise<void> {
     }
 
     process.env["E2E_ADMIN_TOTP_SECRET"] = totpSecret;
+
+    // -----------------------------------------------------------------------
+    // 4. Build Razorpay fixture (engagement + invoice)
+    // -----------------------------------------------------------------------
+    console.log("global-setup: Building Razorpay e2e fixture...");
+
+    const razorpayFixture = await buildRazorpayFixture(
+      context,
+      BOOTSTRAP_EMAIL,
+      workingPassword,
+      totpSecret,
+    );
+
+    saveCachedRazorpayFixture(razorpayFixture);
+
+    process.env["E2E_RAZORPAY_CLIENT_EMAIL"] = razorpayFixture.clientEmail;
+    process.env["E2E_RAZORPAY_CLIENT_PASSWORD"] =
+      razorpayFixture.clientPassword;
+    process.env["E2E_RAZORPAY_ENGAGEMENT_ID"] = razorpayFixture.engagementId;
+    process.env["E2E_RAZORPAY_INVOICE_ID"] = razorpayFixture.invoiceId;
+
+    console.log("global-setup: Razorpay fixture created successfully.");
   } finally {
     await context.dispose();
   }

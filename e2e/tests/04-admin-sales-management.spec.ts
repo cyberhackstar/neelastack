@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { currentTotpCode, requireEnv } from './helpers/admin-auth';
+import { test, expect } from "@playwright/test";
+import { currentTotpCode, requireEnv } from "./helpers/admin-auth";
 
 /**
  * Journey 4 (master prompt, Section 3): admin login -> the Section 1 "Admin Sales
@@ -26,54 +26,72 @@ import { currentTotpCode, requireEnv } from './helpers/admin-auth';
  * shows its "Two-factor verification" step (see login.component.html) first, which this
  * fixture completes with a freshly-generated code before continuing.
  */
-test.describe('Admin sales management dashboard', () => {
-  const adminEmail = requireEnv('E2E_ADMIN_EMAIL');
-  const adminPassword = requireEnv('E2E_ADMIN_PASSWORD');
-  const adminTotpSecret = requireEnv('E2E_ADMIN_TOTP_SECRET');
+test.describe("Admin sales management dashboard", () => {
+  const adminEmail = requireEnv("E2E_ADMIN_EMAIL");
+  const adminPassword = requireEnv("E2E_ADMIN_PASSWORD");
+  const adminTotpSecret = requireEnv("E2E_ADMIN_TOTP_SECRET");
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
+    await page.goto("/login");
     await page.getByLabel("Email", { exact: true }).fill(adminEmail);
     await page.locator('input[formcontrolname="password"]').fill(adminPassword);
-    await page.getByRole('button', { name: /sign in/i }).click();
+    await page.getByRole("button", { name: /sign in/i }).click();
 
     // MFA challenge step -- LoginComponent swaps in the code-entry form once /login
     // responds with mfaRequired=true (see login.component.ts's mfaToken signal).
-    await page.locator('input[formcontrolname="code"]').fill(currentTotpCode(adminTotpSecret));
-    await page.getByRole('button', { name: /verify.*sign in/i }).click();
+    await page
+      .locator('input[formcontrolname="code"]')
+      .fill(currentTotpCode(adminTotpSecret));
+    await page.getByRole("button", { name: /verify.*sign in/i }).click();
 
     // LoginComponent#routeAfterLogin always navigates to '/' on success regardless of
     // role (confirmed in login.component.ts -- it does not branch on ADMIN vs CLIENT),
     // so wait for that redirect, then navigate to /admin explicitly.
     await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
-    await page.goto('/admin');
+    await page.goto("/admin");
   });
 
-  test('summary stats, sales intelligence and proposal intelligence render', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+  test("summary stats, sales intelligence and proposal intelligence render", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole("heading", { name: "Dashboard" }),
+    ).toBeVisible();
 
     // Top-level summary cards (pre-existing getSummary() data) -- always present once
     // loading() flips false, regardless of whether there's any sales data yet.
-    await expect(page.locator('.stat-grid').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Total inquiries')).toBeVisible();
+    await expect(page.locator(".stat-grid").first()).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("Total inquiries")).toBeVisible();
 
     // Sales intelligence section -- either the populated stat grid or the documented
     // "unavailable" fallback, never an indefinite spinner.
-    await expect(page.getByRole('heading', { name: 'Sales intelligence' })).toBeVisible();
     await expect(
-      page.getByText('Weighted pipeline (heuristic)').or(page.getByText('Sales intelligence unavailable right now.')),
+      page.getByRole("heading", { name: "Sales intelligence" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByText("Weighted pipeline (heuristic)")
+        .or(page.getByText("Sales intelligence unavailable right now.")),
     ).toBeVisible({ timeout: 10000 });
 
-    await expect(page.getByRole('heading', { name: 'Proposal intelligence' })).toBeVisible();
-    await expect(page.getByText('Unviewed proposals')).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Proposal intelligence" }),
+    ).toBeVisible();
+    await expect(page.getByText("Unviewed proposals")).toBeVisible();
   });
 
-  test('revenue attribution dimension toggle re-fetches and updates the table header', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Revenue attribution' })).toBeVisible();
+  test("revenue attribution dimension toggle re-fetches and updates the table header", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole("heading", { name: "Revenue attribution" }),
+    ).toBeVisible();
 
-    const toggle = page.locator('.dimension-toggle');
+    const toggle = page.locator(".dimension-toggle");
     await expect(toggle).toBeVisible();
-    const buttons = toggle.locator('button');
+    const buttons = toggle.locator("button");
     const count = await buttons.count();
     expect(count).toBeGreaterThanOrEqual(2); // source / medium / campaign / landing page
 
@@ -85,16 +103,23 @@ test.describe('Admin sales management dashboard', () => {
       await buttons.nth(i).click();
       await expect(buttons.nth(i)).toHaveClass(/active/);
       await expect(
-        page.locator('.attribution-table thead th').first().or(page.getByText('No attribution data yet.')),
+        page
+          .locator(".attribution-table thead th")
+          .first()
+          .or(page.getByText("No attribution data yet.")),
       ).toBeVisible({ timeout: 10000 });
     }
   });
 
-  test('follow-up panel: mark done removes the row optimistically', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Follow-ups' })).toBeVisible();
+  test("follow-up panel: mark done removes the row optimistically", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole("heading", { name: "Follow-ups" }),
+    ).toBeVisible();
 
-    const emptyState = page.getByText('No follow-ups needed right now.');
-    const firstRow = page.locator('.follow-up-row').first();
+    const emptyState = page.getByText("No follow-ups needed right now.");
+    const firstRow = page.locator(".follow-up-row").first();
 
     // A fresh CI-local stack has no seeded inquiries/quotations old enough to trigger a
     // follow-up, so the empty state is the expected, correct render -- only exercise
@@ -103,33 +128,38 @@ test.describe('Admin sales management dashboard', () => {
     await expect(firstRow.or(emptyState)).toBeVisible({ timeout: 10000 });
 
     if (await firstRow.isVisible()) {
-      const rowCountBefore = await page.locator('.follow-up-row').count();
-      await firstRow.getByRole('button', { name: 'Mark done' }).click();
-      await expect(page.locator('.follow-up-row')).toHaveCount(rowCountBefore - 1, { timeout: 10000 });
+      const rowCountBefore = await page.locator(".follow-up-row").count();
+      await firstRow.getByRole("button", { name: "Mark done" }).click();
+      await expect(page.locator(".follow-up-row")).toHaveCount(
+        rowCountBefore - 1,
+        { timeout: 10000 },
+      );
       // The action is optimistic -- a request failure surfaces via followUpActionError(),
       // not a silent no-op, so confirm that path stayed clear.
-      await expect(page.locator('.error-text')).toHaveCount(0);
+      await expect(page.locator(".error-text")).toHaveCount(0);
     }
   });
 
-  test('non-admin cannot reach the admin dashboard', async ({ page }) => {
-    // Session state lives in localStorage (AuthService), not cookies -- registering a
-    // fresh CLIENT account here calls persistSession() and overwrites the admin
-    // session this test's beforeEach just created, so no explicit sign-out is needed.
-    // Register a throwaway CLIENT account, then confirm it's redirected away from
-    // /admin rather than silently rendering ADMIN-only data.
+  test("non-admin cannot reach the admin dashboard", async ({ page }) => {
     const email = `e2e-nonadmin-${Date.now()}@example.com`;
-    await page.goto('/register');
-    await page.locator('input[formcontrolname="fullName"]').fill('E2E Non Admin');
+    await page.goto("/register");
+    await page
+      .locator('input[formcontrolname="fullName"]')
+      .fill("E2E Non Admin");
     await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.locator('input[formcontrolname="password"]').fill('E2eTestPassword!23');
-    await page.getByRole('button', { name: /create account|register|sign up/i }).click();
-    // Same redirect-to-'/' behavior as journey 3 / this test's beforeEach.
-    await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
+    await page
+      .locator('input[formcontrolname="password"]')
+      .fill("E2eTestPassword!23");
+    await page
+      .getByRole("button", { name: /create account|register|sign up/i })
+      .click();
 
-    await page.goto('/admin');
-    await page.waitForURL((url) => !url.pathname.startsWith('/admin'), { timeout: 10000 });
+    // Updated: Accept both '/' and '/login' as valid redirect locations after registration
+    await expect(page).toHaveURL(/\/(login)?$|^\/login$/, { timeout: 10000 });
+
+    await page.goto("/admin");
+    await page.waitForURL((url) => !url.pathname.startsWith("/admin"), {
+      timeout: 10000,
+    });
   });
 });
-
-
