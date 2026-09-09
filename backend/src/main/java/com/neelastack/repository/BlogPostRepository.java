@@ -19,9 +19,9 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, UUID> {
     @Query("""
             SELECT DISTINCT p FROM BlogPost p LEFT JOIN p.tags t
             WHERE p.published = true
-            AND (:q IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%'))
+            AND (:q = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%'))
                  OR LOWER(p.excerpt) LIKE LOWER(CONCAT('%', :q, '%')))
-            AND (:tag IS NULL OR LOWER(t) = LOWER(:tag))
+            AND (:tag = '' OR LOWER(t) = LOWER(:tag))
             ORDER BY p.publishedAt DESC
             """)
     Page<BlogPost> search(@Param("q") String query, @Param("tag") String tag, Pageable pageable);

@@ -202,6 +202,14 @@ export const routes: Routes = [
         title: 'Manage Solutions — Neelastack Admin',
       },
       {
+        path: 'engagements',
+        loadComponent: () =>
+          import('./features/admin/engagements/admin-engagements.component').then(
+            (m) => m.AdminEngagementsComponent,
+          ),
+        title: 'Client Projects — Neelastack Admin',
+      },
+      {
         path: 'inquiries',
         loadComponent: () =>
           import('./features/admin/inquiries/list/admin-inquiries-list.component').then(

@@ -49,8 +49,11 @@ public class BlogPostService {
 
     @Transactional(readOnly = true)
     public Page<BlogPostSummaryDto> search(String query, String tag, Pageable pageable) {
-        String normalizedQuery = (query == null || query.isBlank()) ? null : query.trim();
-        String normalizedTag = (tag == null || tag.isBlank()) ? null : tag.trim();
+        // Always bind concrete String values. PostgreSQL/Hibernate can otherwise infer a
+        // null search parameter as bytea in the LOWER(...) expressions, producing
+        // "function lower(bytea) does not exist" for an otherwise valid public /blog request.
+        String normalizedQuery = (query == null || query.isBlank()) ? "" : query.trim();
+        String normalizedTag = (tag == null || tag.isBlank()) ? "" : tag.trim();
         return blogPostRepository.search(normalizedQuery, normalizedTag, pageable).map(this::toSummaryDto);
     }
 

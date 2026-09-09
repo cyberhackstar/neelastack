@@ -33,8 +33,11 @@ export class AdminLayoutComponent {
       links: [{ label: 'Dashboard', path: '/admin', icon: 'grid', exact: true }],
     },
     {
-      heading: 'Sales',
-      links: [{ label: 'Inquiries', path: '/admin/inquiries', icon: 'inbox' }],
+      heading: 'Sales & Delivery',
+      links: [
+        { label: 'Inquiries', path: '/admin/inquiries', icon: 'inbox' },
+        { label: 'Client Projects', path: '/admin/engagements', icon: 'briefcase' },
+      ],
     },
     {
       heading: 'Content',

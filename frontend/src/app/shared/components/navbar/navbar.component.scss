@@ -7,7 +7,8 @@
   top: 0;
   z-index: 50;
   padding-top: env(safe-area-inset-top);
-  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  // Keep geometry and filter cost stable during native touch scrolling on iOS.
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 // A hairline edge in the accent color rather than a flat border — reads as
@@ -33,10 +34,11 @@
 
 .navbar.scrolled {
   background: rgba(var(--color-bg-rgb), 0.92);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  // Do not animate blur/shadow on the scroll compositor path.
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
   border-bottom-color: var(--color-border);
-  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.45);
 }
 
 .navbar.scrolled::after {
@@ -47,13 +49,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 64px;
   padding: 0.4rem 1.5rem;
   gap: 1.5rem;
-  transition: padding 0.25s ease;
-}
-
-.navbar.scrolled .navbar-inner {
-  padding: 0.3rem 1.5rem;
 }
 
 app-logo {
@@ -449,6 +447,25 @@ app-logo {
   }
   .navbar,
   .navbar-inner,
+  .navbar::after {
+    transition: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    background: rgba(var(--color-bg-rgb), 0.94);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .navbar.scrolled {
+    background: rgba(var(--color-bg-rgb), 0.97);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 4px 16px -10px rgba(0, 0, 0, 0.5);
+  }
+
   .navbar::after {
     transition: none;
   }

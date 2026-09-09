@@ -6,10 +6,12 @@ import {
   AnalyticsSummary,
   AttributionBreakdown,
   AttributionDimension,
+  Engagement,
   FollowUpTask,
   SalesIntelligence,
 } from '../../../core/models/content.model';
 import { SeoService } from '../../../core/services/seo.service';
+import { EngagementService } from '../../../core/services/engagement.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -21,6 +23,7 @@ import { SeoService } from '../../../core/services/seo.service';
 export class AdminDashboardComponent implements OnInit {
   private analyticsService = inject(AnalyticsService);
   private seo = inject(SeoService);
+  private engagementService = inject(EngagementService);
 
   // Each panel has its own signal + loading flag, loaded independently, so a slow
   // attribution query never blocks the KPI row (or any other panel) from rendering.
@@ -37,6 +40,10 @@ export class AdminDashboardComponent implements OnInit {
   followUps = signal<FollowUpTask[] | null>(null);
   followUpsLoading = signal(true);
   followUpActionError = signal<string | null>(null);
+
+  clientProjects = signal<Engagement[]>([]);
+  clientProjectsLoading = signal(true);
+  clientProjectsError = signal<string | null>(null);
 
   readonly dimensions: { value: AttributionDimension; label: string }[] = [
     { value: 'SOURCE', label: 'Source' },
@@ -66,6 +73,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loadAttribution('SOURCE');
     this.loadFollowUps();
+    this.loadClientProjects();
   }
 
   loadAttribution(dimension: AttributionDimension): void {
@@ -113,6 +121,23 @@ export class AdminDashboardComponent implements OnInit {
       error: () => {
         this.followUps.set(prior);
         this.followUpActionError.set('Could not snooze that. Try again.');
+      },
+    });
+  }
+
+
+  loadClientProjects(): void {
+    this.clientProjectsLoading.set(true);
+    this.clientProjectsError.set(null);
+
+    this.engagementService.listAllForAdmin().subscribe({
+      next: (rows) => {
+        this.clientProjects.set(rows.slice(0, 5));
+        this.clientProjectsLoading.set(false);
+      },
+      error: () => {
+        this.clientProjectsLoading.set(false);
+        this.clientProjectsError.set('Client projects are temporarily unavailable. Open the Client Projects page to retry.');
       },
     });
   }

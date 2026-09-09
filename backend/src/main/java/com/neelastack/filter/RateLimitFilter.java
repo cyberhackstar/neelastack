@@ -131,20 +131,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-
-        if (forwarded != null && !forwarded.isBlank()) {
-            String first = forwarded.split(",", 2)[0].trim();
-
-            if (!first.isBlank()) {
-                return first;
-            }
+        // Production traffic is Cloudflare -> cloudflared -> nginx -> Spring.
+        // CF-Connecting-IP is therefore the stable end-user address when present.
+        String cloudflareIp = request.getHeader("CF-Connecting-IP");
+        if (cloudflareIp != null && !cloudflareIp.isBlank()) {
+            return cloudflareIp.trim();
         }
 
         String realIp = request.getHeader("X-Real-IP");
-
         if (realIp != null && !realIp.isBlank()) {
             return realIp.trim();
+        }
+
+        // Local/E2E proxy fallback. Do not trust the first user-supplied XFF hop.
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            String[] hops = forwarded.split(",");
+            String last = hops[hops.length - 1].trim();
+            if (!last.isBlank()) {
+                return last;
+            }
         }
 
         return request.getRemoteAddr();

@@ -111,9 +111,16 @@ export class NavbarComponent {
   // Tighten the bar and strengthen the blur/shadow once the page has
   // scrolled past the hero, so it reads as a deliberate "docked" state
   // rather than a static bar sitting on top of the content.
+  private lastScrolledState = false;
+
   @HostListener('window:scroll')
   onScroll(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.scrolled.set(this.document.defaultView!.scrollY > 8);
+
+    const nextScrolledState = this.document.defaultView!.scrollY > 24;
+    if (nextScrolledState === this.lastScrolledState) return;
+
+    this.lastScrolledState = nextScrolledState;
+    this.scrolled.set(nextScrolledState);
   }
 }

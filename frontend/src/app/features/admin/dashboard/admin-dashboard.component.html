@@ -22,7 +22,7 @@
         </div>
         <div class="card stat">
           <span class="stat-value">{{ summary.totalEngagements }}</span>
-          <span class="stat-label">Active client projects</span>
+          <span class="stat-label">Client projects</span>
         </div>
         <div class="card stat">
           <span class="stat-value teal">₹{{ summary.totalRevenueCollected | number: '1.0-0' }}</span>
@@ -186,6 +186,27 @@
         </div>
       } @else {
         <p class="muted">No projects yet.</p>
+      }
+
+      <h2 class="sub-heading">Recent client projects</h2>
+      @if (clientProjectsLoading()) {
+        <p class="muted">Loading…</p>
+      } @else if (clientProjectsError()) {
+        <p class="error-text">{{ clientProjectsError() }}</p>
+        <a routerLink="/admin/engagements" class="btn btn-ghost see-all">Open Client Projects</a>
+      } @else if (clientProjects().length > 0) {
+        <ul class="recent-list client-project-list">
+          @for (engagement of clientProjects(); track engagement.id) {
+            <li>
+              <a routerLink="/admin/engagements">{{ engagement.title.trim() || 'Untitled project' }}</a>
+              <span class="meta">{{ engagement.clientName }} · {{ engagement.clientEmail }}</span>
+              <span class="tag">{{ engagement.status }}</span>
+            </li>
+          }
+        </ul>
+        <a routerLink="/admin/engagements" class="btn btn-ghost see-all">View all client projects</a>
+      } @else {
+        <p class="muted">No client projects yet.</p>
       }
 
       <h2 class="sub-heading">Recent inquiries</h2>

@@ -69,7 +69,13 @@ public class TestimonialService {
                 return; // Already queued -- webhook + browser confirmation both landed, or a retry.
             }
 
-            Engagement engagement = invoice.getEngagement();
+            // Reload the graph in this REQUIRES_NEW transaction. The Invoice argument may
+            // belong to the suspended payment transaction and must not be relied on for
+            // lazy associations here.
+            Invoice managedInvoice = invoiceRepository.findByIdWithEngagementClientAndProject(invoice.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoice.getId()));
+
+            Engagement engagement = managedInvoice.getEngagement();
             User client = engagement == null ? null : engagement.getClient();
             if (client == null || client.getEmail() == null || client.getEmail().isBlank()) {
                 log.warn("Skipping testimonial request for invoice {} -- no client email on engagement", invoice.getId());
@@ -79,7 +85,7 @@ public class TestimonialService {
             Project project = engagement.getProject();
 
             TestimonialRequest request = TestimonialRequest.builder()
-                    .invoiceId(invoice.getId())
+                    .invoiceId(managedInvoice.getId())
                     .engagementId(engagement.getId())
                     .projectId(project != null ? project.getId() : null)
                     .clientEmail(client.getEmail())
@@ -91,7 +97,7 @@ public class TestimonialService {
 
             TestimonialRequest saved = testimonialRequestRepository.save(request);
 
-            attemptSend(saved, invoice);
+            attemptSend(saved, managedInvoice);
 
             auditLogService.recordBestEffort(AuditAction.TESTIMONIAL_REQUEST_QUEUED, "Invoice", invoice.getId().toString(),
                     Map.of("testimonialRequestId", saved.getId().toString(), "clientEmail", client.getEmail()));

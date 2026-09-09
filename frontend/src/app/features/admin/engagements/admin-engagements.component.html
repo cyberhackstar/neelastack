@@ -1,0 +1,83 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// CLIENT DELIVERY</span>
+        <h1 class="section-heading">Client Projects</h1>
+        <p class="lede">Every private client engagement in the platform, ordered by newest first.</p>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="card status-message error-box">
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (actionError()) {
+      <div class="card status-message error-box">
+        <p>{{ actionError() }}</p>
+      </div>
+    }
+
+    @if (loading()) {
+      <p class="muted">Loading client projects…</p>
+    } @else if (engagements().length === 0) {
+      <div class="card empty-state">
+        <strong>No client projects yet.</strong>
+        <span>Create an engagement from an eligible client inquiry and it will appear here.</span>
+      </div>
+    } @else {
+      <div class="project-list">
+        @for (engagement of engagements(); track engagement.id) {
+          <article class="card project-card">
+            <div class="project-main">
+              <div class="project-heading">
+                <div>
+                  <span class="eyebrow">ENGAGEMENT</span>
+                  <h2>{{ trim(engagement.title) }}</h2>
+                </div>
+                <span class="status-pill status-{{ engagement.status.toLowerCase() }}">
+                  {{ statusLabel(engagement.status) }}
+                </span>
+              </div>
+
+              <div class="project-client">
+                <strong>{{ trim(engagement.clientName) }}</strong>
+                <span>{{ engagement.clientEmail }}</span>
+              </div>
+
+              @if (engagement.description) {
+                <p class="description">{{ engagement.description }}</p>
+              }
+
+              <div class="project-meta">
+                <span><strong>Start</strong> {{ engagement.startDate | date:'d MMM yyyy' }}</span>
+                <span><strong>Target</strong> {{ engagement.targetEndDate | date:'d MMM yyyy' }}</span>
+                <span><strong>Created</strong> {{ engagement.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
+              </div>
+
+              <code class="engagement-id">{{ engagement.id }}</code>
+            </div>
+
+            <div class="project-actions">
+              <label>
+                <span>Status</span>
+                <select
+                  [value]="engagement.status"
+                  [disabled]="updatingId() === engagement.id"
+                  (change)="updateStatus(engagement, $any($event.target).value)"
+                >
+                  @for (status of statuses; track status) {
+                    <option [value]="status">{{ statusLabel(status) }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>

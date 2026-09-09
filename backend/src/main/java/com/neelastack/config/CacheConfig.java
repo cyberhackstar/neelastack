@@ -1,5 +1,11 @@
 package com.neelastack.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
@@ -18,12 +24,8 @@ import java.time.Duration;
 /**
  * Caches read-heavy public content (services, projects, blog posts) in Redis.
  *
- * Admin write endpoints evict the relevant cache entries via @CacheEvict so the
- * public site does not serve stale content after an edit.
- *
- * The cache is deliberately fail-open: if Redis is unavailable or a cached
- * value cannot be deserialized, the application falls through to the database
- * instead of returning a 500 response.
+ * The cache is deliberately fail-open: Redis failures never turn a public content
+ * request into a 500; the application falls through to the database instead.
  */
 @Configuration
 @EnableCaching
@@ -31,111 +33,80 @@ import java.time.Duration;
 public class CacheConfig implements CachingConfigurer {
 
     /**
-     * Bump this whenever a cached return type's serialized shape changes in a
-     * way that is not safely readable by the new code.
-     *
-     * The version is included in every cache key prefix. Therefore changing
-     * v2 -> v3 makes all previous entries invisible to the new application
-     * without requiring FLUSHALL or FLUSHDB.
-     *
-     * This is important because Redis also contains security/rate-limit state
-     * and must not be globally flushed.
+     * Cache format version. Bump this when the serialized shape/serializer changes.
+     * v4 intentionally isolates values written by the corrected serializer from the
+     * incompatible v2/v3 values already present in Redis.
      */
-    @Value("${app.cache.schema-version:v3}")
+    @Value("${app.cache.schema-version:v4}")
     private String cacheSchemaVersion;
 
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
-
         /*
-         * Use Spring Data Redis' GenericJackson2JsonRedisSerializer with its
-         * built-in type handling rather than manually configuring
-         * ObjectMapper.activateDefaultTyping(... NON_FINAL ...).
-         *
-         * The previous custom NON_FINAL configuration could produce cache
-         * entries whose embedded Jackson type information could not be
-         * reconstructed correctly when reading generic Object values back
-         * from Redis.
+         * GenericJackson2JsonRedisSerializer uses default typing because Spring's
+         * cache abstraction stores values as Object. We configure the mapper explicitly
+         * so Java time values (LocalDate/LocalDateTime) are supported, while restricting
+         * polymorphic types to this application's DTO/domain packages and the JDK types
+         * actually used by cached values.
          */
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
+        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("com.neelastack.")
+                .allowIfSubType("java.util.")
+                .allowIfSubType("java.time.")
+                .allowIfSubType("java.math.")
+                .allowIfSubType("java.lang.")
+                .build();
+
+        ObjectMapper mapper = JsonMapper.builder()
+                .addModule(new JavaTimeModule())
+                .build();
+
+        mapper.activateDefaultTyping(
+                typeValidator,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+
+        GenericJackson2JsonRedisSerializer serializer =
+                GenericJackson2JsonRedisSerializer.builder()
+                        .objectMapper(mapper)
+                        .build();
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
                 .disableCachingNullValues()
                 .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(
-                                serializer))
-                .computePrefixWith(
-                        cacheName -> "neelastack:"
-                                + cacheSchemaVersion
-                                + ":"
-                                + cacheName
-                                + "::");
+                        RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                .computePrefixWith(cacheName ->
+                        "neelastack:" + cacheSchemaVersion + ":" + cacheName + "::");
 
         return builder -> builder.cacheDefaults(defaultConfig);
     }
 
-    /**
-     * Redis/cache failures must not make public content endpoints fail.
-     *
-     * A cache GET/PUT/EVICT failure is logged and the application continues
-     * using the database or otherwise completes the original operation.
-     */
+    /** Fail-open cache error handling. */
     @Override
     public CacheErrorHandler errorHandler() {
         return new CacheErrorHandler() {
-
             @Override
-            public void handleCacheGetError(
-                    RuntimeException exception,
-                    Cache cache,
-                    Object key) {
-
-                log.warn(
-                        "Cache GET failed for cache '{}', key '{}' — "
-                                + "falling through to the database: {}",
-                        cache.getName(),
-                        key,
-                        exception.getMessage());
+            public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+                log.warn("Cache GET failed for cache '{}', key '{}' — falling through to the database: {}",
+                        cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCachePutError(
-                    RuntimeException exception,
-                    Cache cache,
-                    Object key,
-                    Object value) {
-
-                log.warn(
-                        "Cache PUT failed for cache '{}', key '{}' — "
-                                + "result was not cached: {}",
-                        cache.getName(),
-                        key,
-                        exception.getMessage());
+            public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+                log.warn("Cache PUT failed for cache '{}', key '{}' — result was not cached: {}",
+                        cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCacheEvictError(
-                    RuntimeException exception,
-                    Cache cache,
-                    Object key) {
-
-                log.warn(
-                        "Cache EVICT failed for cache '{}', key '{}': {}",
-                        cache.getName(),
-                        key,
-                        exception.getMessage());
+            public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+                log.warn("Cache EVICT failed for cache '{}', key '{}': {}",
+                        cache.getName(), key, exception.getMessage());
             }
 
             @Override
-            public void handleCacheClearError(
-                    RuntimeException exception,
-                    Cache cache) {
-
-                log.warn(
-                        "Cache CLEAR failed for cache '{}': {}",
-                        cache.getName(),
-                        exception.getMessage());
+            public void handleCacheClearError(RuntimeException exception, Cache cache) {
+                log.warn("Cache CLEAR failed for cache '{}': {}", cache.getName(), exception.getMessage());
             }
         };
     }

@@ -113,7 +113,6 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  scroll-behavior: smooth;
   font-synthesis: none; /* avoid the browser fabricating bold/italic styles for the
                             fallback font, which changes metrics again once the real
                             font arrives and contributes to layout shift */
@@ -910,5 +909,25 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .theme-toggle__thumb {
     transition: none;
+  }
+}
+
+/* iOS/WebKit scroll safety: keep the ambient visual treatment in the document
+   background, but avoid two full-viewport fixed compositing layers during touch scroll. */
+@media (max-width: 768px) {
+  body::before,
+  body::after {
+    display: none;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    background-image:
+      linear-gradient(rgba(var(--color-text-muted-rgb), 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--color-text-muted-rgb), 0.035) 1px, transparent 1px),
+      radial-gradient(520px circle at 15% 0%, rgba(var(--color-amber-rgb), 0.055), transparent 65%),
+      radial-gradient(560px circle at 90% 25%, rgba(var(--color-teal-rgb), 0.065), transparent 65%);
+    background-size: 44px 44px, 44px 44px, auto, auto;
+    background-attachment: scroll;
   }
 }

@@ -29,6 +29,7 @@ public class ServiceContentService {
     private final IndexNowService indexNowService;
 
     @Cacheable("services")
+    @Transactional(readOnly = true)
     public List<ServiceDto> listPublished() {
         return serviceRepository.findByPublishedTrueOrderByDisplayOrderAsc()
                 .stream()

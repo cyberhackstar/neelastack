@@ -17,6 +17,14 @@ import java.util.UUID;
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     List<Invoice> findByEngagementIdOrderByCreatedAtDesc(UUID engagementId);
     Optional<Invoice> findByRazorpayOrderId(String razorpayOrderId);
+
+    /**
+     * Fully initializes the invoice graph needed by the testimonial side-effect. The
+     * queue method runs in REQUIRES_NEW and therefore must not depend on a detached Invoice
+     * carrying a still-lazy engagement/client/project association from the payment tx.
+     */
+    @Query("SELECT i FROM Invoice i JOIN FETCH i.engagement e JOIN FETCH e.client LEFT JOIN FETCH e.project WHERE i.id = :id")
+    Optional<Invoice> findByIdWithEngagementClientAndProject(@Param("id") UUID id);
     long countByInvoiceNumberStartingWith(String prefix);
 
     /**
