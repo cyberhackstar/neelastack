@@ -31,6 +31,8 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:15432:5432"
     container_name: neelastack-postgres
     restart: unless-stopped
 

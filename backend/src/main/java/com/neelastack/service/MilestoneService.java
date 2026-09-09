@@ -21,8 +21,8 @@ public class MilestoneService {
     private final MilestoneRepository milestoneRepository;
     private final EngagementService engagementService;
 
+    @Transactional(readOnly = true)
     public List<MilestoneDto> list(UUID engagementId) {
-        // Access check: throws if the caller can't see this engagement
         engagementService.getEntityWithAccessCheck(engagementId);
         return milestoneRepository.findByEngagementIdOrderByDisplayOrderAsc(engagementId)
                 .stream().map(this::toDto).toList();
@@ -48,6 +48,11 @@ public class MilestoneService {
     public MilestoneDto updateStatus(UUID milestoneId, MilestoneStatus status) {
         Milestone milestone = milestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone not found: " + milestoneId));
+
+        // Keep the service-layer invariant even if this method is called outside the current
+        // admin controller. This also initializes the lazy engagement safely inside the tx.
+        engagementService.getEntityWithAccessCheck(milestone.getEngagement().getId());
+
         milestone.setStatus(status);
         return toDto(milestoneRepository.save(milestone));
     }

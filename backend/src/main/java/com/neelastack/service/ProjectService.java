@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,43 +33,61 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectDto> listPublished() {
         return projectRepository.findByPublishedTrueOrderByDisplayOrderAsc()
-                .stream().map(this::toDto).toList();
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    /** Includes drafts — used by the admin CMS, never exposed publicly. */
+    /**
+     * Includes drafts — used by the admin CMS, never exposed publicly.
+     */
     @Transactional(readOnly = true)
     public List<ProjectDto> listAllForAdmin() {
-        return projectRepository.findAll(org.springframework.data.domain.Sort.by("displayOrder"))
-                .stream().map(this::toDto).toList();
+        return projectRepository.findAll(
+                org.springframework.data.domain.Sort.by("displayOrder"))
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public ProjectDto getById(UUID id) {
         return projectRepository.findById(id)
                 .map(this::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + id));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Project not found: " + id));
     }
 
     @Cacheable("featuredProjects")
     @Transactional(readOnly = true)
     public List<ProjectDto> listFeatured() {
-        return projectRepository.findByPublishedTrueAndFeaturedTrueOrderByDisplayOrderAsc()
-                .stream().map(this::toDto).toList();
+        return projectRepository
+                .findByPublishedTrueAndFeaturedTrueOrderByDisplayOrderAsc()
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Transactional(readOnly = true)
     public ProjectDto getBySlug(String slug) {
         return projectRepository.findBySlugAndPublishedTrue(slug)
                 .map(this::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + slug));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Project not found: " + slug));
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
     public ProjectDto create(ProjectRequest request) {
+
         if (projectRepository.existsBySlug(request.slug())) {
-            throw new BadRequestException("A project with slug '" + request.slug() + "' already exists");
+            throw new BadRequestException(
+                    "A project with slug '" + request.slug()
+                            + "' already exists");
         }
+
         Project entity = Project.builder()
                 .title(request.title())
                 .slug(request.slug())
@@ -77,28 +96,50 @@ public class ProjectService {
                 .solution(request.solution())
                 .outcome(request.outcome())
                 .coverImageUrl(request.coverImageUrl())
-                .techStack(request.techStack() != null ? request.techStack() : List.of())
+                .techStack(
+                        request.techStack() != null
+                                ? request.techStack()
+                                : List.of())
                 .liveUrl(request.liveUrl())
                 .repoUrl(request.repoUrl())
                 .featured(request.featured())
                 .published(request.published())
-                .displayOrder(request.displayOrder() != null ? request.displayOrder() : 0)
-                .serviceCategories(request.serviceCategories() != null ? request.serviceCategories() : List.of())
-                .keyMetrics(request.keyMetrics() != null ? request.keyMetrics() : List.of())
+                .displayOrder(
+                        request.displayOrder() != null
+                                ? request.displayOrder()
+                                : 0)
+                .serviceCategories(
+                        request.serviceCategories() != null
+                                ? request.serviceCategories()
+                                : List.of())
+                .keyMetrics(
+                        request.keyMetrics() != null
+                                ? request.keyMetrics()
+                                : List.of())
                 .build();
+
         ProjectDto saved = toDto(projectRepository.save(entity));
+
         if (saved.published()) {
-            indexNowService.notifyContentPublished("/portfolio/" + saved.slug());
+            indexNowService.notifyContentPublished(
+                    "/portfolio/" + saved.slug());
             indexNowService.notifyContentPublished("/portfolio");
         }
+
         return saved;
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
-    public ProjectDto update(UUID id, ProjectRequest request) {
+    public ProjectDto update(
+            UUID id,
+            ProjectRequest request) {
+
         Project entity = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + id));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Project not found: " + id));
+
         entity.setTitle(request.title());
         entity.setSlug(request.slug());
         entity.setSummary(request.summary());
@@ -106,46 +147,80 @@ public class ProjectService {
         entity.setSolution(request.solution());
         entity.setOutcome(request.outcome());
         entity.setCoverImageUrl(request.coverImageUrl());
-        entity.setTechStack(request.techStack() != null ? request.techStack() : entity.getTechStack());
+
+        entity.setTechStack(
+                request.techStack() != null
+                        ? request.techStack()
+                        : entity.getTechStack());
+
         entity.setLiveUrl(request.liveUrl());
         entity.setRepoUrl(request.repoUrl());
         entity.setFeatured(request.featured());
         entity.setPublished(request.published());
-        entity.setDisplayOrder(request.displayOrder() != null ? request.displayOrder() : entity.getDisplayOrder());
-        entity.setServiceCategories(request.serviceCategories() != null ? request.serviceCategories() : entity.getServiceCategories());
-        entity.setKeyMetrics(request.keyMetrics() != null ? request.keyMetrics() : entity.getKeyMetrics());
+
+        entity.setDisplayOrder(
+                request.displayOrder() != null
+                        ? request.displayOrder()
+                        : entity.getDisplayOrder());
+
+        entity.setServiceCategories(
+                request.serviceCategories() != null
+                        ? request.serviceCategories()
+                        : entity.getServiceCategories());
+
+        entity.setKeyMetrics(
+                request.keyMetrics() != null
+                        ? request.keyMetrics()
+                        : entity.getKeyMetrics());
+
         ProjectDto saved = toDto(projectRepository.save(entity));
+
         if (saved.published()) {
-            indexNowService.notifyContentPublished("/portfolio/" + saved.slug());
+            indexNowService.notifyContentPublished(
+                    "/portfolio/" + saved.slug());
             indexNowService.notifyContentPublished("/portfolio");
         }
+
         return saved;
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
     public void delete(UUID id) {
+
         if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project not found: " + id);
+            throw new ResourceNotFoundException(
+                    "Project not found: " + id);
         }
+
         projectRepository.deleteById(id);
     }
 
     // ---- Reviews (Review / AggregateRating structured data source) ----
 
-    /** Admin view — includes unpublished drafts awaiting approval. */
+    /**
+     * Admin view — includes unpublished drafts awaiting approval.
+     */
     @Transactional(readOnly = true)
     public List<ReviewDto> listReviewsForAdmin(UUID projectId) {
-        return reviewRepository.findByProjectIdOrderByDisplayOrderAsc(projectId)
-                .stream().map(this::toReviewDto).toList();
+        return reviewRepository
+                .findByProjectIdOrderByDisplayOrderAsc(projectId)
+                .stream()
+                .map(this::toReviewDto)
+                .toList();
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
-    public ReviewDto addReview(UUID projectId, ReviewRequest request) {
+    public ReviewDto addReview(
+            UUID projectId,
+            ReviewRequest request) {
+
         if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found: " + projectId);
+            throw new ResourceNotFoundException(
+                    "Project not found: " + projectId);
         }
+
         Review review = Review.builder()
                 .projectId(projectId)
                 .authorName(request.authorName())
@@ -153,78 +228,123 @@ public class ProjectService {
                 .rating(request.rating())
                 .reviewBody(request.reviewBody())
                 .published(request.published())
-                .displayOrder(request.displayOrder() != null ? request.displayOrder() : 0)
+                .displayOrder(
+                        request.displayOrder() != null
+                                ? request.displayOrder()
+                                : 0)
                 .build();
+
         return toReviewDto(reviewRepository.save(review));
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
-    public ReviewDto updateReview(UUID projectId, UUID reviewId, ReviewRequest request) {
+    public ReviewDto updateReview(
+            UUID projectId,
+            UUID reviewId,
+            ReviewRequest request) {
+
         Review review = reviewRepository.findById(reviewId)
                 .filter(r -> r.getProjectId().equals(projectId))
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewId));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Review not found: " + reviewId));
+
         review.setAuthorName(request.authorName());
         review.setAuthorTitle(request.authorTitle());
         review.setRating(request.rating());
         review.setReviewBody(request.reviewBody());
         review.setPublished(request.published());
-        review.setDisplayOrder(request.displayOrder() != null ? request.displayOrder() : review.getDisplayOrder());
+
+        review.setDisplayOrder(
+                request.displayOrder() != null
+                        ? request.displayOrder()
+                        : review.getDisplayOrder());
+
         return toReviewDto(reviewRepository.save(review));
     }
 
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
-    public void deleteReview(UUID projectId, UUID reviewId) {
+    public void deleteReview(
+            UUID projectId,
+            UUID reviewId) {
+
         Review review = reviewRepository.findById(reviewId)
                 .filter(r -> r.getProjectId().equals(projectId))
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewId));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Review not found: " + reviewId));
+
         reviewRepository.delete(review);
     }
 
     /**
-     * Module 4 moderation queue: client-submitted testimonials (from
-     * TestimonialService#submit) awaiting an admin's publish decision. Not scoped
-     * to a projectId path like the CMS review endpoints above, since a fresh
-     * testimonial may not have a project assigned yet.
+     * Module 4 moderation queue: client-submitted testimonials
+     * awaiting an admin's publish decision.
      */
     @Transactional(readOnly = true)
     public List<ReviewDto> listPendingTestimonials() {
-        return reviewRepository.findBySubmittedViaAndPublishedFalseOrderByCreatedAtDesc(
+        return reviewRepository
+                .findBySubmittedViaAndPublishedFalseOrderByCreatedAtDesc(
                         com.neelastack.entity.ReviewSource.CLIENT_TESTIMONIAL)
-                .stream().map(this::toReviewDto).toList();
+                .stream()
+                .map(this::toReviewDto)
+                .toList();
     }
 
     /**
-     * Publishes (or rejects) a client-submitted testimonial, optionally assigning
-     * it to a case study for the first time. This is the only path by which a
-     * CLIENT_TESTIMONIAL-sourced review can go live -- submission alone
-     * (TestimonialService#submit) never sets published=true.
+     * Publishes or rejects a client-submitted testimonial, optionally
+     * assigning it to a case study.
      */
-    @CacheEvict(value = {"projects", "featuredProjects"}, allEntries = true)
+    @CacheEvict(value = { "projects", "featuredProjects" }, allEntries = true)
     @Transactional
-    public ReviewDto moderateTestimonial(UUID reviewId, UUID projectId, boolean published) {
+    public ReviewDto moderateTestimonial(
+            UUID reviewId,
+            UUID projectId,
+            boolean published) {
+
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewId));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Review not found: " + reviewId));
+
         if (review.getSubmittedVia() != com.neelastack.entity.ReviewSource.CLIENT_TESTIMONIAL) {
-            throw new BadRequestException("Only client-submitted testimonials go through this moderation endpoint.");
+
+            throw new BadRequestException(
+                    "Only client-submitted testimonials go through "
+                            + "this moderation endpoint.");
         }
+
         if (projectId != null) {
+
             if (!projectRepository.existsById(projectId)) {
-                throw new ResourceNotFoundException("Project not found: " + projectId);
+                throw new ResourceNotFoundException(
+                        "Project not found: " + projectId);
             }
+
             review.setProjectId(projectId);
         }
+
         review.setPublished(published);
+
         return toReviewDto(reviewRepository.save(review));
     }
 
     private ProjectDto toDto(Project p) {
+
         List<ReviewDto> publishedReviews = reviewRepository
-                .findByProjectIdAndPublishedTrueOrderByDisplayOrderAsc(p.getId())
-                .stream().map(this::toReviewDto).toList();
-        Double averageRating = reviewRepository.findAverageRatingByProjectId(p.getId()).orElse(null);
-        long reviewCount = reviewRepository.countByProjectIdAndPublishedTrue(p.getId());
+                .findByProjectIdAndPublishedTrueOrderByDisplayOrderAsc(
+                        p.getId())
+                .stream()
+                .map(this::toReviewDto)
+                .toList();
+
+        Double averageRating = reviewRepository.findAverageRatingByProjectId(p.getId())
+                .orElse(null);
+
+        long reviewCount = reviewRepository.countByProjectIdAndPublishedTrue(
+                p.getId());
 
         return ProjectDto.builder()
                 .id(p.getId())
@@ -241,14 +361,20 @@ public class ProjectService {
                 .featured(p.isFeatured())
                 .published(p.isPublished())
                 .reviews(publishedReviews)
-                .averageRating(averageRating != null ? Math.round(averageRating * 10) / 10.0 : null)
+                .averageRating(
+                        averageRating != null
+                                ? Math.round(averageRating * 10) / 10.0
+                                : null)
                 .reviewCount((int) reviewCount)
-                .serviceCategories(new ArrayList<>(p.getServiceCategories()))
-                .keyMetrics(new ArrayList<>(p.getKeyMetrics()))
+                .serviceCategories(
+                        new ArrayList<>(p.getServiceCategories()))
+                .keyMetrics(
+                        new ArrayList<>(p.getKeyMetrics()))
                 .build();
     }
 
     private ReviewDto toReviewDto(Review r) {
+
         return ReviewDto.builder()
                 .id(r.getId())
                 .projectId(r.getProjectId())

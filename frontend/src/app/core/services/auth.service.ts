@@ -2,7 +2,7 @@ import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { tap, catchError, of } from 'rxjs';
+import { tap, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthResponse, LoginPayload, RegisterPayload } from '../models/user.model';
 
@@ -90,6 +90,27 @@ export class AuthService {
 
   resendVerification(email: string) {
     return this.http.post<void>(`${this.apiUrl}/resend-verification`, { email });
+  }
+
+  refreshSession() {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken })
+      .pipe(tap((res) => this.persistSession(res)));
+  }
+
+  /** Clears the local session without making another HTTP request. */
+  clearLocalSession(): void {
+    if (this.isBrowser) {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+    this.currentUser.set(null);
   }
 
   exchangeOAuthCode(code: string) {

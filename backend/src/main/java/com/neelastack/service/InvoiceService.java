@@ -82,6 +82,7 @@ public class InvoiceService {
         return toDto(invoiceRepository.saveAndFlush(invoice));
     }
 
+    @Transactional(readOnly = true)
     public List<InvoiceDto> listForEngagement(UUID engagementId) {
         engagementService.getEntityWithAccessCheck(engagementId);
         return invoiceRepository.findByEngagementIdOrderByCreatedAtDesc(engagementId)
