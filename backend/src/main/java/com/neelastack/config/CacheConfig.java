@@ -1,11 +1,5 @@
 package com.neelastack.config;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
@@ -34,42 +28,22 @@ public class CacheConfig implements CachingConfigurer {
 
     /**
      * Cache format version. Bump this when the serialized shape/serializer changes.
-     * v4 intentionally isolates values written by the corrected serializer from the
-     * incompatible v2/v3 values already present in Redis.
+     * v5 isolates values written by the standard serializer from the incompatible
+     * v4 values written with the previous custom default-typing configuration.
      */
-    @Value("${app.cache.schema-version:v4}")
+    @Value("${app.cache.schema-version:v5}")
     private String cacheSchemaVersion;
 
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         /*
-         * GenericJackson2JsonRedisSerializer uses default typing because Spring's
-         * cache abstraction stores values as Object. We configure the mapper explicitly
-         * so Java time values (LocalDate/LocalDateTime) are supported, while restricting
-         * polymorphic types to this application's DTO/domain packages and the JDK types
-         * actually used by cached values.
+         * Use the serializer's standard self-consistent Jackson configuration.
+         * The previous release supplied a separately configured ObjectMapper with
+         * manually activated default typing; values written by that configuration
+         * are intentionally isolated under the v4 cache namespace.
          */
-        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
-                .allowIfSubType("com.neelastack.")
-                .allowIfSubType("java.util.")
-                .allowIfSubType("java.time.")
-                .allowIfSubType("java.math.")
-                .allowIfSubType("java.lang.")
-                .build();
-
-        ObjectMapper mapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
-
-        mapper.activateDefaultTyping(
-                typeValidator,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
-
         GenericJackson2JsonRedisSerializer serializer =
-                GenericJackson2JsonRedisSerializer.builder()
-                        .objectMapper(mapper)
-                        .build();
+                GenericJackson2JsonRedisSerializer.builder().build();
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))

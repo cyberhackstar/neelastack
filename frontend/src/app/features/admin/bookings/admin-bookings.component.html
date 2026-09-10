@@ -1,0 +1,97 @@
+<section class="page-header">
+  <div class="container">
+    <h1>Bookings</h1>
+
+    @if (stats()) {
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">{{ stats()!.todayCount }}</div><div class="stat-label">Today</div></div>
+        <div class="stat-card"><div class="stat-value">{{ stats()!.upcomingCount }}</div><div class="stat-label">Upcoming</div></div>
+        <div class="stat-card"><div class="stat-value">{{ stats()!.thisMonthCount }}</div><div class="stat-label">This month</div></div>
+        <div class="stat-card"><div class="stat-value">{{ stats()!.cancelledThisMonthCount }}</div><div class="stat-label">Cancelled</div></div>
+        <div class="stat-card"><div class="stat-value">{{ stats()!.noShowThisMonthCount }}</div><div class="stat-label">No-shows</div></div>
+        <div class="stat-card"><div class="stat-value">{{ stats()!.hotLeadBookingsThisMonthCount }}</div><div class="stat-label">HOT leads</div></div>
+        <div class="stat-card"><div class="stat-value">₹{{ stats()!.revenueThisMonth }}</div><div class="stat-label">Revenue</div></div>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="container">
+    <div class="filters">
+      <select [ngModel]="statusFilter()" (ngModelChange)="onFilterChange($event)">
+        <option value="">All statuses</option>
+        @for (s of statusOptions; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+      <input type="text" placeholder="Search name, email, company…" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" />
+      <button type="button" class="btn-ghost btn-sm" (click)="onSearch()">Search</button>
+    </div>
+
+    @if (loading()) {
+      <p>Loading…</p>
+    } @else {
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Meeting</th>
+            <th>Lead</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of bookings(); track b.id) {
+            <tr (click)="toggleExpand(b.id)" class="row-clickable">
+              <td>{{ b.startAt | date: 'MMM d, h:mm a' }}</td>
+              <td>{{ b.clientName }}<br /><span class="muted small">{{ b.clientEmail }}</span></td>
+              <td>{{ b.meetingTypeName }}</td>
+              <td>
+                @if (b.leadTier) { <span class="badge" [class]="'tier-' + b.leadTier.toLowerCase()">{{ b.leadTier }}</span> }
+              </td>
+              <td><span class="badge status-{{ b.status.toLowerCase() }}">{{ b.status }}</span></td>
+              <td>{{ b.paymentStatus }}</td>
+              <td>{{ expandedId() === b.id ? '▲' : '▼' }}</td>
+            </tr>
+            @if (expandedId() === b.id) {
+              <tr class="detail-row">
+                <td colspan="7">
+                  <div class="detail-panel">
+                    @if (b.clientPhone) { <p><strong>Phone:</strong> {{ b.clientPhone }}</p> }
+                    @if (b.clientCompany) { <p><strong>Company:</strong> {{ b.clientCompany }}</p> }
+                    @if (b.utmSource) { <p><strong>Source:</strong> {{ b.utmSource }} / {{ b.utmMedium }} / {{ b.utmCampaign }}</p> }
+                    @for (f of b.formResponses; track f.fieldKey) {
+                      <p><strong>{{ f.label }}:</strong> {{ f.value }}</p>
+                    }
+                    @if (b.internalNotes) { <p><strong>Notes:</strong> {{ b.internalNotes }}</p> }
+
+                    <div class="detail-actions">
+                      <button type="button" class="btn-ghost btn-sm" (click)="markStatus(b, 'COMPLETED')">Mark completed</button>
+                      <button type="button" class="btn-ghost btn-sm" (click)="markStatus(b, 'NO_SHOW')">Mark no-show</button>
+                      <select class="btn-ghost btn-sm" (change)="setOutcome(b, $any($event.target).value, b.internalNotes || '')">
+                        <option value="">Set outcome…</option>
+                        @for (o of outcomeOptions; track o) {
+                          <option [value]="o" [selected]="b.outcome === o">{{ o }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button type="button" class="btn-ghost btn-sm" [disabled]="page() === 0" (click)="goToPage(-1)">Previous</button>
+        <span class="muted small">Page {{ page() + 1 }} of {{ totalPages() || 1 }}</span>
+        <button type="button" class="btn-ghost btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="goToPage(1)">Next</button>
+      </div>
+    }
+  </div>
+</section>

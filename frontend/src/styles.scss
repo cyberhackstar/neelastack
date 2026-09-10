@@ -517,11 +517,13 @@ a {
    controls from forcing iOS zoom, and gives wide tables/code blocks an
    escape hatch on narrow screens instead of blowing out the layout. */
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: auto;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 img,

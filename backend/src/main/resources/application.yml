@@ -107,11 +107,24 @@ app:
   sales:
     # Module 2 of the Client Acquisition & High-Ticket Conversion Engine: when a lead
     # scores Tier-1 (HOT — see LeadScoringService), the frontend shows an instant
-    # booking widget instead of a generic "thank you" screen. Off by default (empty
-    # URL) so a fresh/staging environment never shows a broken or placeholder embed;
-    # InquiryService only ever returns a bookingUrl when both are set.
-    booking-enabled: ${SALES_BOOKING_ENABLED:false}
+    # booking widget instead of a generic "thank you" screen.
+    #
+    # As of the booking-engine build-out, this points at our own first-party booking
+    # page (/book/{slug}) by default instead of the old Calendly embed — see
+    # InquiryService#resolveBookingUrl. calendly-url is kept only as a legacy manual
+    # override: set it (and leave default-meeting-type-slug blank) to fall back to a
+    # Calendly embed instead, e.g. during a migration window.
+    booking-enabled: ${SALES_BOOKING_ENABLED:true}
+    default-meeting-type-slug: ${SALES_DEFAULT_MEETING_TYPE_SLUG:project-consultation}
     calendly-url: ${SALES_CALENDLY_URL:}
+  google-calendar:
+    # OPTIONAL booking-engine feature (see GoogleCalendarService) — off by default.
+    # Reuses GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET already configured for Google
+    # sign-in; needs its own redirect URI registered in that same OAuth client and
+    # the Calendar API enabled on the Google Cloud project. Free tier is sufficient
+    # for a single business calendar's normal booking volume.
+    enabled: ${GOOGLE_CALENDAR_ENABLED:false}
+    redirect-uri: ${GOOGLE_CALENDAR_REDIRECT_URI:${app.site.base-url}/api/v1/admin/booking/calendar/callback}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:}
     api-key: ${CLOUDINARY_API_KEY:}

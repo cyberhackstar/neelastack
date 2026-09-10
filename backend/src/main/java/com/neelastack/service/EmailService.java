@@ -419,6 +419,172 @@ public class EmailService {
         );
     }
 
+    // =====================================================================================
+    // Booking engine notifications (see BookingService). Reuses the same htmlEmail/sendHtml
+    // template helpers below so booking mail looks identical to the rest of the product.
+    // =====================================================================================
+
+    @Async
+    public void sendBookingConfirmation(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType) {
+        String title = "Booking confirmed: " + meetingType.getName();
+        DateTimeFormatter fmt = displayFormatter(booking.getClientTimezone());
+        String content = """
+                <p>Hi %s,</p>
+                <p>Your %s is confirmed.</p>
+
+                <div class="card">
+                  <div class="label">APPOINTMENT</div>
+                  <table class="details">
+                    <tr><td>When</td><td><strong>%s</strong></td></tr>
+                    <tr><td>Duration</td><td>%d minutes</td></tr>
+                    <tr><td>Where</td><td>%s</td></tr>
+                    <tr><td>Booking ID</td><td>%s</td></tr>
+                  </table>
+                </div>
+
+                <p><a class="button" href="%s/booking/%s">View, reschedule, or cancel this booking</a></p>
+                <p style="color:%s;font-size:13px;">Need to change something? Use the link above — no login required.</p>
+                """.formatted(
+                esc(booking.getClientName()),
+                esc(meetingType.getName()),
+                esc(booking.getStartAt().atZoneSameInstant(java.time.ZoneId.of(booking.getClientTimezone())).format(fmt)),
+                meetingType.getDurationMinutes(),
+                esc(nullToDash(booking.getMeetingUrl())),
+                esc(booking.getBookingNumber()),
+                escAttr(frontendUrl), escAttr(booking.getViewToken()),
+                MUTED
+        );
+        sendHtml(booking.getClientEmail(), title, htmlEmail(title, content, "You're all set — see you then."));
+    }
+
+    @Async
+    public void sendAdminBookingAlert(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType, Inquiry inquiry) {
+        String tierLabel = inquiry != null && inquiry.getLeadTier() == LeadTier.HOT ? "🔥 HOT lead booked: " : "New booking: ";
+        String title = tierLabel + nullToDash(booking.getClientName());
+        DateTimeFormatter fmt = displayFormatter("Asia/Kolkata");
+        String content = """
+                <p>A new appointment has been booked.</p>
+
+                <div class="card">
+                  <div class="label">APPOINTMENT</div>
+                  <table class="details">
+                    <tr><td>Type</td><td>%s</td></tr>
+                    <tr><td>When (IST)</td><td><strong>%s</strong></td></tr>
+                    <tr><td>Booking ID</td><td>%s</td></tr>
+                  </table>
+                </div>
+
+                <div class="card">
+                  <div class="label">CLIENT</div>
+                  <table class="details">
+                    <tr><td>Name</td><td>%s</td></tr>
+                    <tr><td>Email</td><td>%s</td></tr>
+                    <tr><td>Phone</td><td>%s</td></tr>
+                    <tr><td>Company</td><td>%s</td></tr>
+                    <tr><td>Lead tier</td><td>%s</td></tr>
+                  </table>
+                </div>
+
+                <p><a class="button" href="%s/admin/bookings">Open bookings dashboard</a></p>
+                """.formatted(
+                esc(meetingType.getName()),
+                esc(booking.getStartAt().atZoneSameInstant(java.time.ZoneId.of("Asia/Kolkata")).format(fmt)),
+                esc(booking.getBookingNumber()),
+                esc(booking.getClientName()),
+                esc(booking.getClientEmail()),
+                esc(nullToDash(booking.getClientPhone())),
+                esc(nullToDash(booking.getClientCompany())),
+                esc(inquiry != null ? inquiry.getLeadTier() : "—"),
+                escAttr(frontendUrl)
+        );
+        sendHtml(adminAddress, title, htmlEmail(title, content, "A consultation just landed on the calendar."));
+    }
+
+    @Async
+    public void sendRescheduleConfirmation(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType, java.time.OffsetDateTime oldStartAt) {
+        String title = "Rescheduled: " + meetingType.getName();
+        DateTimeFormatter fmt = displayFormatter(booking.getClientTimezone());
+        String content = """
+                <p>Hi %s,</p>
+                <p>Your appointment has been moved to a new time.</p>
+
+                <div class="card">
+                  <div class="label">NEW TIME</div>
+                  <table class="details">
+                    <tr><td>When</td><td><strong>%s</strong></td></tr>
+                    <tr><td>Booking ID</td><td>%s</td></tr>
+                  </table>
+                </div>
+
+                <p><a class="button" href="%s/booking/%s">View this booking</a></p>
+                """.formatted(
+                esc(booking.getClientName()),
+                esc(booking.getStartAt().atZoneSameInstant(java.time.ZoneId.of(booking.getClientTimezone())).format(fmt)),
+                esc(booking.getBookingNumber()),
+                escAttr(frontendUrl), escAttr(booking.getViewToken())
+        );
+        sendHtml(booking.getClientEmail(), title, htmlEmail(title, content, "Your new time is confirmed."));
+    }
+
+    @Async
+    public void sendCancellationConfirmation(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType) {
+        String title = "Cancelled: " + meetingType.getName();
+        String content = """
+                <p>Hi %s,</p>
+                <p>Your %s (Booking ID %s) has been cancelled as requested.</p>
+                <p>Changed your mind? You're welcome to book a new time whenever suits.</p>
+                <p><a class="button" href="%s/book/%s">Book a new time</a></p>
+                """.formatted(
+                esc(booking.getClientName()), esc(meetingType.getName()), esc(booking.getBookingNumber()),
+                escAttr(frontendUrl), escAttr(meetingType.getSlug())
+        );
+        sendHtml(booking.getClientEmail(), title, htmlEmail(title, content, "This appointment has been cancelled."));
+    }
+
+    @Async
+    public void sendNoShowFollowUp(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType) {
+        String title = "Sorry we missed you";
+        String content = """
+                <p>Hi %s,</p>
+                <p>We had a %s scheduled but didn't manage to connect. No worries — these things happen.</p>
+                <p>Whenever you're ready, pick a new time that works better:</p>
+                <p><a class="button" href="%s/book/%s">Book another time</a></p>
+                """.formatted(
+                esc(booking.getClientName()), esc(meetingType.getName()),
+                escAttr(frontendUrl), escAttr(meetingType.getSlug())
+        );
+        sendHtml(booking.getClientEmail(), title, htmlEmail(title, content, "Let's find a better time."));
+    }
+
+    @Async
+    public void sendBookingReminder(com.neelastack.entity.Booking booking, com.neelastack.entity.MeetingType meetingType, String whenLabel) {
+        String title = "Reminder: " + meetingType.getName() + " " + whenLabel;
+        DateTimeFormatter fmt = displayFormatter(booking.getClientTimezone());
+        String content = """
+                <p>Hi %s,</p>
+                <p>Just a reminder — your %s is coming up %s.</p>
+
+                <div class="card">
+                  <table class="details">
+                    <tr><td>When</td><td><strong>%s</strong></td></tr>
+                    <tr><td>Where</td><td>%s</td></tr>
+                  </table>
+                </div>
+
+                <p><a class="button" href="%s/booking/%s">View booking details</a></p>
+                """.formatted(
+                esc(booking.getClientName()), esc(meetingType.getName()), esc(whenLabel),
+                esc(booking.getStartAt().atZoneSameInstant(java.time.ZoneId.of(booking.getClientTimezone())).format(fmt)),
+                esc(nullToDash(booking.getMeetingUrl())),
+                escAttr(frontendUrl), escAttr(booking.getViewToken())
+        );
+        sendHtml(booking.getClientEmail(), title, htmlEmail(title, content, "See you " + whenLabel + "."));
+    }
+
+    private DateTimeFormatter displayFormatter(String timezone) {
+        return DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy 'at' h:mm a (zzz)");
+    }
+
     private void sendHtml(String to, String subject, String html) {
         try {
             sendMimeMessage(to, subject, html, null, null);
@@ -552,28 +718,33 @@ public class EmailService {
                 </body>
                 </html>
                 """.formatted(
-                esc(title),
-                PAGE_BG,
-                TEXT,
-                esc(preheader),
-                PAGE_BG,
-                DARK,
-                CARD_BG,
-                BORDER,
-                ACCENT,
-                TEXT,
-                esc(title),
-                content,
-                BORDER,
-                MUTED,
-                MUTED,
-                TEXT,
-                MUTED,
-                TEXT,
-                MUTED,
-                TEXT,
-                ACCENT,
-                TEXT
+                esc(title),        // 1  %s — <title>
+                PAGE_BG,           // 2  %s — body background
+                TEXT,              // 3  %s — body text
+                esc(preheader),    // 4  %s — preheader
+                PAGE_BG,           // 5  %s — outer table background
+                DARK,              // 6  %s — header background
+                CARD_BG,           // 7  %s — content background
+                BORDER,            // 8  %s — content border
+                ACCENT,            // 9  %s — brand accent
+                TEXT,              // 10 %s — section heading label
+                esc(title),        // 11 %s — email title
+                content,           // 12 %s — email content
+                BORDER,            // 13 %s — divider
+                MUTED,             // 14 %s — footer text
+                MUTED,             // 15 %s — automated email text
+                TEXT,              // 16 %s — paragraph text
+                MUTED,             // 17 %s — small text
+                BORDER,            // 18 %s — card border
+                ACCENT,            // 19 %s — label color
+                MUTED,             // 20 %s — table label
+                TEXT,              // 21 %s — table value
+                MUTED,             // 22 %s — item header
+                TEXT,              // 23 %s — item text
+                TEXT,              // 24 %s — quote title
+                TEXT,              // 25 %s — mono text
+                ACCENT,            // 26 %s — button background
+                TEXT               // 27 %s — list text
         );
     }
 

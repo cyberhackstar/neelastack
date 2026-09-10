@@ -46,6 +46,12 @@ public class InquiryService {
     @org.springframework.beans.factory.annotation.Value("${app.sales.booking-enabled:false}")
     private boolean bookingEnabled;
 
+    @org.springframework.beans.factory.annotation.Value("${app.sales.default-meeting-type-slug:}")
+    private String defaultMeetingTypeSlug;
+
+    @org.springframework.beans.factory.annotation.Value("${app.site.frontend-url}")
+    private String frontendUrl;
+
     @org.springframework.beans.factory.annotation.Value("${app.sales.calendly-url:}")
     private String calendlyUrl;
 
@@ -362,12 +368,22 @@ public class InquiryService {
     }
 
     /** Module 2: instant-booking trigger for Tier-1 (HOT) leads. Null whenever the
-     *  feature is disabled, unconfigured, or the lead isn't Tier-1 -- see
-     *  LeadScoringService#isTierOne and app.sales.* config. */
+     *  feature is disabled or the lead isn't Tier-1 -- see LeadScoringService#isTierOne
+     *  and app.sales.* config.
+     *
+     *  Points at our own first-party booking page by default (booking-engine build-out
+     *  — see PublicBookingController / BookingRequest#inquiryId, which is how the
+     *  resulting booking gets linked back to this inquiry for lead-scoring/attribution).
+     *  Falls back to a manually-configured Calendly URL only if
+     *  default-meeting-type-slug is left blank -- a deliberate legacy escape hatch,
+     *  not the normal path. */
     private String resolveBookingUrl(Inquiry i) {
-        if (!bookingEnabled || calendlyUrl == null || calendlyUrl.isBlank()) {
+        if (!bookingEnabled || !leadScoringService.isTierOne(i.getLeadTier())) {
             return null;
         }
-        return leadScoringService.isTierOne(i.getLeadTier()) ? calendlyUrl : null;
+        if (defaultMeetingTypeSlug != null && !defaultMeetingTypeSlug.isBlank()) {
+            return frontendUrl + "/book/" + defaultMeetingTypeSlug + "?inquiryId=" + i.getId();
+        }
+        return (calendlyUrl == null || calendlyUrl.isBlank()) ? null : calendlyUrl;
     }
 }

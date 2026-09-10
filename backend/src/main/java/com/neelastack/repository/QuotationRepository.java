@@ -59,4 +59,8 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID> {
             QuotationStatus status, Integer viewCount, LocalDateTime cutoff);
 
     List<Quotation> findByStatusAndSentAtIsNotNull(QuotationStatus status);
+
+    /** Proposals actually sent to a client within a date range — used by the booking-engine
+     *  sales funnel (BookingAnalyticsService) to compute the booking-to-proposal rate. */
+    long countBySentAtBetween(LocalDateTime from, LocalDateTime to);
 }

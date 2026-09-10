@@ -36,6 +36,7 @@ export class AdminLayoutComponent {
       heading: 'Sales & Delivery',
       links: [
         { label: 'Inquiries', path: '/admin/inquiries', icon: 'inbox' },
+        { label: 'Bookings', path: '/admin/bookings', icon: 'calendar' },
         { label: 'Client Projects', path: '/admin/engagements', icon: 'briefcase' },
       ],
     },

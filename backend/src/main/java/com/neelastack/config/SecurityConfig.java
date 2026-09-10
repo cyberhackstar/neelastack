@@ -44,6 +44,11 @@ public class SecurityConfig {
             "/sitemap.xml",
             "/robots.txt",
             "/api/v1/payments/webhook",
+            "/api/v1/admin/booking/calendar/callback", // Google's OAuth redirect is a plain browser
+                                                        // navigation and can't carry our JWT bearer
+                                                        // token; the handler verifies a short-lived
+                                                        // signed state param instead (see
+                                                        // GoogleCalendarService#buildAuthorizationUrl).
             "/oauth2/**",
             "/login/oauth2/**"
     };

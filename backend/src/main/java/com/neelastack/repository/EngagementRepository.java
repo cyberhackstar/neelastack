@@ -14,6 +14,10 @@ public interface EngagementRepository extends JpaRepository<Engagement, UUID> {
     @Query("SELECT e.status AS status, COUNT(e) AS total FROM Engagement e GROUP BY e.status")
     List<StatusCount> countByStatus();
 
+    /** New clients (engagements created) within a date range — the final stage of the
+     *  booking-engine sales funnel, see BookingAnalyticsService. */
+    long countByCreatedAtBetween(java.time.LocalDateTime from, java.time.LocalDateTime to);
+
     interface StatusCount {
         String getStatus();
         Long getTotal();

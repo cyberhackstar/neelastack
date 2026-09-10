@@ -1,0 +1,79 @@
+<section class="page-header">
+  <div class="container">
+    @if (loading()) {
+      <p>Loading…</p>
+    } @else if (error()) {
+      <div class="card error-card">
+        <h1>Can't find this booking</h1>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (booking()) {
+      <h1>Your booking</h1>
+
+      <div class="card booking-card">
+        <div class="label">{{ booking()!.status }}</div>
+        <h2>{{ booking()!.meetingTypeName }}</h2>
+        <p class="meta-line">{{ formatDateTime(booking()!.startAt, booking()!.clientTimezone) }}</p>
+        <p class="muted">Booking ID: {{ booking()!.bookingNumber }}</p>
+        @if (booking()!.meetingUrl) {
+          <p><a class="btn-primary btn-sm" [href]="booking()!.meetingUrl!" target="_blank" rel="noopener">Join meeting link</a></p>
+        }
+
+        @if (mode() === 'view') {
+          <div class="actions">
+            @if (booking()!.reschedulable) {
+              <button type="button" class="btn-ghost" (click)="startReschedule()">Reschedule</button>
+            }
+            @if (booking()!.cancellable) {
+              <button type="button" class="btn-ghost" (click)="startCancel()">Cancel</button>
+            }
+            @if (!booking()!.cancellable && booking()!.status !== 'CANCELLED') {
+              <p class="muted small">This booking is inside the cancellation window — please contact us directly to make changes.</p>
+            }
+          </div>
+        }
+
+        @if (mode() === 'reschedule') {
+          <div class="reschedule-panel">
+            <div class="label" style="margin-top:1rem;">PICK A NEW DATE</div>
+            <div class="day-chips">
+              @for (day of rescheduleDays(); track day.date) {
+                <button type="button" class="day-chip" [class.active]="rescheduleSelectedDate() === day.date"
+                        (click)="selectRescheduleDate(day.date)">
+                  {{ formatDayLabel(day.date) }}
+                </button>
+              }
+            </div>
+            <div class="label" style="margin-top:1rem;">PICK A NEW TIME</div>
+            <div class="slot-grid">
+              @for (slot of slotsForRescheduleDate(); track slot) {
+                <button type="button" class="slot-btn" [disabled]="actionInFlight()" (click)="confirmReschedule(slot)">
+                  {{ formatSlotTime(slot) }}
+                </button>
+              }
+            </div>
+            @if (actionError()) { <p class="error-text">{{ actionError() }}</p> }
+            <button type="button" class="btn-ghost btn-sm" (click)="backToView()">Cancel, keep original time</button>
+          </div>
+        }
+
+        @if (mode() === 'cancel-confirm') {
+          <div class="cancel-panel">
+            <p>Are you sure you want to cancel this booking?</p>
+            <label>
+              Reason (optional)
+              <textarea rows="2" [(ngModel)]="cancelReason"></textarea>
+            </label>
+            @if (actionError()) { <p class="error-text">{{ actionError() }}</p> }
+            <div class="actions">
+              <button type="button" class="btn-primary" [disabled]="actionInFlight()" (click)="confirmCancel()">
+                {{ actionInFlight() ? 'Cancelling…' : 'Yes, cancel booking' }}
+              </button>
+              <button type="button" class="btn-ghost" (click)="backToView()">No, keep it</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -210,6 +210,12 @@ export const routes: Routes = [
         title: 'Client Projects — Neelastack Admin',
       },
       {
+        path: 'bookings',
+        loadComponent: () =>
+          import('./features/admin/bookings/admin-bookings.component').then((m) => m.AdminBookingsComponent),
+        title: 'Bookings — Neelastack Admin',
+      },
+      {
         path: 'inquiries',
         loadComponent: () =>
           import('./features/admin/inquiries/list/admin-inquiries-list.component').then(
@@ -226,6 +232,18 @@ export const routes: Routes = [
         title: 'Inquiry — Neelastack Admin',
       },
     ],
+  },
+  {
+    path: 'book/:slug',
+    loadComponent: () =>
+      import('./features/booking/booking-page.component').then((m) => m.BookingPageComponent),
+    title: 'Book a consultation — Neelastack',
+  },
+  {
+    path: 'booking/:token',
+    loadComponent: () =>
+      import('./features/booking/booking-manage.component').then((m) => m.BookingManageComponent),
+    title: 'Your booking — Neelastack',
   },
   {
     path: '**',
