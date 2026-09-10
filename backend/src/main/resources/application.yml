@@ -2,6 +2,10 @@ spring:
   application:
     name: neelastack-backend
 
+  http:
+    converters:
+      preferred-json-mapper: jackson2
+
   security:
     oauth2:
       client:

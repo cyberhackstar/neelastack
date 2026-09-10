@@ -50,6 +50,20 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Get cache date
+        id: date
+        shell: bash
+        run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache OWASP Dependency-Check data
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check-data
+          key: owasp-data-${{ runner.os }}-${{ steps.date.outputs.date }}
+          restore-keys: |
+            owasp-data-${{ runner.os }}-
 
       - name: OWASP Dependency-Check
         working-directory: backend
@@ -58,6 +72,7 @@ jobs:
           org.owasp:dependency-check-maven:check
           -DfailBuildOnCVSS=8
           -DnvdApiKeyEnvironmentVariable=NVD_API_KEY
+          -DdataDirectory=$HOME/.dependency-check-data
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
