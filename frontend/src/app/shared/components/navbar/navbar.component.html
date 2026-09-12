@@ -9,11 +9,14 @@
       <a routerLink="/blog" routerLinkActive="active" ariaCurrentWhenActive="page">Blog</a>
       <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">About</a>
       <a routerLink="/team" routerLinkActive="active" ariaCurrentWhenActive="page">Team</a>
+      <a routerLink="/book" routerLinkActive="active" ariaCurrentWhenActive="page">Schedule</a>
     </nav>
 
     <nav class="account-nav" aria-label="Account">
       @if (auth.currentUser(); as user) {
-        <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+        @if (!isAdminRole(user.role)) {
+          <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+        }
         @if (isAdminRole(user.role)) {
           <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
           <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>
@@ -64,11 +67,14 @@
         <a routerLink="/blog" routerLinkActive="active" ariaCurrentWhenActive="page">Blog</a>
         <a routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">About</a>
         <a routerLink="/team" routerLinkActive="active" ariaCurrentWhenActive="page">Team</a>
+        <a routerLink="/book" routerLinkActive="active" ariaCurrentWhenActive="page">Schedule a call</a>
 
         <div class="mobile-divider"></div>
 
         @if (auth.currentUser(); as user) {
-          <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+          @if (!isAdminRole(user.role)) {
+            <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">My Projects</a>
+          }
           @if (isAdminRole(user.role)) {
             <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin Dashboard</a>
             <a routerLink="/admin/inquiries" routerLinkActive="active" ariaCurrentWhenActive="page">Inquiries</a>

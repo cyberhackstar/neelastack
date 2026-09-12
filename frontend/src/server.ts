@@ -41,7 +41,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://api.razorpay.com; frame-src https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://api.razorpay.com; frame-src https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
   next();
 });
 

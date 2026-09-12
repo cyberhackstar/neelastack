@@ -119,7 +119,36 @@
   max-width: 480px;
 }
 
+.confirmation-card .btn-ghost,
+.confirmation-card .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  text-align: center;
+}
+
 .btn-sm {
   padding: 0.4rem 0.8rem;
   font-size: 0.8rem;
+}
+
+
+@media (max-width: 640px) {
+  .booking-grid {
+    max-width: 100%;
+  }
+
+  .row.two {
+    grid-template-columns: 1fr;
+  }
+
+  .day-chip {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+
+  .slot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

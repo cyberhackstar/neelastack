@@ -449,11 +449,11 @@
               <span class="amount">{{ invoice.currency }} {{ invoice.amount }}</span>
               <span class="tag status-{{ invoice.status.toLowerCase() }}">{{ invoice.status }}</span>
               <button class="btn btn-ghost" (click)="downloadInvoicePdf(invoice)">PDF</button>
-              @if (invoice.status === 'PENDING') {
+              @if (!isAdmin && invoice.status === 'PENDING') {
                 <button class="btn btn-primary" (click)="payInvoice(invoice)" [disabled]="payingInvoiceId() === invoice.id">
                   {{ payingInvoiceId() === invoice.id ? 'Processing…' : 'Pay now' }}
                 </button>
-                @if (!isAdmin && upiMethods().length) {<button class="btn btn-ghost" type="button" (click)="toggleUpi(invoice)">{{upiOpenInvoiceId()===invoice.id?'Hide UPI':'Pay via UPI'}}</button>}
+                @if (upiMethods().length) {<button class="btn btn-ghost" type="button" (click)="toggleUpi(invoice)">{{upiOpenInvoiceId()===invoice.id?'Hide UPI':'Pay via UPI'}}</button>}
               }
               @if (!isAdmin && upiOpenInvoiceId() === invoice.id) {
                 <div class="upi-panel card">

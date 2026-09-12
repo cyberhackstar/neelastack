@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
+import { clientGuard } from './core/guards/client.guard';
 
 export const routes: Routes = [
   {
@@ -159,14 +160,14 @@ export const routes: Routes = [
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/list/dashboard-list.component').then((m) => m.DashboardListComponent),
-    canActivate: [authGuard],
+    canActivate: [authGuard, clientGuard],
     title: 'My Projects — Neelastack',
   },
   {
     path: 'dashboard/:id',
     loadComponent: () =>
       import('./features/dashboard/detail/dashboard-detail.component').then((m) => m.DashboardDetailComponent),
-    canActivate: [authGuard],
+    canActivate: [authGuard, clientGuard],
     title: 'Project — Neelastack',
   },
   {
@@ -272,6 +273,12 @@ export const routes: Routes = [
         title: 'Inquiry — Neelastack Admin',
       },
     ],
+  },
+  {
+    path: 'book',
+    loadComponent: () =>
+      import('./features/booking/booking-list.component').then((m) => m.BookingListComponent),
+    title: 'Schedule a consultation — Neelastack',
   },
   {
     path: 'book/:slug',

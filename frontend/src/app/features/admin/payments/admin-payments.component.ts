@@ -22,7 +22,37 @@ export class AdminPaymentsComponent implements OnInit {
   totalAmount: number|null=null; scheduleCurrency='INR'; installmentText=''; scheduleBusy=signal(false); scheduleMessage=signal<string|null>(null);
 
   ngOnInit(): void { this.seo.update({title:'Payments & Operations',description:'Manage UPI payments, payment plans and project operations.',noindex:true}); this.reload(); this.engagements.listAllForAdmin().subscribe({next:v=>this.projects.set(v)}); }
-  reload(): void { this.upi.listAllMethods().subscribe({next:v=>this.methods.set(v)}); this.upi.listPendingSubmissions().subscribe({next:v=>this.pending.set(v)}); this.health.getOperationsSummary().subscribe({next:v=>this.ops.set(v)}); }
+  reload(): void {
+    this.message.set(null);
+    this.upi.listAllMethods().subscribe({
+      next: v => this.methods.set(v),
+      error: e => {
+        if (e?.status === 401) {
+          this.message.set('Your admin session has expired. Please sign in again.');
+        } else if (e?.status === 403) {
+          this.message.set('Your account is not currently permitted to manage payment settings.');
+        } else {
+          this.message.set(e?.error?.message ?? 'Could not load UPI methods.');
+        }
+      },
+    });
+    this.upi.listPendingSubmissions().subscribe({
+      next: v => this.pending.set(v),
+      error: e => {
+        if (e?.status !== 401 && e?.status !== 403) {
+          this.message.set(e?.error?.message ?? 'Could not load pending UPI submissions.');
+        }
+      },
+    });
+    this.health.getOperationsSummary().subscribe({
+      next: v => this.ops.set(v),
+      error: e => {
+        if (e?.status !== 401 && e?.status !== 403) {
+          this.message.set(e?.error?.message ?? 'Could not load operations summary.');
+        }
+      },
+    });
+  }
   onQr(event: Event): void { const input=event.target as HTMLInputElement; this.qrFile=input.files?.[0]??null; }
   addMethod(): void { if(!this.newLabel.trim()||!this.qrFile){this.message.set('Label and QR image are required.');return;} this.methodBusy.set(true); this.message.set(null); this.upi.createMethod({label:this.newLabel.trim(),vpa:this.newVpa.trim()||undefined,payeeName:this.newPayee.trim()||undefined},this.qrFile).subscribe({next:v=>{this.methods.set([v,...this.methods()]);this.newLabel='';this.newVpa='';this.newPayee='';this.qrFile=null;this.methodBusy.set(false);},error:e=>{this.methodBusy.set(false);this.message.set(e?.error?.message??'Could not create UPI method.');}}); }
   toggleMethod(m: UpiPaymentMethod): void { this.actionBusy.set(m.id); const call=m.active?this.upi.deactivateMethod(m.id):this.upi.activateMethod(m.id); call.subscribe({next:v=>{this.methods.set(this.methods().map(x=>x.id===v.id?v:x));this.actionBusy.set(null)},error:e=>{this.actionBusy.set(null);this.message.set(e?.error?.message??'Could not update UPI method.')}}); }

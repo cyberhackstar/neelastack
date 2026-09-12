@@ -36,6 +36,7 @@ export class BookingPageComponent implements OnInit {
   selectedDate = signal<string | null>(null);
   selectedSlot = signal<string | null>(null);
   loadingSlots = signal(false);
+  availabilityError = signal<string | null>(null);
 
   step = signal<'pick-time' | 'details' | 'confirmed'>('pick-time');
   submitting = signal(false);
@@ -86,6 +87,7 @@ export class BookingPageComponent implements OnInit {
 
   private loadAvailability(slug: string): void {
     this.loadingSlots.set(true);
+    this.availabilityError.set(null);
     const from = new Date();
     const to = new Date();
     to.setDate(to.getDate() + (this.meetingType()?.maxHorizonDays ?? 30));
@@ -105,8 +107,11 @@ export class BookingPageComponent implements OnInit {
         }
         this.loadingSlots.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.loadingSlots.set(false);
+        this.availabilityError.set(
+          err?.error?.message || 'We could not load availability right now. Please try again.',
+        );
       },
     });
   }
@@ -127,7 +132,28 @@ export class BookingPageComponent implements OnInit {
   }
 
   formatSlotTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: this.timezone,
+    });
+  }
+
+  googleCalendarUrl(booking: BookingDto): string {
+    const toGoogleDate = (value: string): string =>
+      new Date(value)
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace('.000Z', 'Z');
+
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: booking.meetingTypeName + ' — Neelastack',
+      dates: `${toGoogleDate(booking.startAt)}/${toGoogleDate(booking.endAt)}`,
+      details: `Booking ${booking.bookingNumber}.${booking.meetingUrl ? `\nMeeting link: ${booking.meetingUrl}` : ''}`,
+      location: booking.meetingUrl ?? '',
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
   }
 
   formatDayLabel(dateStr: string): string {
@@ -163,7 +189,8 @@ export class BookingPageComponent implements OnInit {
         inquiryId,
         idempotencyKey,
         source: 'website',
-        landingPage: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        landingPage: typeof window !== 'undefined' ? window.location.href.slice(0, 300) : undefined,
+        referrer: typeof document !== 'undefined' ? document.referrer.slice(0, 300) : undefined,
       })
       .subscribe({
         next: (booking) => {

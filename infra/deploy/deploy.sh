@@ -169,6 +169,26 @@ public_smoke_test() {
   fi
 }
 
+purge_ssr_cache() {
+  log "Purging Nginx SSR cache after image update..."
+
+  # Nginx may need a moment to finish starting after a compose update. Retry rather
+  # than silently leaving stale HTML in the persistent cache volume. A failed purge
+  # is deployment-fatal because stale SSR HTML can reference asset hashes from the
+  # previous frontend image and produce an apparently unstyled page.
+  for attempt in 1 2 3 4 5; do
+    if docker exec neelastack-nginx sh -c 'find /var/cache/nginx/ssr -mindepth 1 -delete' 2>/dev/null; then
+      log "Nginx SSR cache purged."
+      return 0
+    fi
+    log "  SSR cache purge attempt $attempt/5 — nginx not ready yet."
+    sleep 2
+  done
+
+  log "ERROR: Could not purge Nginx SSR cache after 5 attempts."
+  return 1
+}
+
 deploy_tag() {
   local tag="$1"
   log "Deploying image tag: $tag"
@@ -185,7 +205,7 @@ ghcr_login_if_configured
 
 deploy_tag "$IMAGE_TAG"
 
-if wait_for_healthy && smoke_test; then
+if wait_for_healthy && purge_ssr_cache && smoke_test; then
   echo "$IMAGE_TAG" > "$LAST_GOOD_FILE"
   log "Deploy of $IMAGE_TAG succeeded and passed local smoke tests."
   public_smoke_test || true
@@ -198,7 +218,7 @@ log "Deploy of $IMAGE_TAG failed health checks or local smoke tests."
 if [ -n "$previous_tag" ] && [ "$previous_tag" != "$IMAGE_TAG" ]; then
   log "Rolling back to last known-good tag: $previous_tag"
   deploy_tag "$previous_tag"
-  if wait_for_healthy && smoke_test; then
+  if wait_for_healthy && purge_ssr_cache && smoke_test; then
     log "Rollback to $previous_tag succeeded. The bad tag ($IMAGE_TAG) never stayed live."
     public_smoke_test || true
     exit 1

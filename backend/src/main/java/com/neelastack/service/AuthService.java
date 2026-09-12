@@ -180,10 +180,10 @@ public class AuthService {
         }
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalStateException("User not found"));
+                .orElseThrow(() -> new BadRequestException("This refresh token is invalid or has expired"));
 
         if (!jwtService.isTokenValid(refreshToken, user, user.getTokenVersion())) {
-            throw new IllegalStateException("Refresh token is invalid or expired");
+            throw new BadRequestException("This refresh token is invalid or has expired");
         }
 
         String jti = jwtService.extractJti(refreshToken);

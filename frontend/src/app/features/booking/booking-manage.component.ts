@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BookingService } from '../../core/services/booking.service';
+import { SeoService } from '../../core/services/seo.service';
 import { BookingDto, DaySlotsDto } from '../../core/models/booking.model';
 
 /**
@@ -20,6 +21,7 @@ import { BookingDto, DaySlotsDto } from '../../core/models/booking.model';
 export class BookingManageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private bookingService = inject(BookingService);
+  private seo = inject(SeoService);
 
   booking = signal<BookingDto | null>(null);
   loading = signal(true);
@@ -33,6 +35,11 @@ export class BookingManageComponent implements OnInit {
   cancelReason = '';
 
   ngOnInit(): void {
+    this.seo.update({
+      title: 'Manage your booking',
+      description: 'View, reschedule, or cancel your Neelastack booking.',
+      noindex: true,
+    });
     const token = this.route.snapshot.paramMap.get('token');
     if (!token) {
       this.error.set('Invalid booking link.');

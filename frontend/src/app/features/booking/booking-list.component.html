@@ -1,0 +1,77 @@
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">// SCHEDULE</span>
+    <h1 class="section-heading">Choose a time to talk.</h1>
+    <p class="section-sub">
+      No account required. Pick the conversation that fits, choose a real available time, and
+      confirm your meeting directly.
+    </p>
+  </div>
+</section>
+
+<section class="booking-types-section">
+  <div class="container">
+    @if (loading()) {
+      <div class="card state-card">
+        <p>Loading available consultations…</p>
+      </div>
+    } @else if (error()) {
+      <div class="card state-card error-card">
+        <h2>Booking is temporarily unavailable.</h2>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (meetingTypes().length === 0) {
+      <div class="card state-card">
+        <h2>No consultations are currently open.</h2>
+        <p>Please use the contact form and we will arrange the right time.</p>
+        <a routerLink="/contact" class="btn btn-primary">Contact Neelastack</a>
+      </div>
+    } @else {
+      <div class="meeting-types-grid">
+        @for (type of meetingTypes(); track type.id) {
+          <article class="card meeting-type-card">
+            <div class="meeting-type-meta">
+              <span class="label">{{ type.durationMinutes }} MINUTES</span>
+              <span class="price">{{ formatPrice(type) }}</span>
+            </div>
+
+            <h2>{{ type.name }}</h2>
+            @if (type.description) {
+              <p class="description">{{ type.description }}</p>
+            } @else {
+              <p class="description">
+                A focused conversation to understand your goals, constraints, and the right next
+                step.
+              </p>
+            }
+
+            <div class="meeting-type-details">
+              @if (type.locationType === 'GOOGLE_MEET') {
+                <span>Google Meet</span>
+              } @else if (type.locationDetail) {
+                <span>{{ type.locationDetail }}</span>
+              } @else {
+                <span>Online meeting</span>
+              }
+              <span>{{ type.maxHorizonDays }}-day booking window</span>
+            </div>
+
+            <a [routerLink]="['/book', type.slug]" class="btn btn-primary book-button">
+              Choose a time <span aria-hidden="true">→</span>
+            </a>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container cta-inner">
+    <h2 class="section-heading">Not sure which conversation fits?</h2>
+    <p class="section-sub">
+      Start with a message and we will point you to the right consultation.
+    </p>
+    <a routerLink="/contact" class="btn btn-ghost">Talk to us first</a>
+  </div>
+</section>

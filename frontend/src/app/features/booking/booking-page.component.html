@@ -32,6 +32,9 @@
           <div class="label">PICK A DATE</div>
           @if (loadingSlots()) {
             <p>Finding available times…</p>
+          } @else if (availabilityError()) {
+            <p class="error-text">{{ availabilityError() }}</p>
+            <button type="button" class="btn-ghost btn-sm" (click)="loadAvailability(meetingType()!.slug)">Try again</button>
           } @else if (visibleDays().length === 0) {
             <p>No available times in the next {{ meetingType()!.maxHorizonDays }} days. Please check back soon.</p>
           } @else {
@@ -136,6 +139,9 @@
         @if (confirmation()!.meetingUrl) {
           <p><a class="btn-primary" [href]="confirmation()!.meetingUrl" target="_blank" rel="noopener">Join meeting link</a></p>
         }
+        <p>
+          <a class="btn-ghost" [href]="googleCalendarUrl(confirmation()!)" target="_blank" rel="noopener">Add to Google Calendar</a>
+        </p>
         <p class="muted">
           A confirmation email is on its way to {{ confirmation()!.clientEmail }} with a link to reschedule or cancel.
         </p>

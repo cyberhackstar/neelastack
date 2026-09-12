@@ -43,6 +43,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: "blog/:slug", renderMode: RenderMode.Server },
   { path: "solutions", renderMode: RenderMode.Server },
   { path: "solutions/:slug", renderMode: RenderMode.Server },
+  { path: "book", renderMode: RenderMode.Server },
+  { path: "book/:slug", renderMode: RenderMode.Server },
   { path: "quote/:token", renderMode: RenderMode.Server },
   { path: "testimonial/:token", renderMode: RenderMode.Server },
 
@@ -55,8 +57,11 @@ export const serverRoutes: ServerRoute[] = [
   { path: "accept-invitation", renderMode: RenderMode.Client },
   { path: "accept-admin-invitation", renderMode: RenderMode.Client },
   { path: "oauth-callback", renderMode: RenderMode.Client },
+  { path: "change-password", renderMode: RenderMode.Client },
+  { path: "check-email", renderMode: RenderMode.Client },
   { path: "dashboard", renderMode: RenderMode.Client },
   { path: "dashboard/:id", renderMode: RenderMode.Client },
+  { path: "booking/:token", renderMode: RenderMode.Client },
   { path: "admin", renderMode: RenderMode.Client },
   { path: "admin/content/services", renderMode: RenderMode.Client },
   { path: "admin/content/projects", renderMode: RenderMode.Client },
@@ -67,6 +72,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: "admin/staff", renderMode: RenderMode.Client },
   { path: "admin/inquiries", renderMode: RenderMode.Client },
   { path: "admin/inquiries/:id", renderMode: RenderMode.Client },
+  { path: "admin/engagements", renderMode: RenderMode.Client },
+  { path: "admin/bookings", renderMode: RenderMode.Client },
+  { path: "admin/booking-settings", renderMode: RenderMode.Client },
+  { path: "admin/payments", renderMode: RenderMode.Client },
 
   // ---- Fallback: 404 page rendered on the server with a real 404 status, so
   //      crawlers that hit a dead link get an honest status code, not a 200. ----
