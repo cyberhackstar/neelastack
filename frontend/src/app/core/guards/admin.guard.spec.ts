@@ -16,6 +16,7 @@ describe('adminGuard', () => {
     email: 'admin@example.com',
     role: 'ADMIN',
     emailVerified: true,
+    verificationRequired: false,
     mfaRequired: false,
     mfaToken: null,
     mustChangePassword: false,

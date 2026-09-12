@@ -10,11 +10,16 @@ import com.neelastack.entity.Invoice;
 import com.neelastack.entity.InvoiceStatus;
 import com.neelastack.entity.PaymentAttempt;
 import com.neelastack.entity.PaymentAttemptStatus;
+import com.neelastack.entity.NotificationPriority;
+import com.neelastack.entity.NotificationType;
 import com.neelastack.entity.PaymentSource;
+import com.neelastack.entity.ProjectActivityType;
+import com.neelastack.entity.User;
 import com.neelastack.exception.BadRequestException;
 import com.neelastack.exception.ResourceNotFoundException;
 import com.neelastack.repository.InvoiceRepository;
 import com.neelastack.repository.PaymentAttemptRepository;
+import com.neelastack.security.CurrentUserProvider;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
@@ -44,6 +49,9 @@ public class InvoiceService {
     private final PdfInvoiceService pdfInvoiceService;
     private final AuditLogService auditLogService;
     private final TestimonialService testimonialService;
+    private final ProjectActivityService projectActivityService;
+    private final CurrentUserProvider currentUserProvider;
+    private final NotificationService notificationService;
 
     @Value("${app.razorpay.key-id}")
     private String razorpayKeyId;
@@ -79,7 +87,19 @@ public class InvoiceService {
                 .dueDate(request.dueDate())
                 .build();
 
-        return toDto(invoiceRepository.saveAndFlush(invoice));
+        Invoice saved = invoiceRepository.saveAndFlush(invoice);
+
+        projectActivityService.recordBestEffort(engagement.getId(), currentUserProvider.get(),
+                ProjectActivityType.INVOICE_CREATED,
+                "Invoice " + saved.getInvoiceNumber() + " created (" + saved.getCurrency() + " " + saved.getAmount() + ")",
+                null);
+
+        notificationService.notifyBestEffort(engagement.getClient(), engagement, NotificationType.INVOICE_CREATED,
+                "New invoice " + saved.getInvoiceNumber(),
+                "A new invoice for " + saved.getCurrency() + " " + saved.getAmount() + " (" + saved.getDescription() + ") is ready for payment.",
+                "/dashboard/" + engagement.getId());
+
+        return toDto(saved);
     }
 
     @Transactional(readOnly = true)
@@ -243,6 +263,7 @@ public class InvoiceService {
                 paymentAttemptRepository.save(attempt);
             });
             queueTestimonialBestEffort(invoice);
+            recordInvoicePaidActivity(invoice, currentUserProvider.get());
             return dto;
         }
 
@@ -297,6 +318,7 @@ public class InvoiceService {
         // to PAID. Best-effort inside TestimonialService — never allowed to affect this
         // (already-committed-in-intent) payment confirmation.
         queueTestimonialBestEffort(invoice);
+        recordInvoicePaidActivity(invoice, currentUserProvider.get());
 
         return dto;
     }
@@ -324,8 +346,22 @@ public class InvoiceService {
                 auditLogService.recordBestEffort(AuditAction.PAYMENT_MARKED_PAID, "Invoice", invoice.getId().toString(),
                         Map.of("source", source.name(), "razorpayPaymentId", razorpayPaymentId == null ? "" : razorpayPaymentId));
                 queueTestimonialBestEffort(invoice);
+                // No authenticated actor on the webhook request path -- null reads as
+                // "Neelastack" on the client timeline (see ProjectActivityService#record).
+                recordInvoicePaidActivity(invoice, null);
+                notificationService.notifyBestEffort(invoice.getEngagement().getClient(), invoice.getEngagement(),
+                        NotificationType.INVOICE_PAID, NotificationPriority.LOW,
+                        "Payment received — " + invoice.getInvoiceNumber(),
+                        "We've received your payment for invoice " + invoice.getInvoiceNumber() + ". Thank you!",
+                        null, null, "/dashboard/" + invoice.getEngagement().getId());
             }
         });
+    }
+
+    private void recordInvoicePaidActivity(Invoice invoice, User actor) {
+        projectActivityService.recordBestEffort(invoice.getEngagement().getId(), actor,
+                ProjectActivityType.INVOICE_PAID,
+                "Invoice " + invoice.getInvoiceNumber() + " marked paid", null);
     }
 
     /**
@@ -360,6 +396,44 @@ public class InvoiceService {
         // Reuses engagement ownership check (throws AccessDeniedException if the caller can't see it)
         engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId());
         return invoice;
+    }
+
+    /** Public entry point for other services (UpiPaymentService, PaymentScheduleService) that
+     *  already hold an Invoice and just need the same ownership check applied. */
+    public void checkAccess(Invoice invoice) {
+        engagementService.getEntityWithAccessCheck(invoice.getEngagement().getId());
+    }
+
+    /**
+     * Admin-verified "mark paid" path shared by direct UPI QR payments (UpiPaymentService) and
+     * any future manually-reconciled payment method. Deliberately mirrors
+     * {@link #markPaidFromWebhook}'s locking and idempotency: the same pessimistic row lock,
+     * and the same refusal to transition an already-PAID invoice, so this can never race the
+     * Razorpay webhook/reconciliation sweep into a double-processed or inconsistent state --
+     * whichever path gets there first wins, and every path after that is a no-op.
+     */
+    @Transactional
+    public InvoiceDto markPaidByAdmin(UUID invoiceId, PaymentSource source) {
+        Invoice invoice = invoiceRepository.findByIdForUpdate(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            return toDto(invoice);
+        }
+
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(LocalDateTime.now());
+        invoice.setPaymentSource(source);
+        InvoiceDto dto = toDto(invoiceRepository.save(invoice));
+
+        log.info("Invoice {} marked PAID via {}", invoice.getInvoiceNumber(), source);
+        auditLogService.recordBestEffort(AuditAction.PAYMENT_MARKED_PAID, "Invoice", invoice.getId().toString(),
+                Map.of("source", source.name()));
+
+        queueTestimonialBestEffort(invoice);
+        recordInvoicePaidActivity(invoice, currentUserProvider.get());
+
+        return dto;
     }
 
     private String nextInvoiceNumber() {

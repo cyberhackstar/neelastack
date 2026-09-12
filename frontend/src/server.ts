@@ -33,6 +33,18 @@ const browserDistFolder = resolve(serverDistFolder, "../browser");
  */
 
 const app = express();
+
+app.disable("x-powered-by");
+
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://api.razorpay.com; frame-src https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
+  next();
+});
+
 const allowedHosts = (
   process.env["NG_ALLOWED_HOSTS"] ??
   "neelastack.com,www.neelastack.com,localhost,127.0.0.1"
@@ -492,3 +504,6 @@ if (isMainModule(import.meta.url)) {
  * Export Express application for Angular SSR.
  */
 export default app;
+
+
+

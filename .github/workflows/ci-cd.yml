@@ -109,22 +109,68 @@ jobs:
         working-directory: frontend
         shell: bash
         run: |
+          # P0 fix: this step used to retry npm audit and then `exit 0` unconditionally
+          # once retries ran out, so "found a high/critical vulnerability" and "npm
+          # registry was unreachable" both produced a green build. It now distinguishes
+          # the three outcomes explicitly and only ever exits 0 on a genuine pass.
           set -u
+
+          audit_json=""
+          ran_successfully=false
 
           for attempt in 1 2 3 4 5; do
             echo "npm audit attempt ${attempt}/5"
 
-            if npm audit --audit-level=high; then
-              exit 0
+            if audit_json="$(npm audit --audit-level=high --json)"; then
+              ran_successfully=true
+              break
+            fi
+
+            # npm audit's own exit code doesn't distinguish "vulnerabilities found"
+            # from "couldn't reach the registry" -- inspect the JSON body instead.
+            # A successful audit (with or without findings) always parses and has a
+            # "vulnerabilities" object; a registry/network failure returns an
+            # "error" object instead and no usable report.
+            if echo "$audit_json" | node -e '
+              let d = "";
+              process.stdin.on("data", c => d += c);
+              process.stdin.on("end", () => {
+                try {
+                  const j = JSON.parse(d);
+                  process.exit(j.vulnerabilities ? 0 : 1);
+                } catch { process.exit(1); }
+              });'; then
+              ran_successfully=true
+              break
             fi
 
             if [ "$attempt" -lt 5 ]; then
-              echo "npm audit failed; retrying in 15 seconds..."
+              echo "npm audit could not be evaluated (registry likely unavailable); retrying in 15 seconds..."
               sleep 15
             fi
           done
 
-          echo "::warning::npm audit failed after 5 attempts. Registry may be unavailable. Re-run manually."
+          if [ "$ran_successfully" != true ]; then
+            echo "::error::npm audit did not return a usable report after 5 attempts (registry/service unavailable). Failing closed -- this is NOT the same as a clean scan."
+            exit 1
+          fi
+
+          high_or_critical=$(echo "$audit_json" | node -e '
+            let d = "";
+            process.stdin.on("data", c => d += c);
+            process.stdin.on("end", () => {
+              const j = JSON.parse(d);
+              const m = (j.metadata && j.metadata.vulnerabilities) || {};
+              console.log((m.high || 0) + (m.critical || 0));
+            });')
+
+          if [ "${high_or_critical:-0}" -gt 0 ]; then
+            echo "::error::npm audit found ${high_or_critical} high/critical vulnerabilities."
+            echo "$audit_json" | node -e 'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>console.log(JSON.stringify(JSON.parse(d).metadata.vulnerabilities,null,2)))'
+            exit 1
+          fi
+
+          echo "npm audit passed: no high/critical vulnerabilities."
           exit 0
 
   sast:

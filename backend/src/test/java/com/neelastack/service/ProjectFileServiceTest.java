@@ -2,11 +2,14 @@ package com.neelastack.service;
 
 import com.neelastack.entity.Engagement;
 import com.neelastack.entity.ProjectFile;
+import com.neelastack.entity.Role;
+import com.neelastack.entity.User;
 import com.neelastack.exception.ResourceNotFoundException;
 import com.neelastack.repository.ProjectFileRepository;
 import com.neelastack.security.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +24,7 @@ class ProjectFileServiceTest {
     private FileStorageService fileStorageService;
     private CurrentUserProvider currentUserProvider;
     private AuditLogService auditLogService;
+    private ProjectActivityService projectActivityService;
     private ProjectFileService projectFileService;
 
     @BeforeEach
@@ -30,8 +34,10 @@ class ProjectFileServiceTest {
         fileStorageService = mock(FileStorageService.class);
         currentUserProvider = mock(CurrentUserProvider.class);
         auditLogService = mock(AuditLogService.class);
+        projectActivityService = mock(ProjectActivityService.class);
         projectFileService = new ProjectFileService(
-                projectFileRepository, engagementService, fileStorageService, currentUserProvider, auditLogService);
+                projectFileRepository, engagementService, fileStorageService, currentUserProvider,
+                auditLogService, projectActivityService);
     }
 
     @Test
@@ -66,16 +72,20 @@ class ProjectFileServiceTest {
     void delete_ownFile_deletesFromCloudinaryWithCorrectResourceType() {
         UUID engagementId = UUID.randomUUID();
         Engagement engagement = Engagement.builder().id(engagementId).build();
+        User uploader = User.builder().id(UUID.randomUUID()).role(Role.CLIENT).build();
 
         ProjectFile file = ProjectFile.builder()
                 .id(UUID.randomUUID())
                 .engagement(engagement)
+                .uploadedBy(uploader)
                 .cloudinaryPublicId("neelastack/engagements/mine/report")
                 .cloudinaryResourceType("raw")
                 .build();
 
         when(engagementService.getEntityWithAccessCheck(engagementId)).thenReturn(engagement);
         when(projectFileRepository.findById(file.getId())).thenReturn(Optional.of(file));
+        // The caller is the same client who uploaded the file.
+        when(currentUserProvider.get()).thenReturn(uploader);
 
         projectFileService.delete(engagementId, file.getId());
 
@@ -83,6 +93,61 @@ class ProjectFileServiceTest {
         // authenticated assets (this was the bug fixed in FileStorageService.delete).
         verify(fileStorageService).delete("neelastack/engagements/mine/report", "raw");
         verify(projectFileRepository).delete(file);
+    }
+
+    @Test
+    void delete_staffMember_canDeleteAnyFileOnTheEngagement() {
+        // Admin/superadmin manage the whole project, so they may remove a file even though
+        // they are not its uploader.
+        UUID engagementId = UUID.randomUUID();
+        Engagement engagement = Engagement.builder().id(engagementId).build();
+        User clientUploader = User.builder().id(UUID.randomUUID()).role(Role.CLIENT).build();
+        User admin = User.builder().id(UUID.randomUUID()).role(Role.ADMIN).build();
+
+        ProjectFile file = ProjectFile.builder()
+                .id(UUID.randomUUID())
+                .engagement(engagement)
+                .uploadedBy(clientUploader)
+                .cloudinaryPublicId("neelastack/engagements/mine/deliverable")
+                .cloudinaryResourceType("raw")
+                .build();
+
+        when(engagementService.getEntityWithAccessCheck(engagementId)).thenReturn(engagement);
+        when(projectFileRepository.findById(file.getId())).thenReturn(Optional.of(file));
+        when(currentUserProvider.get()).thenReturn(admin);
+
+        projectFileService.delete(engagementId, file.getId());
+
+        verify(fileStorageService).delete("neelastack/engagements/mine/deliverable", "raw");
+        verify(projectFileRepository).delete(file);
+    }
+
+    @Test
+    void delete_clientAttemptsToDeleteAnotherUsersFileOnSameEngagement_isDenied() {
+        // This is the gap the review flagged: engagement-level access was being treated as
+        // sufficient, when a CLIENT should only be able to delete their own uploads.
+        UUID engagementId = UUID.randomUUID();
+        Engagement engagement = Engagement.builder().id(engagementId).build();
+        User uploader = User.builder().id(UUID.randomUUID()).role(Role.CLIENT).build();
+        User otherClientOnSameEngagement = User.builder().id(UUID.randomUUID()).role(Role.CLIENT).build();
+
+        ProjectFile file = ProjectFile.builder()
+                .id(UUID.randomUUID())
+                .engagement(engagement)
+                .uploadedBy(uploader)
+                .cloudinaryPublicId("neelastack/engagements/mine/report")
+                .cloudinaryResourceType("raw")
+                .build();
+
+        when(engagementService.getEntityWithAccessCheck(engagementId)).thenReturn(engagement);
+        when(projectFileRepository.findById(file.getId())).thenReturn(Optional.of(file));
+        when(currentUserProvider.get()).thenReturn(otherClientOnSameEngagement);
+
+        assertThatThrownBy(() -> projectFileService.delete(engagementId, file.getId()))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verifyNoInteractions(fileStorageService);
+        verify(projectFileRepository, never()).delete(any());
     }
 
     @Test

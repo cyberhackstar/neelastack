@@ -13,13 +13,19 @@ export function isAdminRole(role: UserRole | undefined | null): boolean {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
+  /** Null on a fresh, not-yet-verified registration (verificationRequired=true) or when
+   *  mfaRequired=true — neither issues a usable session yet. */
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenType: string | null;
   fullName: string;
   email: string;
   role: UserRole;
   emailVerified: boolean;
+  /** True when this is the result of a fresh registration whose email still needs
+   *  verification — accessToken/refreshToken are null. The user must check their inbox
+   *  (or call AuthService.resendVerification()) and verify before /login will issue tokens. */
+  verificationRequired: boolean;
   /** True when the account has MFA enabled — accessToken/refreshToken are absent and
    *  mfaToken must be exchanged via AuthService.completeMfaLogin() instead. */
   mfaRequired: boolean;

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { EngagementService } from '../../../core/services/engagement.service';
 import { Engagement, EngagementStatus } from '../../../core/models/content.model';
@@ -7,7 +8,7 @@ import { Engagement, EngagementStatus } from '../../../core/models/content.model
 @Component({
   selector: 'app-admin-engagements',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   templateUrl: './admin-engagements.component.html',
   styleUrl: './admin-engagements.component.scss',
 })

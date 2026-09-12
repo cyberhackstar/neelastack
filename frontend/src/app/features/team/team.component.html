@@ -3,18 +3,26 @@
     <span class="eyebrow">// TEAM</span>
     <h1 class="section-heading">Small by design.</h1>
     <p class="section-sub">
-      Neelastack is Bhawesh's practice — every engagement is led by him personally, start to
-      finish. For larger builds, he brings in a small network of engineers he trusts, rather than
-      handing your project off to whoever's free.
+      Neelastack is Bhawesh's practice — every engagement is led by him
+      personally, start to finish. For larger builds, he brings in a small
+      network of engineers he trusts, rather than handing your project off to
+      whoever's free.
     </p>
   </div>
 </section>
-
 <section class="team-grid-section">
   <div class="container grid">
     @for (member of team; track member.name) {
       <article class="card card-tilt member-card">
-        <div class="avatar">{{ member.initials }}</div>
+        <div class="avatar">
+          <img
+            [src]="member.photoUrl"
+            [alt]="member.name"
+            loading="lazy"
+            width="96"
+            height="96"
+          />
+        </div>
         <h2>{{ member.name }}</h2>
         <span class="role">{{ member.role }}</span>
         <p>{{ member.bio }}</p>
@@ -27,11 +35,13 @@
     }
   </div>
 </section>
-
 <section class="cta-band">
   <div class="container cta-inner">
     <h2 class="section-heading">One point of contact, always accountable.</h2>
-    <p class="section-sub">No account managers relaying messages between you and the engineer. You talk directly to the person writing the code.</p>
+    <p class="section-sub">
+      No account managers relaying messages between you and the engineer. You
+      talk directly to the person writing the code.
+    </p>
     <a routerLink="/contact" class="btn btn-primary">Start a conversation</a>
   </div>
 </section>

@@ -50,7 +50,12 @@ public class SecurityConfig {
                                                         // signed state param instead (see
                                                         // GoogleCalendarService#buildAuthorizationUrl).
             "/oauth2/**",
-            "/login/oauth2/**"
+            "/login/oauth2/**",
+            // TestSupportController's whole bean is gated by @Profile("test") -- this route
+            // doesn't exist at all outside the disposable e2e stack / JUnit test profile, so
+            // permitAll here is inert in dev/prod (no controller means a plain 404, regardless
+            // of this matcher). See TestSupportController's javadoc for why it exists.
+            "/api/v1/test-support/**"
     };
 
     @Bean

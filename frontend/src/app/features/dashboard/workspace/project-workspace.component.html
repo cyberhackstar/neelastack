@@ -1,0 +1,88 @@
+<section class="workspace-grid">
+  <article class="workspace-card health-panel">
+    <div class="panel-heading"><span>Project health</span><span class="health-status" [class]="'health-' + (health()?.status?.toLowerCase() ?? 'unknown')">{{ health()?.status?.replaceAll('_', ' ') ?? 'Loading…' }}</span></div>
+    @if (health(); as h) {
+      <ul class="reason-list">
+        @for (reason of h.reasons; track reason) { <li>{{ reason }}</li> }
+      </ul>
+    }
+  </article>
+
+  <article class="workspace-card action-panel">
+    <div class="panel-heading"><span>Needs your attention</span><span class="count-pill">{{ actions().length }}</span></div>
+    @if (actions().length) {
+      <ul class="action-list">
+        @for (item of actions(); track item.kind + item.relatedId) {
+          <li>
+            <div><strong>{{ item.title }}</strong><p>{{ item.description }}</p></div>
+            @if (item.dueDate) { <time>{{ item.dueDate | date: 'mediumDate' }}</time> }
+          </li>
+        }
+      </ul>
+    } @else { <p class="muted">Nothing requires your attention right now.</p> }
+  </article>
+</section>
+
+@if (schedule(); as schedule) {
+  <section class="workspace-card schedule-panel">
+    <div class="panel-heading"><span>Payment plan</span><span>{{ schedule.currency }} {{ schedule.paidAmount | number:'1.0-2' }} paid</span></div>
+    <div class="schedule-summary">
+      <div><span>Plan</span><strong>{{ schedule.currency }} {{ schedule.totalAmount | number:'1.0-2' }}</strong></div>
+      <div><span>Outstanding</span><strong>{{ schedule.currency }} {{ schedule.outstandingAmount | number:'1.0-2' }}</strong></div>
+    </div>
+    <div class="installments">
+      @for (installment of schedule.installments; track installment.id) {
+        <div class="installment-row">
+          <div><strong>{{ installment.label }}</strong><span>{{ installment.dueDate ? (installment.dueDate | date:'mediumDate') : 'No due date' }}</span></div>
+          <div><strong>{{ schedule.currency }} {{ installment.amount | number:'1.0-2' }}</strong><span class="tag">{{ statusLabel(installment.status) }}</span></div>
+        </div>
+      }
+    </div>
+  </section>
+}
+
+@if (!isAdmin && invoices.length) {
+  <section class="workspace-card upi-panel">
+    <div class="panel-heading"><span>Pay directly by UPI</span><span class="muted">No gateway needed</span></div>
+    @if (!upiMethods().length) {
+      <p class="muted">Direct UPI is not configured yet. Use the standard Pay now button on the invoice.</p>
+    } @else {
+      <div class="invoice-pay-list">
+        @for (invoice of invoices; track invoice.id) {
+          @if (invoice.status === 'PENDING') {
+            <div class="invoice-pay-row">
+              <div><strong>{{ invoice.invoiceNumber }}</strong><span>{{ invoice.currency }} {{ invoice.amount | number:'1.0-2' }}</span></div>
+              <button type="button" class="btn btn-ghost" (click)="openUpi(invoice.id, invoice.amount)">Pay by UPI</button>
+            </div>
+          }
+        }
+      </div>
+    }
+  </section>
+}
+
+@if (selectedInvoiceId(); as invoiceId) {
+  <section class="workspace-card upi-checkout">
+    <div class="panel-heading"><span>UPI payment proof</span><button type="button" class="text-button" (click)="closeUpi()">Close</button></div>
+    <div class="upi-method-grid">
+      @for (method of upiMethods(); track method.id) {
+        <label class="upi-method" [class.selected]="selectedMethodId() === method.id">
+          <input type="radio" name="upiMethod" [value]="method.id" [ngModel]="selectedMethodId()" (ngModelChange)="selectedMethodId.set($event)" />
+          <img [src]="method.qrImageUrl" [alt]="method.label + ' QR code'" />
+          <strong>{{ method.label }}</strong>
+          @if (method.vpa) { <span>{{ method.vpa }}</span> }
+          @if (method.payeeName) { <small>{{ method.payeeName }}</small> }
+        </label>
+      }
+    </div>
+    <div class="upi-form">
+      <label>UTR / transaction reference<input [ngModel]="utrReference()" (ngModelChange)="utrReference.set($event)" maxlength="120" /></label>
+      <label>Payer UPI ID (optional)<input [ngModel]="payerUpiId()" (ngModelChange)="payerUpiId.set($event)" maxlength="120" /></label>
+      <label>Amount paid<input type="number" min="1" step="0.01" [ngModel]="amountClaimed()" (ngModelChange)="amountClaimed.set($event)" /></label>
+      <label>Payment screenshot (optional)<input type="file" accept="image/*" (change)="onScreenshot($event)" /></label>
+      @if (upiError()) { <p class="error">{{ upiError() }}</p> }
+      @if (upiMessage()) { <p class="success">{{ upiMessage() }}</p> }
+      <button type="button" class="btn btn-primary" [disabled]="submittingUpi()" (click)="submitUpi(invoiceId)">{{ submittingUpi() ? 'Submitting…' : 'Submit payment proof' }}</button>
+    </div>
+  </section>
+}

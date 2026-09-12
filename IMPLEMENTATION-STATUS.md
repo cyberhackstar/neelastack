@@ -1,46 +1,40 @@
-# IMPLEMENTATION-STATUS — Theme overhaul
+# Neelastack Implementation Status — Canonical
 
-## Done
-- [x] New dark palette (ink/bone/bronze) applied via `:root`/`[data-theme="dark"]`.
-- [x] New light palette applied via `[data-theme="light"]`, sourced from your
-      uploaded `neelastack-theme.css`.
-- [x] All hardcoded colors across `frontend/src/app/**/*.{scss,html}` swept
-      and replaced with theme variables (status colors, glow rgba effects,
-      the architecture diagram SVG, navbar translucency).
-- [x] Animated dark/light toggle component, wired into desktop + mobile nav.
-- [x] No-flash theme bootstrap (inline script in `index.html` + SSR default).
-- [x] `localStorage` persistence of the visitor's choice.
-- [x] Production dev-mode build verified clean (`ng build --configuration development`),
-      SSR prerender of all 6 static routes succeeds.
-- [x] Razorpay checkout accent color updated to match the new bronze.
-- [x] `CHANGES-theme-overhaul.md` written.
+This file is the current source of truth. Older CHANGES/FIXES files are historical notes and may describe an earlier state.
 
-## Not done / not in scope for this pass
-- **Full production build (`--configuration production`) was not run to
-  completion** — it exceeded the sandbox's time budget partway through the
-  optimization/minification phase (dev build did complete and compiles the
-  same source cleanly, so this is very unlikely to surface new errors, but
-  it hasn't been directly confirmed). Recommend running
-  `npm run build` yourself once before deploying, or let me know and I'll
-  retry it in smaller steps.
-- **Visual QA in a real browser** — I verified the compiled CSS contains
-  both theme blocks and that the SSR HTML carries the toggle and correct
-  `data-theme` attribute, but I have not visually inspected every page in
-  both themes (there are ~40 routes/components). The color mapping was done
-  systematically (every hardcoded color found via full-codebase grep was
-  either mapped to a variable or deliberately left as-is with a documented
-  reason), so I'd expect it to look right everywhere, but a manual pass over
-  admin pages, the dashboard, and the estimator/quote flows would catch
-  anything subtle (e.g. an icon or chart library rendering its own colors
-  outside CSS) that a text search can't.
-- **Contrast/accessibility audit** — I picked light-theme status colors
-  (`--color-danger`, `--color-success`, `--color-info`) with WCAG contrast
-  in mind, but didn't run an automated contrast checker across every
-  color/background pairing in the app.
-- **Backend, migrations, content, SEO, deployment config, CI/CD** —
-  untouched, as requested; this pass is frontend theme only.
+## Production-readiness status
 
-## Suggested next step
-Run the app locally (`npm start` or `ng serve`) and click through a few key
-pages (home, an admin list page, the estimator) toggling light/dark, since
-that's faster and more reliable than me guessing further from source alone.
+| Area | Status | Notes |
+|---|---|---|
+| Authentication / JWT | COMPLETE | Email verification and token-version invalidation enforced |
+| Admin MFA / step-up | COMPLETE | MFA enrollment gate, high-risk step-up and recovery controls |
+| Rate limiting | COMPLETE | Redis + bounded local fallback for auth/MFA paths |
+| Razorpay | COMPLETE | Checkout, webhook and reconciliation paths present |
+| Direct UPI | COMPLETE | Client submission + admin verification UI |
+| Payment schedules | COMPLETE | Client visibility + admin creation/invoice raising |
+| Project health | COMPLETE | Client health and admin operations summary use backend health engine |
+| Action center | COMPLETE | Client dashboard presents actionable items |
+| Booking engine | COMPLETE | Types, weekly windows, date overrides, analytics, Calendar connection UI |
+| Portfolio case-study CMS | COMPLETE | Service categories and key metrics editable in admin |
+| Staff management | COMPLETE | SUPERADMIN invitation, role and enable/disable controls |
+| Observability | COMPLETE | Sentry + Actuator metrics/Prometheus endpoint |
+| Backup / DR | COMPLETE | Restore drill + systemd timer example + health/backup-age check |
+| E2E | IN PROGRESS | Core journeys exist; security/payment/booking regression suite added |
+
+## Required release gate
+
+A deployment is only considered release-ready after local/CI success for:
+
+1. Backend clean build and tests.
+2. Angular clean install, build and unit tests.
+3. Playwright E2E against the production-like Docker stack.
+4. ARM64 Docker image build if the target host is ARM64.
+5. Database migrations from a fresh database and from an existing backup restore.
+6. `scripts/check-production-health.sh` against the deployed origin.
+
+## Known operational prerequisites
+
+- Configure real `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, database/Redis/mail credentials and OAuth secrets.
+- Keep the application origin private behind the trusted proxy/tunnel before trusting proxy IP headers.
+- Configure an actual offsite object-storage command for `backup-restore-drill.sh` and enable the supplied systemd timer/cron equivalent.
+- Treat `/actuator/prometheus` as an authenticated operational endpoint; do not expose it publicly through the edge proxy.

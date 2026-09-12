@@ -136,8 +136,8 @@ test.describe("Admin sales management dashboard", () => {
       .getByRole("button", { name: /create account|register|sign up/i })
       .click();
 
-    // Updated: Accept both '/' and '/login' as valid redirect locations after registration
-    await expect(page).toHaveURL(/\/(login)?$|^\/login$/, { timeout: 10000 });
+    // Registration now correctly requires email verification before login.
+    await expect(page).toHaveURL(/\/check-email\?email=/, { timeout: 10000 });
 
     await page.goto("/admin");
     await page.waitForURL((url) => !url.pathname.startsWith("/admin"), {
@@ -145,3 +145,4 @@ test.describe("Admin sales management dashboard", () => {
     });
   });
 });
+

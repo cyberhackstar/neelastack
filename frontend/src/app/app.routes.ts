@@ -103,6 +103,12 @@ export const routes: Routes = [
     title: 'Create account — Neelastack',
   },
   {
+    path: 'check-email',
+    loadComponent: () =>
+      import('./features/auth/check-email/check-email.component').then((m) => m.CheckEmailComponent),
+    title: 'Check your email — Neelastack',
+  },
+  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./features/auth/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
@@ -113,6 +119,22 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent),
     title: 'Reset password — Neelastack',
+  },
+  {
+    path: 'accept-invitation',
+    loadComponent: () =>
+      import('./features/auth/accept-invitation/accept-invitation.component').then(
+        (m) => m.AcceptInvitationComponent,
+      ),
+    title: 'Set up your workspace — Neelastack',
+  },
+  {
+    path: 'accept-admin-invitation',
+    loadComponent: () =>
+      import('./features/auth/accept-invitation/accept-invitation.component').then(
+        (m) => m.AcceptInvitationComponent,
+      ),
+    title: 'Accept admin invitation — Neelastack',
   },
   {
     path: 'verify-email',
@@ -180,6 +202,12 @@ export const routes: Routes = [
         title: 'Security Settings — Neelastack Admin',
       },
       {
+        path: 'staff',
+        loadComponent: () =>
+          import('./features/admin/security/admin-staff.component').then((m) => m.AdminStaffComponent),
+        title: 'Staff Management — Neelastack Admin',
+      },
+      {
         path: 'content/projects',
         loadComponent: () =>
           import('./features/admin/content/projects/admin-projects.component').then(
@@ -214,6 +242,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/bookings/admin-bookings.component').then((m) => m.AdminBookingsComponent),
         title: 'Bookings — Neelastack Admin',
+      },
+      {
+        path: 'booking-settings',
+        loadComponent: () =>
+          import('./features/admin/booking-settings/admin-booking-settings.component').then((m) => m.AdminBookingSettingsComponent),
+        title: 'Booking Settings — Neelastack Admin',
+      },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./features/admin/payments/admin-payments.component').then((m) => m.AdminPaymentsComponent),
+        title: 'Payments & Operations — Neelastack Admin',
       },
       {
         path: 'inquiries',

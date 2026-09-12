@@ -52,6 +52,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: "forgot-password", renderMode: RenderMode.Client },
   { path: "reset-password", renderMode: RenderMode.Client },
   { path: "verify-email", renderMode: RenderMode.Client },
+  { path: "accept-invitation", renderMode: RenderMode.Client },
+  { path: "accept-admin-invitation", renderMode: RenderMode.Client },
   { path: "oauth-callback", renderMode: RenderMode.Client },
   { path: "dashboard", renderMode: RenderMode.Client },
   { path: "dashboard/:id", renderMode: RenderMode.Client },
@@ -62,6 +64,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: "admin/content/solutions", renderMode: RenderMode.Client },
   { path: "admin/pricing-rules", renderMode: RenderMode.Client },
   { path: "admin/security", renderMode: RenderMode.Client },
+  { path: "admin/staff", renderMode: RenderMode.Client },
   { path: "admin/inquiries", renderMode: RenderMode.Client },
   { path: "admin/inquiries/:id", renderMode: RenderMode.Client },
 

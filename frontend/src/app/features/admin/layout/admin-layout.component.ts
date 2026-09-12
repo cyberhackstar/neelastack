@@ -37,6 +37,7 @@ export class AdminLayoutComponent {
       links: [
         { label: 'Inquiries', path: '/admin/inquiries', icon: 'inbox' },
         { label: 'Bookings', path: '/admin/bookings', icon: 'calendar' },
+        { label: 'Booking settings', path: '/admin/booking-settings', icon: 'calendar-settings' },
         { label: 'Client Projects', path: '/admin/engagements', icon: 'briefcase' },
       ],
     },
@@ -52,8 +53,10 @@ export class AdminLayoutComponent {
     {
       heading: 'Configuration',
       links: [
+        { label: 'Payments & operations', path: '/admin/payments', icon: 'credit-card' },
         { label: 'Pricing rules', path: '/admin/pricing-rules', icon: 'tag' },
         { label: 'Security', path: '/admin/security', icon: 'shield' },
+        { label: 'Staff', path: '/admin/staff', icon: 'users' },
       ],
     },
   ];

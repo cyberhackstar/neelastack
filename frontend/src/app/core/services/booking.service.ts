@@ -66,6 +66,18 @@ export class BookingService {
     return this.http.get<MeetingTypeDto[]>(`${this.adminBase}/meeting-types`);
   }
 
+  createMeetingType(payload: unknown) {
+    return this.http.post<MeetingTypeDto>(`${this.adminBase}/meeting-types`, payload);
+  }
+
+  updateMeetingType(id: string, payload: unknown) {
+    return this.http.put<MeetingTypeDto>(`${this.adminBase}/meeting-types/${id}`, payload);
+  }
+
+  deleteMeetingType(id: string) {
+    return this.http.delete<void>(`${this.adminBase}/meeting-types/${id}`);
+  }
+
   listBookings(params: { status?: BookingStatus; meetingTypeId?: string; search?: string; page?: number; size?: number }) {
     let httpParams = new HttpParams();
     if (params.status) httpParams = httpParams.set('status', params.status);
@@ -125,6 +137,10 @@ export class BookingService {
   listAvailabilityOverrides(from: string, to: string) {
     const params = new HttpParams().set('from', from).set('to', to);
     return this.http.get<AvailabilityOverrideDto[]>(`${this.adminBase}/availability/overrides`, { params });
+  }
+
+  removeAvailabilityOverride(date: string) {
+    return this.http.delete<void>(`${this.adminBase}/availability/overrides/${date}`);
   }
 
   upsertAvailabilityOverride(overrideDate: string, isAvailable: boolean, startTime?: string, endTime?: string, reason?: string) {

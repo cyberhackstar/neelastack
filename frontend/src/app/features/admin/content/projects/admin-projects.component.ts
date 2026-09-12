@@ -36,6 +36,8 @@ export class AdminProjectsComponent implements OnInit {
     featured: [false],
     published: [true],
     displayOrder: [0],
+    serviceCategoriesText: [''],
+    keyMetricsText: [''],
   });
 
   ngOnInit(): void {
@@ -68,6 +70,7 @@ export class AdminProjectsComponent implements OnInit {
     this.form.reset({
       title: '', slug: '', summary: '', problemStatement: '', solution: '', outcome: '',
       coverImageUrl: '', techStackText: '', liveUrl: '', repoUrl: '', featured: false, published: true, displayOrder: 0,
+      serviceCategoriesText: '', keyMetricsText: '',
     });
     this.formOpen.set(true);
   }
@@ -89,6 +92,8 @@ export class AdminProjectsComponent implements OnInit {
         featured: full.featured,
         published: full.published ?? true,
         displayOrder: 0,
+        serviceCategoriesText: (full.serviceCategories ?? []).join(', '),
+        keyMetricsText: (full.keyMetrics ?? []).join(', '),
       });
     });
     this.formOpen.set(true);
@@ -110,8 +115,12 @@ export class AdminProjectsComponent implements OnInit {
     const payload = {
       ...raw,
       techStack: raw.techStackText.split(',').map((t) => t.trim()).filter(Boolean),
+      serviceCategories: raw.serviceCategoriesText.split(',').map((t) => t.trim()).filter(Boolean),
+      keyMetrics: raw.keyMetricsText.split(',').map((t) => t.trim()).filter(Boolean),
     };
     delete (payload as any).techStackText;
+    delete (payload as any).serviceCategoriesText;
+    delete (payload as any).keyMetricsText;
 
     const editingId = this.editingId();
     const request = editingId

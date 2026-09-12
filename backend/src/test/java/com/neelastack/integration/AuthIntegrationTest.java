@@ -5,6 +5,7 @@ import java.util.Date;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neelastack.security.JwtService;
+import com.neelastack.repository.UserRepository;
 import com.neelastack.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,12 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         @Autowired
         private UserDetailsService userDetailsService;
 
+        @Autowired
+        private UserRepository userRepository;
+
         private static final String PASSWORD = "Str0ngPassw0rd!";
 
-        private String registerAndGetBody(String email) throws Exception {
+        private String registerRaw(String email) throws Exception {
                 String payload = """
                                 {"fullName":"Test User","email":"%s","password":"%s","phone":"9999999999"}
                                 """.formatted(email, PASSWORD);
@@ -49,16 +53,84 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(payload))
                                 .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.accessToken").exists())
-                                .andExpect(jsonPath("$.refreshToken").exists())
+                                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                                .andExpect(jsonPath("$.verificationRequired").value(true))
+                                .andExpect(jsonPath("$.emailVerified").value(false))
                                 .andExpect(jsonPath("$.role").value("CLIENT"))
                                 .andReturn().getResponse().getContentAsString();
         }
 
+        /**
+         * Marks the account verified directly (as if the user had clicked the emailed link)
+         * and signs in, returning the login response body.
+         */
+        private String loginAfterVerifying(String email) throws Exception {
+                var user = userRepository.findByEmail(email).orElseThrow();
+                user.setEmailVerified(true);
+                userRepository.save(user);
+
+                String loginPayload = """
+                                {"email":"%s","password":"%s"}
+                                """.formatted(email, PASSWORD);
+
+                return mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(loginPayload))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.accessToken").exists())
+                                .andExpect(jsonPath("$.refreshToken").exists())
+                                .andReturn().getResponse().getContentAsString();
+        }
+
+        /**
+         * Registers, verifies, and signs in -- for tests that just need a real token pair and
+         * aren't exercising the registration/verification flow itself (security review P1 #1:
+         * register() no longer hands back tokens directly, so getting a session now takes the
+         * same two steps a real user goes through).
+         */
+        private String registerAndGetBody(String email) throws Exception {
+                registerRaw(email);
+                return loginAfterVerifying(email);
+        }
+
         @Test
-        void register_thenLogin_returnsTokenPair() throws Exception {
+        void register_doesNotIssueTokens_verificationRequiredInstead() throws Exception {
+                // Security review P1 #1: registering an account must not itself grant an
+                // authenticated session -- a fake/unowned email would otherwise get working
+                // tokens before ever proving control of the address. The account is created and
+                // a verification email is sent, but accessToken/refreshToken are absent.
+                registerRaw("no-tokens-on-register@example.com");
+        }
+
+        @Test
+        void register_thenLoginBeforeVerifying_isRejected() throws Exception {
+                // Security review P1 #5: a freshly-registered CLIENT account is not yet
+                // email-verified, and login() enforces that on every sign-in attempt --
+                // including the very first one, since register() itself no longer hands back a
+                // session (security review P1 #1).
                 String email = "register-login@example.com";
-                registerAndGetBody(email);
+                registerRaw(email);
+
+                String loginPayload = """
+                                {"email":"%s","password":"%s"}
+                                """.formatted(email, PASSWORD);
+
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(loginPayload))
+                                .andExpect(status().isForbidden())
+                                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("verify")));
+        }
+
+        @Test
+        void login_afterEmailVerified_returnsTokenPair() throws Exception {
+                String email = "verified-login@example.com";
+                registerRaw(email);
+
+                var user = userRepository.findByEmail(email).orElseThrow();
+                user.setEmailVerified(true);
+                userRepository.save(user);
 
                 String loginPayload = """
                                 {"email":"%s","password":"%s"}
@@ -76,7 +148,7 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         @Test
         void register_duplicateEmail_returns409() throws Exception {
                 String email = "duplicate@example.com";
-                registerAndGetBody(email);
+                registerRaw(email);
 
                 String payload = """
                                 {"fullName":"Someone Else","email":"%s","password":"%s"}
@@ -104,7 +176,7 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         @Test
         void login_wrongPassword_returns401() throws Exception {
                 String email = "wrongpass@example.com";
-                registerAndGetBody(email);
+                registerRaw(email);
 
                 String payload = """
                                 {"email":"%s","password":"TotallyWrong1"}

@@ -5,6 +5,7 @@ import com.neelastack.dto.engagement.EngagementRequest;
 import com.neelastack.entity.Engagement;
 import com.neelastack.entity.EngagementStatus;
 import com.neelastack.entity.Inquiry;
+import com.neelastack.entity.ProjectActivityType;
 import com.neelastack.entity.Role;
 import com.neelastack.entity.User;
 import com.neelastack.exception.BadRequestException;
@@ -13,11 +14,15 @@ import com.neelastack.repository.EngagementRepository;
 import com.neelastack.repository.InquiryRepository;
 import com.neelastack.repository.UserRepository;
 import com.neelastack.security.CurrentUserProvider;
+import com.neelastack.security.OneTimeTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -30,15 +35,20 @@ public class EngagementService {
     private final UserRepository userRepository;
     private final InquiryRepository inquiryRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final PasswordEncoder passwordEncoder;
+    private final OneTimeTokenService oneTimeTokenService;
+    private final EmailService emailService;
+    private final ProjectActivityService projectActivityService;
+
+    @Value("${app.site.frontend-url}")
+    private String frontendUrl;
+
+    private static final String INVITE_NAMESPACE = "client_invitation";
+    private static final Duration INVITE_TTL = Duration.ofDays(7);
 
     @Transactional
     public EngagementDto create(EngagementRequest request) {
         String normalizedClientEmail = normalizeEmail(request.clientEmail());
-
-        User client = userRepository.findByEmail(normalizedClientEmail)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No registered client account found for email: " + request.clientEmail().trim() +
-                                " — the client must sign up first."));
 
         Inquiry inquiry = request.inquiryId() != null
                 ? inquiryRepository.findById(request.inquiryId())
@@ -57,6 +67,14 @@ public class EngagementService {
                     "The selected inquiry does not belong to the supplied client email");
         }
 
+        // Section 5 of the client-workspace review: don't require the client to already have
+        // a registered account. If none exists for this email, create an invited placeholder
+        // instead of failing — the client activates it via the emailed link (or Google
+        // sign-in with the same address) rather than visiting /register separately first.
+        boolean isNewInvite = userRepository.findByEmail(normalizedClientEmail).isEmpty();
+        User client = userRepository.findByEmail(normalizedClientEmail)
+                .orElseGet(() -> inviteClient(normalizedClientEmail, resolveClientName(request, inquiry)));
+
         Engagement engagement = Engagement.builder()
                 .client(client)
                 .inquiry(inquiry)
@@ -67,7 +85,56 @@ public class EngagementService {
                 .targetEndDate(request.targetEndDate())
                 .build();
 
-        return toDto(engagementRepository.save(engagement));
+        Engagement saved = engagementRepository.save(engagement);
+        EngagementDto dto = toDto(saved);
+
+        if (isNewInvite) {
+            sendInvitation(client, engagement.getTitle());
+        }
+
+        projectActivityService.recordBestEffort(saved.getId(), currentUserProvider.get(),
+                ProjectActivityType.ENGAGEMENT_CREATED, "Project created", null);
+
+        return dto;
+    }
+
+    /**
+     * Creates a placeholder account for a client the admin is granting project access to
+     * before they've registered. Unusable random-hash password (same technique as
+     * OAuth2LoginSuccessHandler#createUserFromGoogle — the column is NOT NULL) and
+     * enabled=false so a password-login attempt is rejected outright by the authentication
+     * manager until the client actually activates the invite.
+     */
+    private User inviteClient(String normalizedEmail, String name) {
+        User user = User.builder()
+                .fullName(name)
+                .email(normalizedEmail)
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(Role.CLIENT)
+                .enabled(false)
+                .emailVerified(false)
+                .invitationPending(true)
+                .build();
+        return userRepository.save(user);
+    }
+
+    private String resolveClientName(EngagementRequest request, Inquiry inquiry) {
+        if (request.clientName() != null && !request.clientName().isBlank()) {
+            return request.clientName().trim();
+        }
+        if (inquiry != null && inquiry.getName() != null && !inquiry.getName().isBlank()) {
+            return inquiry.getName().trim();
+        }
+        // Last-resort fallback so fullName (NOT NULL) is never empty — the client can correct
+        // this the moment they accept the invitation.
+        String localPart = request.clientEmail().trim().split("@")[0];
+        return localPart.isBlank() ? "there" : localPart;
+    }
+
+    private void sendInvitation(User client, String engagementTitle) {
+        String token = oneTimeTokenService.issue(INVITE_NAMESPACE, client.getId().toString(), INVITE_TTL);
+        String inviteUrl = frontendUrl + "/accept-invitation?token=" + token;
+        emailService.sendClientInvitationEmail(client.getEmail(), client.getFullName(), engagementTitle, inviteUrl);
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +159,13 @@ public class EngagementService {
         Engagement engagement = engagementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Engagement not found: " + id));
         engagement.setStatus(status);
-        return toDto(engagementRepository.save(engagement));
+        EngagementDto dto = toDto(engagementRepository.save(engagement));
+
+        projectActivityService.recordBestEffort(id, currentUserProvider.get(),
+                ProjectActivityType.ENGAGEMENT_STATUS_CHANGED,
+                "Project status changed to " + status.name().replace('_', ' '), null);
+
+        return dto;
     }
 
     /**

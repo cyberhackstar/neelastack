@@ -232,6 +232,43 @@ public class EmailService {
     }
 
     @Async
+    public void sendAdminInvitationEmail(String toEmail, String fullName, String inviteUrl) {
+        String title = "Your Neelastack admin invitation";
+        String content = """
+                <p>Hi %s,</p>
+                <p>You have been invited to administer the Neelastack workspace.</p>
+                <p>Use the secure link below to set your password. Admin accounts must enroll MFA before normal administration access is available.</p>
+                <p><a class="button" href="%s">Accept admin invitation</a></p>
+                <p class="small">This invitation expires in 48 hours and can only be used once.</p>
+                """.formatted(esc(fullName), escAttr(inviteUrl));
+        sendHtml(toEmail, title, htmlEmail(title, content, "You're invited to the Neelastack admin team."));
+    }
+
+    @Async
+    public void sendClientInvitationEmail(String toEmail, String fullName, String engagementTitle, String inviteUrl) {
+        String title = "Your Neelastack project is ready";
+        String content = """
+                <p>Hi %s,</p>
+                <p><strong>%s</strong> has been added to your client workspace.</p>
+                <p>Set up your account to review project progress, upload files, discuss
+                requirements, review deliverables, approve milestones, view invoices, and make
+                payments — all in one place.</p>
+
+                <p><a class="button" href="%s">Set up your workspace</a></p>
+
+                <div class="card subtle">
+                  <p class="small">This link expires in <strong>7 days</strong>. If the button
+                  doesn't work, copy this link into your browser:</p>
+                  <p class="mono">%s</p>
+                  <p class="small">You can also sign in with Google using this same email
+                  address instead of setting a password.</p>
+                </div>
+                """.formatted(esc(fullName), esc(engagementTitle), escAttr(inviteUrl), esc(inviteUrl));
+
+        sendHtml(toEmail, title, htmlEmail(title, content, "Your project workspace is ready to set up."));
+    }
+
+    @Async
     public void sendVerificationEmail(String toEmail, String fullName, String verifyUrl) {
         String title = "Confirm your email — Neelastack";
         String content = """
@@ -746,6 +783,30 @@ public class EmailService {
                 ACCENT,            // 26 %s — button background
                 TEXT               // 27 %s — list text
         );
+    }
+
+    /**
+     * Generic transactional-notification email, backing {@link NotificationService}. Every
+     * in-app notification (milestone approvals, invoices, UPI verification, payment-schedule
+     * reminders, change-request quotes, etc.) funnels through this one template rather than
+     * each event type growing its own bespoke sendXxx method the way the pre-notification-engine
+     * code did -- keeps the "in-app + email" fan-out in the notification engine itself instead
+     * of duplicating it per event.
+     */
+    @Async
+    public void sendNotificationEmail(String toEmail, String recipientName, String title, String body, String actionUrl, String actionLabel) {
+        String content = """
+                <p>Hi %s,</p>
+                <p>%s</p>
+                %s
+                """.formatted(
+                esc(recipientName),
+                esc(body),
+                actionUrl != null && actionLabel != null
+                        ? "<p><a class=\"button\" href=\"%s\">%s</a></p>".formatted(escAttr(actionUrl), esc(actionLabel))
+                        : ""
+        );
+        sendHtml(toEmail, title, htmlEmail(title, content, title));
     }
 
     private String nullToDash(String value) {

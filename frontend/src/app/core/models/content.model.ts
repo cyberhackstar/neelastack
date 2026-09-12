@@ -106,6 +106,8 @@ export interface Project {
   reviews?: Review[];
   averageRating?: number | null;
   reviewCount?: number;
+  serviceCategories?: string[];
+  keyMetrics?: string[];
 }
 
 export interface ProjectPayload {
@@ -122,6 +124,8 @@ export interface ProjectPayload {
   featured: boolean;
   published: boolean;
   displayOrder?: number;
+  serviceCategories?: string[];
+  keyMetrics?: string[];
 }
 
 export interface BlogPostSummary {
@@ -352,6 +356,9 @@ export interface Engagement {
 
 export interface EngagementPayload {
   clientEmail: string;
+  // Only used when clientEmail has no existing account yet — names the invited placeholder
+  // account. Falls back to the linked inquiry's name, then the email's local part, if omitted.
+  clientName?: string;
   inquiryId?: string;
   title: string;
   description?: string;
@@ -359,7 +366,7 @@ export interface EngagementPayload {
   targetEndDate?: string;
 }
 
-export type MilestoneStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
+export type MilestoneStatus = 'PENDING' | 'IN_PROGRESS' | 'AWAITING_APPROVAL' | 'CHANGES_REQUESTED' | 'DONE';
 
 export interface Milestone {
   id: string;
@@ -388,6 +395,107 @@ export interface ProjectFile {
   createdAt: string;
 }
 
+export type MessageSenderRole = 'CLIENT' | 'STAFF';
+
+// Attachment summaries on a message omit fileUrl/uploadedByName -- the signed link is
+// resolved on demand via GET /engagements/{id}/files using this id, the same way the
+// document center does, rather than re-signing every attachment on every message load.
+export interface ProjectMessageAttachment {
+  id: string;
+  fileName: string;
+  fileType?: string;
+  fileSizeBytes?: number;
+  createdAt: string;
+}
+
+export interface ProjectMessage {
+  id: string;
+  engagementId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: MessageSenderRole;
+  body: string;
+  attachment?: ProjectMessageAttachment;
+  createdAt: string;
+}
+
+export interface ProjectMessagePayload {
+  body: string;
+  attachmentFileId?: string;
+}
+
+export interface UnreadCount {
+  unreadCount: number;
+}
+
+export type ProjectActivityType =
+  | 'ENGAGEMENT_CREATED'
+  | 'ENGAGEMENT_STATUS_CHANGED'
+  | 'MILESTONE_CREATED'
+  | 'MILESTONE_STATUS_CHANGED'
+  | 'MILESTONE_APPROVED'
+  | 'MILESTONE_CHANGES_REQUESTED'
+  | 'TASK_CREATED'
+  | 'TASK_STATUS_CHANGED'
+  | 'TASK_ASSIGNED'
+  | 'FILE_UPLOADED'
+  | 'FILE_DELETED'
+  | 'INVOICE_CREATED'
+  | 'INVOICE_PAID';
+
+export interface ProjectActivity {
+  id: string;
+  engagementId: string;
+  actorName?: string;
+  actorRole?: string;
+  activityType: ProjectActivityType;
+  summary: string;
+  createdAt: string;
+}
+
+export type MilestoneApprovalAction = 'APPROVED' | 'CHANGES_REQUESTED';
+
+export interface MilestoneApproval {
+  id: string;
+  milestoneId: string;
+  engagementId: string;
+  action: MilestoneApprovalAction;
+  comment?: string;
+  actorName: string;
+  createdAt: string;
+}
+
+export type ChangeRequestPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+export type ChangeRequestStatus = 'SUBMITTED' | 'QUOTED' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED';
+
+export interface ChangeRequest {
+  id: string;
+  engagementId: string;
+  requestedByName: string;
+  title: string;
+  description: string;
+  priority: ChangeRequestPriority;
+  status: ChangeRequestStatus;
+  estimatedCost?: number;
+  estimatedCostCurrency?: string;
+  estimatedTimelineDays?: number;
+  attachment?: ProjectMessageAttachment;
+  createdAt: string;
+}
+
+export interface ChangeRequestCreatePayload {
+  title: string;
+  description: string;
+  priority?: ChangeRequestPriority;
+  attachmentFileId?: string;
+}
+
+export interface ChangeRequestQuotePayload {
+  estimatedCost: number;
+  estimatedCostCurrency?: string;
+  estimatedTimelineDays?: number;
+}
+
 export type InvoiceStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
 
 export interface Invoice {
@@ -410,6 +518,37 @@ export interface InvoicePayload {
   currency?: string;
   dueDate?: string;
 }
+
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE';
+
+export interface ProjectTask {
+  id: string;
+  milestoneId: string;
+  engagementId: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  dueDate?: string;
+  clientActionRequired: boolean;
+  assigneeName?: string;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface ProjectTaskPayload {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  clientActionRequired?: boolean;
+  displayOrder?: number;
+}
+
+export interface StaffSummary {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
 
 export interface CheckoutOrder {
   razorpayOrderId: string;
@@ -509,4 +648,152 @@ export interface PublicQuotation {
   /** Module 3: contextual social proof for the quoted service — absent when no
    *  published, matching case study exists. Never a generic fallback. */
   relatedCaseStudy?: CaseStudyProof | null;
+}
+
+// ---------------- Notification engine ----------------
+
+export type NotificationType =
+  | 'MILESTONE_READY_FOR_APPROVAL' | 'MILESTONE_APPROVED' | 'MILESTONE_CHANGES_REQUESTED'
+  | 'TASK_ACTION_REQUIRED' | 'INVOICE_CREATED' | 'INVOICE_DUE_SOON' | 'INVOICE_OVERDUE' | 'INVOICE_PAID'
+  | 'UPI_PAYMENT_SUBMITTED' | 'UPI_PAYMENT_VERIFIED' | 'UPI_PAYMENT_REJECTED'
+  | 'PAYMENT_SCHEDULE_INSTALLMENT_DUE' | 'CHANGE_REQUEST_QUOTED' | 'PROJECT_MESSAGE_RECEIVED' | 'GENERAL';
+
+export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+/** Mirrors backend NotificationDto. */
+export interface AppNotification {
+  id: string;
+  engagementId: string | null;
+  type: NotificationType;
+  priority: NotificationPriority;
+  title: string;
+  body: string | null;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  deepLink: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+
+export type AdminRole = 'ADMIN' | 'SUPERADMIN';
+export interface AdminStaff {
+  id: string; fullName: string; email: string; role: AdminRole; enabled: boolean;
+  mfaEnabled: boolean; mustChangePassword: boolean; createdAt: string | null;
+}
+
+// ---------------- Direct UPI QR payments ----------------
+
+export interface UpiPaymentMethod {
+  id: string;
+  label: string;
+  vpa: string | null;
+  payeeName: string | null;
+  qrImageUrl: string;
+  active: boolean;
+  displayOrder: number;
+}
+
+export interface UpiPaymentMethodPayload {
+  label: string;
+  vpa?: string;
+  payeeName?: string;
+  displayOrder?: number;
+}
+
+export type UpiSubmissionStatus = 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+
+export interface UpiSubmission {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  engagementId: string;
+  methodLabel: string;
+  submittedByName: string;
+  utrReference: string;
+  payerUpiId: string | null;
+  amountClaimed: number;
+  screenshotUrl: string | null;
+  status: UpiSubmissionStatus;
+  adminNote: string | null;
+  createdAt: string;
+  verifiedAt: string | null;
+}
+
+export interface UpiSubmissionPayload {
+  upiMethodId: string;
+  utrReference: string;
+  payerUpiId?: string;
+  amountClaimed: number;
+}
+
+// ---------------- Payment schedules ----------------
+
+export type InstallmentStatus = 'PENDING' | 'INVOICED' | 'PAID' | 'OVERDUE';
+
+export interface PaymentScheduleInstallment {
+  id: string;
+  label: string;
+  amount: number;
+  percentage: number | null;
+  dueDate: string | null;
+  status: InstallmentStatus;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  displayOrder: number;
+}
+
+export interface PaymentSchedule {
+  id: string;
+  engagementId: string;
+  totalAmount: number;
+  currency: string;
+  paidAmount: number;
+  outstandingAmount: number;
+  installments: PaymentScheduleInstallment[];
+}
+
+export interface PaymentScheduleInstallmentPayload {
+  label: string;
+  amount: number;
+  percentage?: number;
+  dueDate?: string;
+  displayOrder?: number;
+}
+
+export interface PaymentSchedulePayload {
+  engagementId: string;
+  totalAmount: number;
+  currency?: string;
+  installments: PaymentScheduleInstallmentPayload[];
+}
+
+// ---------------- Project health & action center ----------------
+
+export type ProjectHealthStatus = 'HEALTHY' | 'AT_RISK' | 'CRITICAL';
+
+export interface ProjectHealth {
+  engagementId: string;
+  status: ProjectHealthStatus;
+  reasons: string[];
+}
+
+export interface ProjectOperationsSummary {
+  atRiskProjects: number;
+  criticalProjects: number;
+  awaitingClientProjects: number;
+  overdueTasks: number;
+  overdueInvoices: number;
+  pendingMilestoneApprovals: number;
+  pendingUpiVerifications: number;
+  deadlinesThisWeek: number;
+}
+
+export interface ActionItem {
+  kind: string;
+  relatedId: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  deepLink: string | null;
 }

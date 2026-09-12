@@ -141,7 +141,7 @@ export class AdminInquiryDetailComponent implements OnInit {
         error: (err) => {
           this.creatingEngagement.set(false);
           this.engagementError.set(
-            err?.error?.message ?? 'Could not create the project — the client may not have a registered account yet.',
+            err?.error?.message ?? 'Could not create the project. Please try again.',
           );
         },
       });

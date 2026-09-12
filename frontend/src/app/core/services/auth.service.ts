@@ -21,10 +21,16 @@ export class AuthService {
 
   readonly currentUser = signal<AuthResponse | null>(this.readStoredUser());
 
+  /**
+   * A fresh registration no longer comes back with usable tokens (backend security review
+   * P1 #1) — verificationRequired=true and accessToken/refreshToken are null until the user
+   * verifies their email and signs in. Nothing to persist in that case; RegisterComponent
+   * routes to the "check your inbox" step instead of straight into the app.
+   */
   register(payload: RegisterPayload) {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/register`, payload)
-      .pipe(tap((res) => this.persistSession(res)));
+      .pipe(tap((res) => this.persistSessionUnlessUnverified(res)));
   }
 
   login(payload: LoginPayload) {
@@ -82,6 +88,18 @@ export class AuthService {
 
   resetPassword(token: string, newPassword: string) {
     return this.http.post<void>(`${this.apiUrl}/reset-password`, { token, newPassword });
+  }
+
+  /**
+   * Completes a client-workspace invitation (see EngagementService#inviteClient on the
+   * backend): sets a password on the account an admin created on the client's behalf and
+   * logs them straight in — no separate /register step. fullName lets the client correct
+   * the name an admin guessed (from the inquiry, or the email) at invite time.
+   */
+  acceptInvitation(token: string, password: string, fullName?: string) {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/accept-invitation`, { token, password, fullName })
+      .pipe(tap((res) => this.persistSession(res)));
   }
 
   verifyEmail(token: string) {
@@ -147,7 +165,13 @@ export class AuthService {
     this.persistSession(res);
   }
 
+  private persistSessionUnlessUnverified(res: AuthResponse): void {
+    if (res.verificationRequired || !res.accessToken || !res.refreshToken) return; // no session issued yet
+    this.persistSession(res);
+  }
+
   private persistSession(res: AuthResponse): void {
+    if (!res.accessToken || !res.refreshToken) return; // defensive — nothing to persist without a real token pair
     if (this.isBrowser) {
       localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
       localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);

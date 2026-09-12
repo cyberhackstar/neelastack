@@ -22,16 +22,21 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Financial/client/project-mutating admin endpoints, plus MFA and session management
- * themselves, need a *recent* MFA-verified assertion, not just a valid JWT issued
- * hours ago (master prompt, Section 2). Runs after JwtAuthFilter (so the
- * SecurityContext is already populated) and only ever narrows an already-authenticated
- * ROLE_ADMIN request further -- it never grants access SecurityConfig wouldn't
- * otherwise allow.
+ * A specific, deliberately narrow set of high-risk admin mutations -- invoices, payments,
+ * pricing rules, UPI, payment schedules, session revocation, and MFA disable/force-reset --
+ * need a *recent* MFA-verified assertion, not just a valid JWT issued hours ago (master
+ * prompt, Section 2). Runs after JwtAuthFilter (so the SecurityContext is already
+ * populated) and only ever narrows an already-authenticated ROLE_ADMIN request further --
+ * it never grants access SecurityConfig wouldn't otherwise allow.
  *
- * Deliberately only gates mutations (POST/PUT/PATCH/DELETE) on the specific high-risk
- * route list below -- the same list the audit-logging call sites target, for
- * consistency -- not every admin GET.
+ * This is intentionally NOT "every financial/client/project-mutating admin endpoint" --
+ * ordinary project/engagement/milestone/task/booking/content mutations are left to the
+ * standard JWT + role check (security review P1 #9). Requiring a fresh TOTP on every admin
+ * write would make step-up ubiquitous rather than meaningful; the line is drawn at
+ * operations that move money, touch payment configuration, or change another account's
+ * security posture. If that line should move, extend HIGH_RISK_PATTERNS below rather than
+ * this comment -- the comment is only accurate as long as the pattern list is what actually
+ * decides which routes are gated (see isHighRiskMutation()).
  *
  * An admin with MFA *disabled* is DENIED these high-risk mutations outright, not waved
  * through: "no MFA enrolled" must never be a softer security posture than "MFA enrolled
@@ -54,7 +59,14 @@ public class StepUpAuthFilter extends OncePerRequestFilter {
             Pattern.compile("^/api/v1/admin/payments(/.*)?$"),
             Pattern.compile("^/api/v1/admin/pricing-rules(/.*)?$"),
             Pattern.compile("^/api/v1/admin/mfa/(disable|.*force-reset)$"),
-            Pattern.compile("^/api/v1/admin/sessions(/.*)?$")
+            Pattern.compile("^/api/v1/admin/sessions(/.*)?$"),
+            // Added: UPI submission verification ultimately calls
+            // InvoiceService#markPaidByAdmin, and payment-schedule mutations create/alter
+            // financial obligations (installments, raised invoices) — both are just as
+            // sensitive as the /invoices and /payments patterns above and must not be
+            // reachable without a recent step-up (see security review, P0 #1).
+            Pattern.compile("^/api/v1/admin/upi(/.*)?$"),
+            Pattern.compile("^/api/v1/admin/payment-schedules(/.*)?$")
     );
 
     private static final List<String> MUTATING_METHODS = List.of("POST", "PUT", "PATCH", "DELETE");

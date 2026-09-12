@@ -3,12 +3,15 @@ package com.neelastack.service;
 import com.neelastack.dto.engagement.ProjectFileDto;
 import com.neelastack.entity.AuditAction;
 import com.neelastack.entity.Engagement;
+import com.neelastack.entity.ProjectActivityType;
 import com.neelastack.entity.ProjectFile;
+import com.neelastack.entity.Role;
 import com.neelastack.entity.User;
 import com.neelastack.exception.ResourceNotFoundException;
 import com.neelastack.repository.ProjectFileRepository;
 import com.neelastack.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +29,7 @@ public class ProjectFileService {
     private final FileStorageService fileStorageService;
     private final CurrentUserProvider currentUserProvider;
     private final AuditLogService auditLogService;
+    private final ProjectActivityService projectActivityService;
 
     // Read-only transaction: toDto() below reads f.getUploadedBy().getFullName(), and
     // ProjectFile.uploadedBy is @ManyToOne(LAZY). With open-in-view=false, an untransactional
@@ -58,7 +62,12 @@ public class ProjectFileService {
                 .fileSizeBytes(file.getSize())
                 .build();
 
-        return toDto(projectFileRepository.save(projectFile));
+        ProjectFileDto dto = toDto(projectFileRepository.save(projectFile));
+
+        projectActivityService.recordBestEffort(engagementId, uploader,
+                ProjectActivityType.FILE_UPLOADED, "Uploaded " + dto.fileName(), null);
+
+        return dto;
     }
 
     @Transactional
@@ -77,10 +86,28 @@ public class ProjectFileService {
             throw new ResourceNotFoundException("File not found: " + fileId);
         }
 
+        // Engagement-level access only proves the caller belongs to this project, not that
+        // they own this particular file. Admin/superadmin staff manage the whole project and
+        // may remove any file in it, but a CLIENT must be restricted to deleting files they
+        // themselves uploaded — otherwise any client on the engagement could delete files
+        // uploaded by Neelastack staff (deliverables, internal docs) or by other client-side
+        // collaborators on the same engagement. This is the invariant the docs already promise
+        // but the code did not enforce.
+        User current = currentUserProvider.get();
+        boolean isStaff = current.getRole() == Role.ADMIN || current.getRole() == Role.SUPERADMIN;
+        boolean isUploader = file.getUploadedBy() != null && file.getUploadedBy().getId().equals(current.getId());
+        if (!isStaff && !isUploader) {
+            throw new AccessDeniedException("You can only delete files you uploaded yourself");
+        }
+
+        String fileName = file.getFileName() == null ? "" : file.getFileName();
+
         fileStorageService.delete(file.getCloudinaryPublicId(), file.getCloudinaryResourceType());
         projectFileRepository.delete(file);
         auditLogService.recordBestEffort(AuditAction.FILE_DELETED, "ProjectFile", fileId.toString(),
-                Map.of("engagementId", engagementId.toString(), "fileName", file.getFileName() == null ? "" : file.getFileName()));
+                Map.of("engagementId", engagementId.toString(), "fileName", fileName));
+        projectActivityService.recordBestEffort(engagementId, current,
+                ProjectActivityType.FILE_DELETED, "Removed " + fileName, null);
     }
 
     private ProjectFileDto toDto(ProjectFile f) {

@@ -26,6 +26,7 @@ describe('AuthService', () => {
     email: 'jane@example.com',
     role: 'CLIENT',
     emailVerified: false,
+    verificationRequired: false,
     mfaRequired: false,
     mfaToken: null,
     mustChangePassword: false,
@@ -77,7 +78,28 @@ describe('AuthService', () => {
     expect(service.currentUser()?.email).toBe('jane@example.com');
   });
 
-  it('persists tokens on successful registration the same way as login', () => {
+  it('does not persist a session on registration when the email still needs verification', () => {
+    // Backend security review P1 #1: a fresh registration no longer comes back with a
+    // usable token pair — accessToken/refreshToken are null and verificationRequired is
+    // true until the user verifies their email and signs in.
+    service
+      .register({ fullName: 'Jane Client', email: authResponse.email, password: 'irrelevant' })
+      .subscribe();
+
+    const req = httpMock.expectOne('http://localhost:8080/api/v1/auth/register');
+    req.flush({
+      ...authResponse,
+      accessToken: null,
+      refreshToken: null,
+      verificationRequired: true,
+    });
+
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.currentUser()).toBeNull();
+    expect(localStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  });
+
+  it('persists tokens on registration if a real token pair is issued (defensive — not the current backend contract)', () => {
     service
       .register({ fullName: 'Jane Client', email: authResponse.email, password: 'irrelevant' })
       .subscribe();

@@ -56,6 +56,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseGet(() -> createUserFromGoogle(email, name, Boolean.TRUE.equals(emailVerifiedAttr)));
 
+        // Google confirming this address is equally valid proof of ownership as clicking the
+        // emailed invitation link — activate a pending client-workspace invitation here too,
+        // so a client can accept it either way (see AuthService#acceptInvitation for the other
+        // path). Without this, an invited-but-not-yet-activated account (enabled=false) would
+        // otherwise sit in limbo if the client's first move is "Sign in with Google" instead of
+        // opening the invitation email.
+        if (user.isInvitationPending()) {
+            user.setEnabled(true);
+            user.setEmailVerified(true);
+            user.setInvitationPending(false);
+            user = userRepository.save(user);
+        }
+
         String code = oneTimeTokenService.issue(EXCHANGE_NAMESPACE, user.getId().toString(), Duration.ofSeconds(60));
 
         // Defense in depth, not load-bearing: SecurityConfig runs SessionCreationPolicy.STATELESS,

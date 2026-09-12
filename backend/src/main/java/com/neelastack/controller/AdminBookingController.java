@@ -195,9 +195,9 @@ public class AdminBookingController {
         try {
             googleCalendarService.verifyState(state);
             googleCalendarService.handleOAuthCallback(code);
-            response.sendRedirect("/admin/settings/booking?calendar=connected");
+            response.sendRedirect("/admin/booking-settings?calendar=connected");
         } catch (Exception e) {
-            response.sendRedirect("/admin/settings/booking?calendar=error");
+            response.sendRedirect("/admin/booking-settings?calendar=error");
         }
     }
 }

@@ -27,6 +27,57 @@
         <p class="section-sub">{{ engagement.description }}</p>
       }
 
+      <app-project-workspace [engagementId]="engagement.id" [isAdmin]="isAdmin" [invoices]="invoices()"></app-project-workspace>
+
+      @if (!isAdmin && projectHealth(); as health) {
+        <div class="health-card project-health-card">
+          <div class="health-row"><span class="health-label">Project health</span><span class="tag status-{{ health.status.toLowerCase() }}">{{ health.status.replace('_', ' ') }}</span></div>
+          @if (health.reasons.length) {<ul class="health-reasons">@for (reason of health.reasons; track reason) {<li>{{ reason }}</li>}</ul>}
+        </div>
+      }
+
+      @if (!isAdmin && actionItems().length) {
+        <h2 class="sub-heading">Needs your attention</h2>
+        <div class="action-center">@for (item of actionItems(); track item.kind + item.relatedId) {<button type="button" class="card action-item" (click)="openAction(item)"><div><strong>{{ item.title }}</strong>@if(item.description){<p>{{ item.description }}</p>}@if(item.dueDate){<span class="meta">Due {{ item.dueDate | date:'mediumDate' }}</span>}</div><span class="arrow">→</span></button>}</div>
+      }
+
+      @if (!isAdmin && paymentSchedule(); as schedule) {
+        <h2 class="sub-heading">Payment plan</h2><div class="card payment-plan"><div class="schedule-head"><strong>{{ schedule.currency }} {{ schedule.totalAmount | number:'1.0-2' }}</strong><span>{{ schedule.outstandingAmount | number:'1.0-2' }} outstanding</span></div>@for(i of schedule.installments;track i.id){<div class="installment"><span><strong>{{i.label}}</strong><small>{{i.dueDate?(i.dueDate|date:'mediumDate'):'No due date'}}</small></span><span>{{schedule.currency}} {{i.amount|number:'1.0-2'}} · {{i.status}}</span></div>}</div>
+      }
+
+      @if (milestones().length > 0) {
+        <div class="health-card">
+          <div class="health-row">
+            <span class="health-label">Milestone progress</span>
+            <span class="health-percent">{{ milestoneProgressPercent }}% complete</span>
+          </div>
+          <div class="health-bar">
+            <div class="health-bar-fill" [style.width.%]="milestoneProgressPercent"></div>
+          </div>
+          @if (nextMilestone; as next) {
+            <span class="health-next">Next milestone: {{ next.title }} @if (next.dueDate) { &middot; due {{ next.dueDate | date: 'mediumDate' }} }</span>
+          }
+        </div>
+      }
+
+      <h2 class="sub-heading">Activity</h2>
+
+      @if (activity().length > 0) {
+        <ul class="activity-timeline">
+          @for (item of activity(); track item.id) {
+            <li class="activity-item">
+              <span class="dot"></span>
+              <div>
+                <p><span class="activity-actor">{{ activityActorLabel(item) }}</span> {{ item.summary }}</p>
+                <span class="activity-time">{{ item.createdAt | date: 'medium' }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No activity yet.</p>
+      }
+
       <h2 class="sub-heading">Milestones</h2>
 
       @if (milestones().length > 0) {
@@ -54,6 +105,103 @@
                 </select>
               } @else {
                 <span class="tag">{{ milestone.status.replace('_', ' ') }}</span>
+              }
+
+              @if (!isAdmin && milestone.status === 'AWAITING_APPROVAL') {
+                <div class="approval-card">
+                  <p class="approval-heading">Deliverable ready — please review this milestone.</p>
+                  @if (requestingChangesFor() === milestone.id) {
+                    <textarea #changeComment rows="2" placeholder="What needs to change?"></textarea>
+                    <div class="approval-actions">
+                      <button type="button" class="btn btn-ghost" (click)="cancelRequestChanges()">Cancel</button>
+                      <button
+                        type="button"
+                        class="btn"
+                        [disabled]="submittingApprovalFor() === milestone.id"
+                        (click)="submitRequestChanges(milestone.id, changeComment)"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="approval-actions">
+                      <button type="button" class="btn btn-ghost" (click)="openRequestChanges(milestone.id)">Request changes</button>
+                      <button
+                        type="button"
+                        class="btn"
+                        [disabled]="submittingApprovalFor() === milestone.id"
+                        (click)="approveMilestone(milestone.id)"
+                      >
+                        {{ submittingApprovalFor() === milestone.id ? 'Approving…' : 'Approve milestone' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (milestone.status === 'CHANGES_REQUESTED' && latestChangeRequestFor(milestone.id); as changeRequest) {
+                <div class="change-requested-note">
+                  <span class="tag tag-action">Change requested</span>
+                  <p>"{{ changeRequest.comment }}"</p>
+                  <span class="meta">{{ changeRequest.actorName }} · {{ changeRequest.createdAt | date: 'medium' }}</span>
+                </div>
+              }
+
+              @if (tasksForMilestone(milestone.id).length > 0) {
+                <ul class="task-list">
+                  @for (task of tasksForMilestone(milestone.id); track task.id) {
+                    <li class="task-item">
+                      <div class="task-main">
+                        <span class="task-title">{{ task.title }}</span>
+                        @if (task.clientActionRequired) {
+                          <span class="tag tag-action">Client action</span>
+                        }
+                        @if (task.dueDate) {
+                          <span class="due">Due {{ task.dueDate | date: 'mediumDate' }}</span>
+                        }
+                        @if (task.assigneeName) {
+                          <span class="meta">Assigned to {{ task.assigneeName }}</span>
+                        }
+                      </div>
+
+                      @if (isAdmin) {
+                        <div class="task-controls">
+                          <select [ngModel]="task.status" (ngModelChange)="updateTaskStatus(task.id, $event)">
+                            @for (status of taskStatuses; track status) {
+                              <option [value]="status">{{ status.replace('_', ' ') }}</option>
+                            }
+                          </select>
+                          <select [ngModel]="staffEmailByName(task.assigneeName)" (ngModelChange)="assignTask(task.id, $event)">
+                            <option value="">Unassigned</option>
+                            @for (member of staff(); track member.id) {
+                              <option [value]="member.email">{{ member.fullName }}</option>
+                            }
+                          </select>
+                        </div>
+                      } @else {
+                        <span class="tag">{{ task.status.replace('_', ' ') }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (isAdmin) {
+                <div class="task-add-row">
+                  <input #taskTitle type="text" placeholder="Add a task…" />
+                  <input #taskDueDate type="date" />
+                  <label class="task-action-check">
+                    <input #taskClientAction type="checkbox" /> Client action
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    [disabled]="addingTaskForMilestone() === milestone.id"
+                    (click)="addTask(milestone.id, taskTitle, taskDueDate, taskClientAction)"
+                  >
+                    {{ addingTaskForMilestone() === milestone.id ? 'Adding…' : '+ Add task' }}
+                  </button>
+                </div>
               }
             </li>
           }
@@ -83,6 +231,180 @@
           </button>
         </form>
       }
+
+      <h2 class="sub-heading">Change requests</h2>
+
+      @if (changeRequestError()) {
+        <p class="error">{{ changeRequestError() }}</p>
+      }
+
+      @if (changeRequests().length > 0) {
+        <ul class="change-requests">
+          @for (cr of changeRequests(); track cr.id) {
+            <li class="change-request">
+              <div class="cr-heading">
+                <span class="cr-title">{{ cr.title }}</span>
+                <span class="tag">{{ cr.priority }}</span>
+                <span class="tag">{{ cr.status.replace('_', ' ') }}</span>
+              </div>
+              <p class="cr-description">{{ cr.description }}</p>
+              <span class="meta">
+                Requested by {{ cr.requestedByName }} &middot; {{ cr.createdAt | date: 'mediumDate' }}
+                @if (cr.attachment; as att) {
+                  &middot; 📎 {{ att.fileName }}
+                }
+              </span>
+
+              @if (cr.status === 'QUOTED' || cr.status === 'ACCEPTED' || cr.status === 'COMPLETED') {
+                <div class="cr-quote">
+                  <span class="cr-impact">
+                    +{{ cr.estimatedCostCurrency }} {{ cr.estimatedCost }}
+                    @if (cr.estimatedTimelineDays) {
+                      , +{{ cr.estimatedTimelineDays }} days
+                    }
+                  </span>
+                  @if (!isAdmin && cr.status === 'QUOTED') {
+                    <div class="approval-actions">
+                      <button
+                        type="button"
+                        class="btn btn-ghost"
+                        [disabled]="changeRequestActionFor() === cr.id"
+                        (click)="declineChangeRequest(cr.id)"
+                      >
+                        Decline
+                      </button>
+                      <button
+                        type="button"
+                        class="btn"
+                        [disabled]="changeRequestActionFor() === cr.id"
+                        (click)="acceptChangeRequest(cr.id)"
+                      >
+                        {{ changeRequestActionFor() === cr.id ? 'Processing…' : 'Approve quote' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (isAdmin && (cr.status === 'SUBMITTED' || cr.status === 'QUOTED')) {
+                @if (quotingChangeRequestFor() === cr.id) {
+                  <div class="cr-quote-form">
+                    <input #crCost type="number" min="0" step="0.01" placeholder="Estimated cost (INR)" />
+                    <input #crDays type="number" min="0" placeholder="Extra days" />
+                    <div class="approval-actions">
+                      <button type="button" class="btn btn-ghost" (click)="cancelQuoteForm()">Cancel</button>
+                      <button
+                        type="button"
+                        class="btn"
+                        [disabled]="changeRequestActionFor() === cr.id"
+                        (click)="submitQuote(cr.id, crCost, crDays)"
+                      >
+                        Send quote
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button type="button" class="btn btn-ghost" (click)="openQuoteForm(cr.id)">
+                    {{ cr.status === 'QUOTED' ? 'Update quote' : 'Send quote' }}
+                  </button>
+                }
+              }
+
+              @if (isAdmin && cr.status === 'ACCEPTED') {
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  [disabled]="changeRequestActionFor() === cr.id"
+                  (click)="completeChangeRequest(cr.id)"
+                >
+                  Mark delivered
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">No change requests yet.</p>
+      }
+
+      @if (!isAdmin) {
+        <form [formGroup]="changeRequestForm" (ngSubmit)="submitChangeRequest()" novalidate class="card milestone-form">
+          <label>
+            Title
+            <input type="text" formControlName="title" placeholder="e.g. Add WhatsApp login" />
+          </label>
+          <label>
+            Description
+            <textarea formControlName="description" rows="3" placeholder="What do you need, and why?"></textarea>
+          </label>
+          <label>
+            Priority
+            <select formControlName="priority">
+              @for (p of changeRequestPriorities; track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+          </label>
+          <button type="submit" class="btn btn-ghost" [disabled]="submittingChangeRequest()">
+            {{ submittingChangeRequest() ? 'Submitting…' : '+ Request a change' }}
+          </button>
+        </form>
+      }
+
+      <h2 class="sub-heading">Messages</h2>
+
+      <div class="message-thread">
+        @if (messages().length > 0) {
+          @for (message of messages(); track message.id) {
+            <div class="message" [class.message-own]="isOwnMessage(message)">
+              <div class="message-bubble">
+                <div class="message-meta">
+                  <span class="message-sender">{{ message.senderName }}</span>
+                  <span class="message-time">{{ message.createdAt | date: 'short' }}</span>
+                </div>
+                <p class="message-body">{{ message.body }}</p>
+                @if (message.attachment; as attachment) {
+                  <div class="message-attachment">
+                    📎 {{ attachment.fileName }}
+                    @if (attachment.fileSizeBytes) {
+                      <span class="meta">({{ formatSize(attachment.fileSizeBytes) }})</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        } @else {
+          <p class="muted">No messages yet — start the conversation below.</p>
+        }
+      </div>
+
+      @if (messageError()) {
+        <p class="error">{{ messageError() }}</p>
+      }
+
+      <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" novalidate class="card message-form">
+        <label>
+          Message
+          <textarea formControlName="body" rows="3" placeholder="Write a message to the project team…"></textarea>
+        </label>
+
+        @if (files().length > 0) {
+          <label>
+            Attach an existing file (optional)
+            <select [ngModel]="selectedAttachmentId()" (ngModelChange)="selectedAttachmentId.set($event)" [ngModelOptions]="{ standalone: true }">
+              <option value="">No attachment</option>
+              @for (file of files(); track file.id) {
+                <option [value]="file.id">{{ file.fileName }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        <button type="submit" class="btn btn-primary" [disabled]="sendingMessage()">
+          {{ sendingMessage() ? 'Sending…' : 'Send message' }}
+        </button>
+      </form>
 
       <h2 class="sub-heading">Files</h2>
 
@@ -131,6 +453,18 @@
                 <button class="btn btn-primary" (click)="payInvoice(invoice)" [disabled]="payingInvoiceId() === invoice.id">
                   {{ payingInvoiceId() === invoice.id ? 'Processing…' : 'Pay now' }}
                 </button>
+                @if (!isAdmin && upiMethods().length) {<button class="btn btn-ghost" type="button" (click)="toggleUpi(invoice)">{{upiOpenInvoiceId()===invoice.id?'Hide UPI':'Pay via UPI'}}</button>}
+              }
+              @if (!isAdmin && upiOpenInvoiceId() === invoice.id) {
+                <div class="upi-panel card">
+                  <h3>Pay directly via UPI</h3><p class="muted">Pay using the QR/VPA below, then submit the UTR. The payment remains pending until verified by Neelastack.</p>
+                  <div class="upi-methods">@for(m of upiMethods();track m.id){<button type="button" class="upi-method" [class.selected]="upiMethodId()[invoice.id]===m.id" (click)="setUpiMethod(invoice.id,m.id)"><img [src]="m.qrImageUrl" [alt]="m.label+' QR'"/><span><strong>{{m.label}}</strong><small>{{m.vpa||'No VPA'}}{{m.payeeName?' · '+m.payeeName:''}}</small></span></button>}</div>
+                  <div class="row two"><label>UTR / reference<input [value]="upiUtr()[invoice.id]||''" (input)="setUpiUtr(invoice.id,$event)" maxlength="100" /></label><label>Amount<input type="number" min="1" [value]="upiAmount()[invoice.id]||invoice.amount" (input)="setUpiAmount(invoice.id,$event)" /></label></div>
+                  <div class="row two"><label>Your UPI ID (optional)<input [value]="upiPayerId()[invoice.id]||''" (input)="setUpiPayerId(invoice.id,$event)" /></label><label>Payment screenshot (optional)<input type="file" accept="image/*" (change)="onUpiScreenshot(invoice.id,$event)" /></label></div>
+                  @if(upiErrors()[invoice.id]){<p class="error">{{upiErrors()[invoice.id]}}</p>}
+                  <button type="button" class="btn btn-primary" [disabled]="upiSubmittingInvoiceId()===invoice.id" (click)="submitUpi(invoice)">{{upiSubmittingInvoiceId()===invoice.id?'Submitting…':'Submit UPI payment'}}</button>
+                  @if((upiSubmissions()[invoice.id]||[]).length){<div class="upi-history"><strong>Previous submissions</strong>@for(sub of upiSubmissions()[invoice.id];track sub.id){<div><span>{{sub.utrReference}} · {{sub.amountClaimed|number:'1.0-2'}}</span><span class="tag">{{sub.status.replace('_',' ')}}</span></div>}</div>}
+                </div>
               }
             </li>
           }

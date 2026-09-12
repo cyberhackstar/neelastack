@@ -64,6 +64,17 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean emailVerified = false;
 
+    /**
+     * True for a placeholder account created by {@code EngagementService#inviteClient} when
+     * an admin converts a quote/inquiry into a project for an email with no existing account.
+     * The row has an unusable random-hash password and {@code enabled=false} until the client
+     * activates it via {@code AuthService#acceptInvitation} (or by signing in with Google using
+     * the same address, which activates it too — see OAuth2LoginSuccessHandler).
+     */
+    @Builder.Default
+    @Column(name = "invitation_pending", nullable = false)
+    private boolean invitationPending = false;
+
     // --- MFA (Section 2) ---
 
     @Builder.Default

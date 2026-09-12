@@ -7,6 +7,7 @@ import com.neelastack.entity.Role;
 import com.neelastack.entity.User;
 import com.neelastack.exception.BadRequestException;
 import com.neelastack.exception.EmailAlreadyExistsException;
+import com.neelastack.exception.EmailNotVerifiedException;
 import com.neelastack.repository.UserRepository;
 import com.neelastack.security.JwtService;
 import com.neelastack.security.OneTimeTokenService;
@@ -43,6 +44,8 @@ public class AuthService {
     private static final String RESET_NAMESPACE = "reset_password";
     private static final String OAUTH_EXCHANGE_NAMESPACE = "oauth_exchange";
     private static final String LOGIN_MFA_NAMESPACE = "login_mfa";
+    private static final String INVITE_NAMESPACE = "client_invitation";
+    private static final String ADMIN_INVITE_NAMESPACE = "admin_invitation";
     private static final Duration VERIFY_TTL = Duration.ofHours(24);
     private static final Duration RESET_TTL = Duration.ofMinutes(30);
     private static final Duration LOGIN_MFA_TTL = Duration.ofMinutes(5);
@@ -56,6 +59,16 @@ public class AuthService {
         return rawEmail == null ? null : rawEmail.trim().toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Deliberately does NOT hand back an access/refresh token pair (security review P1 #1).
+     * The previous behavior authenticated an unverified account immediately on registration
+     * while login() (below) required verification on every subsequent sign-in -- so a
+     * fake/unowned email could still get a working session for as long as it stayed logged
+     * in from that first response. Registering now only creates the account and sends the
+     * verification email; the client must complete /verify-email and then call /login (or
+     * finish an MFA challenge) like any other sign-in, gated by the same email-verification
+     * check login() already enforces.
+     */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.email());
@@ -76,7 +89,13 @@ public class AuthService {
         userRepository.save(user);
         sendVerificationEmail(user);
 
-        return buildAuthResponse(user);
+        return AuthResponse.builder()
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .emailVerified(false)
+                .verificationRequired(true)
+                .build();
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -88,6 +107,17 @@ public class AuthService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found after successful authentication"));
+
+        // Verification exists as a mechanism but wasn't previously an enforced policy --
+        // a correct password on an unverified CLIENT account used to be enough to log in
+        // indefinitely (security review P1 #5). ADMIN/SUPERADMIN accounts are exempt: they
+        // are created via bootstrap/invitation, not self-registration, and are already
+        // gated by MustChangePasswordFilter + AdminMfaEnrollmentRequiredFilter.
+        if (user.getRole() == Role.CLIENT && !user.isEmailVerified()) {
+            throw new EmailNotVerifiedException(
+                    "Please verify your email before logging in. "
+                            + "POST to /api/v1/auth/resend-verification if you need a new link.");
+        }
 
         // Password alone isn't enough for an MFA-enrolled account — hand back a short-lived
         // challenge token instead of real tokens; the frontend prompts for a TOTP/recovery
@@ -220,6 +250,52 @@ public class AuthService {
         // working immediately, on every device, not just the one that requested the reset.
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
+    }
+
+    /**
+     * Completes a client-workspace invitation (EngagementService#inviteClient): sets a real
+     * password on the placeholder account, activates it, and logs the client straight in —
+     * no separate /register step, per Section 5 of the client-workspace review. Receiving
+     * this token via the emailed link is treated as proof of email ownership, same as the
+     * password-reset flow above, so this also marks the address verified.
+     */
+    @Transactional
+    public AuthResponse acceptInvitation(String token, String password, String fullName) {
+        boolean adminInvitation = false;
+        String userId = oneTimeTokenService.consume(INVITE_NAMESPACE, token).orElse(null);
+        if (userId == null) {
+            userId = oneTimeTokenService.consume(ADMIN_INVITE_NAMESPACE, token).orElse(null);
+            adminInvitation = userId != null;
+        }
+        if (userId == null) {
+            throw new BadRequestException("This invitation link is invalid or has expired");
+        }
+
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new BadRequestException("Account no longer exists"));
+
+        if (!user.isInvitationPending()) {
+            // Already activated (e.g. the client signed in with Google before using this link) —
+            // consuming the token above already made it single-use; just log them in.
+            return buildAuthResponse(user);
+        }
+
+        user.setPassword(passwordEncoder.encode(password));
+        if (fullName != null && !fullName.isBlank()) {
+            user.setFullName(fullName.trim());
+        }
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        user.setInvitationPending(false);
+        if (adminInvitation) {
+            // The invitation itself was the initial password setup; do not force the
+            // administrator through a redundant second password change. The separate
+            // AdminMfaEnrollmentRequiredFilter still blocks normal admin routes until MFA is enrolled.
+            user.setMustChangePassword(false);
+        }
+        userRepository.save(user);
+
+        return buildAuthResponse(user);
     }
 
     /**

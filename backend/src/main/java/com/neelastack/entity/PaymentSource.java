@@ -7,5 +7,10 @@ package com.neelastack.entity;
  */
 public enum PaymentSource {
     WEBHOOK,
-    RECONCILIATION
+    RECONCILIATION,
+    /** Marked paid by an admin after manually verifying a direct UPI QR scan-and-pay claim
+     *  against the bank statement -- see UpiPaymentService#verify. No gateway commission,
+     *  but also no programmatic proof beyond the UTR the client typed in, so this path is
+     *  always a deliberate human decision rather than an automatic transition. */
+    MANUAL_UPI
 }

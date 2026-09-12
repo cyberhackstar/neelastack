@@ -63,6 +63,12 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/accept-invitation")
+    @Operation(summary = "Activate a client-workspace invitation (set a password, no separate registration step) and sign in")
+    public ResponseEntity<AuthResponse> acceptInvitation(@Valid @RequestBody AcceptInvitationRequest request) {
+        return ResponseEntity.ok(authService.acceptInvitation(request.token(), request.password(), request.fullName()));
+    }
+
     @PostMapping("/verify-email")
     @Operation(summary = "Confirm an email address using the token from the verification email")
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {

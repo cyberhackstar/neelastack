@@ -131,6 +131,21 @@ async function buildRazorpayFixture(
     );
   }
 
+  // Security review P1 #1: /register no longer issues tokens for an unverified account, so
+  // this client can't sign in yet. The e2e stack has no real inbox to click a verification
+  // link from (see TestSupportController's javadoc), so mark it verified directly via the
+  // test-only endpoint that only exists under SPRING_PROFILES_ACTIVE=test.
+  const verifyRes = await context.post(
+    `${API_BASE_URL}/api/v1/test-support/force-verify-email`,
+    { data: { email: clientEmail } },
+  );
+
+  if (!verifyRes.ok()) {
+    throw new Error(
+      `global-setup: force-verify-email failed: ${verifyRes.status()} ${await verifyRes.text()}`,
+    );
+  }
+
   // Create engagement
   const engagementRes = await context.post(
     `${API_BASE_URL}/api/v1/admin/engagements`,

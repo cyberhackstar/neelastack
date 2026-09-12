@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Neelastack backup/restore drill every 6 hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:20:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

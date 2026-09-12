@@ -1,0 +1,65 @@
+<section class="auth-shell bg-grid">
+  <div class="auth-shell-inner">
+    <aside class="auth-visual">
+      <span class="eyebrow eyebrow-amber">{{ isAdminInvitation ? "Admin Access" : "Client Workspace" }}</span>
+      <h2>{{ isAdminInvitation ? "Your admin access is ready." : "Your project is ready." }}</h2>
+      <p>
+        {{ isAdminInvitation ? "Set a secure password to join the Neelastack admin team. MFA enrollment is required before normal administration access." : "Set a password to unlock your workspace — track progress, upload files, message us, review deliverables, and manage invoices, all in one place." }}
+      </p>
+      <div class="system-line"></div>
+      <ul class="auth-trust">
+        <li>Passwords are hashed, never stored in plain text</li>
+        <li>You can also sign in with Google using this same email instead</li>
+      </ul>
+    </aside>
+
+    <div class="auth-form-panel">
+      @if (success()) {
+        <div class="auth-card card success">
+          <h1>{{ isAdminInvitation ? "Admin account activated" : "Workspace activated" }}</h1>
+          <p>{{ isAdminInvitation ? "Taking you to the admin area…" : "Taking you to your project…" }}</p>
+        </div>
+      } @else {
+        <form
+          [formGroup]="form"
+          (ngSubmit)="submit()"
+          novalidate
+          class="auth-card card"
+        >
+          <h1>{{ isAdminInvitation ? "Accept admin invitation" : "Set up your workspace" }}</h1>
+
+          <label>
+            Your name (optional)
+            <input
+              type="text"
+              formControlName="fullName"
+              autocomplete="name"
+              placeholder="Leave blank to keep what we have on file"
+            />
+          </label>
+
+          <label>
+            Choose a password
+            <input
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+          </label>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <button type="submit" [disabled]="loading()">
+            {{ loading() ? "Setting up…" : (isAdminInvitation ? "Activate admin account" : "Activate workspace") }}
+          </button>
+
+          <p class="switch">
+            <a routerLink="/login">Already set up? Sign in</a>
+          </p>
+        </form>
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,38 @@
+<section class="auth-shell bg-grid">
+  <div class="auth-shell-inner">
+    <aside class="auth-visual">
+      <!-- <app-logo></app-logo> -->
+      <span class="eyebrow eyebrow-amber">Almost there</span>
+      <h2>Confirm your email to finish setting up.</h2>
+      <p>
+        Verifying your email keeps your account secure and unlocks project
+        notifications, quotes, and delivery updates.
+      </p>
+      <div class="system-line"></div>
+    </aside>
+
+    <div class="auth-form-panel">
+      <div class="auth-card card success">
+        <h1>Check your inbox</h1>
+        <p>
+          @if (email()) {
+            We've sent a verification link to <strong>{{ email() }}</strong>.
+          } @else {
+            We've sent a verification link to your email address.
+          }
+          Click it to confirm your account, then sign in.
+        </p>
+
+        @if (resent()) {
+          <p>If that address needs a new link, it's on its way.</p>
+        } @else {
+          <button type="button" class="btn btn-ghost" [disabled]="resending() || !email()" (click)="resend()">
+            {{ resending() ? "Sending…" : "Resend verification email" }}
+          </button>
+        }
+
+        <p class="switch">Already verified? <a routerLink="/login">Sign in</a></p>
+      </div>
+    </div>
+  </div>
+</section>

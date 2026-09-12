@@ -1,0 +1,10 @@
+[Unit]
+Description=Neelastack PostgreSQL backup and restore drill
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/neelastack
+ExecStart=/opt/neelastack/scripts/backup-restore-drill.sh
+User=root

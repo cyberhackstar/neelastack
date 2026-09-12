@@ -74,6 +74,7 @@ REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SOURCE_CONTAINER="${SOURCE_CONTAINER:-neelastack-postgres}"
 MIGRATIONS_DIR="${MIGRATIONS_DIR:-$REPO_ROOT/backend/src/main/resources/db/migration}"
 BACKUP_DIR="${BACKUP_DIR:-$REPO_ROOT/backups}"
+BACKUP_MAX_AGE_HOURS="${BACKUP_MAX_AGE_HOURS:-30}"
 
 RETENTION_DAILY_DAYS="${RETENTION_DAILY_DAYS:-7}"
 RETENTION_WEEKLY_WEEKS="${RETENTION_WEEKLY_WEEKS:-4}"
@@ -349,6 +350,7 @@ main() {
   fi
 
   run_restore_drill "$dump_file"
+  printf 'DRILL_STATUS=PASS\nDRILL_BACKUP=%s\n' "$dump_file" > "$BACKUP_DIR/LAST_SUCCESSFUL_DRILL"
   log "Backup + restore drill completed successfully. Exit code 0."
 }
 

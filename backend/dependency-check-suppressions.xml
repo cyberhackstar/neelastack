@@ -14,7 +14,8 @@
         Note: this finding intermittently disappears/reappears across scan
         runs depending on NVD data cache state — do not remove this
         suppression based on a single clean scan.
-    ]]></notes>
+        ]]>
+    </notes>
     <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@.*$</packageUrl>
     <cve>CVE-2026-53914</cve>
   </suppress>

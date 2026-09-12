@@ -79,4 +79,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Invoice i WHERE i.status = 'PENDING'")
     BigDecimal sumPendingAmount();
+
+    // Powers ProjectHealthService / the admin project-operations summary: a PENDING invoice
+    // whose due date has already passed.
+    long countByEngagementIdAndStatusAndDueDateBefore(UUID engagementId, InvoiceStatus status, java.time.LocalDate cutoff);
+
+    long countByStatusAndDueDateBefore(InvoiceStatus status, java.time.LocalDate cutoff);
 }

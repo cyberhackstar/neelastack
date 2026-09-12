@@ -47,9 +47,14 @@ export class RegisterComponent implements OnInit {
     this.errorMessage.set(null);
 
     this.authService.register(this.form.getRawValue()).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading.set(false);
-        this.router.navigate(["/"]);
+        // Registration no longer signs the user in directly — it must be verified first
+        // (see AuthService#register on the backend). Send them to the "check your inbox"
+        // step instead of into the app.
+        this.router.navigate(["/check-email"], {
+          queryParams: { email: res.email },
+        });
       },
       error: (err) => {
         this.loading.set(false);

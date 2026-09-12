@@ -34,6 +34,9 @@ class AuthorizationIntegrationTest extends AbstractIntegrationTest {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private com.neelastack.security.JwtService jwtService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private static final String PASSWORD = "Str0ngPassw0rd!";
@@ -46,10 +49,17 @@ class AuthorizationIntegrationTest extends AbstractIntegrationTest {
                 .role(role)
                 .enabled(true)
                 .emailVerified(true)
+                // Admin/superadmin accounts must have MFA enrolled to reach ordinary
+                // /api/v1/admin/** functionality (AdminMfaEnrollmentRequiredFilter) --
+                // mirror that here so this fixture represents a real, usable admin account.
+                .mfaEnabled(role == Role.ADMIN || role == Role.SUPERADMIN)
                 .build();
         return userRepository.save(user);
     }
 
+    private String issueAccessToken(User user) {
+        return jwtService.generateAccessToken(user, user.getTokenVersion());
+    }
     private String loginAndGetAccessToken(String email) throws Exception {
         String payload = """
                 {"email":"%s","password":"%s"}
@@ -122,7 +132,8 @@ class AuthorizationIntegrationTest extends AbstractIntegrationTest {
     @Test
     void adminRole_canCallAdminEndpoint_returns200() throws Exception {
         persistUser("real-admin@example.com", Role.ADMIN);
-        String token = loginAndGetAccessToken("real-admin@example.com");
+        User admin = userRepository.findByEmail("real-admin@example.com").orElseThrow();
+        String token = issueAccessToken(admin);
 
         mockMvc.perform(get("/api/v1/admin/engagements")
                         .header("Authorization", "Bearer " + token))
@@ -135,7 +146,8 @@ class AuthorizationIntegrationTest extends AbstractIntegrationTest {
         Engagement engagement = persistEngagementFor(clientA);
         persistUser("admin-checking-in@example.com", Role.ADMIN);
 
-        String adminToken = loginAndGetAccessToken("admin-checking-in@example.com");
+        User admin = userRepository.findByEmail("admin-checking-in@example.com").orElseThrow();
+        String adminToken = issueAccessToken(admin);
 
         mockMvc.perform(get("/api/v1/client/engagements/" + engagement.getId())
                         .header("Authorization", "Bearer " + adminToken))

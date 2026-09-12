@@ -27,14 +27,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Server-side TOTP MFA for admin accounts (Section 2, master prompt). Setup is
@@ -46,7 +50,13 @@ import java.util.UUID;
  *
  * Rate limiting reuses the same Redis fixed-window pattern as RateLimitFilter, but
  * keyed per-account rather than per-IP (5 attempts / 15 min, per master prompt) since
- * this guards a specific account's TOTP secret, not a public endpoint.
+ * this guards a specific account's TOTP secret, not a public endpoint. Unlike the
+ * public-route limits in RateLimitFilter, a TOTP secret is exactly what this limiter
+ * protects against brute force -- so a Redis outage must not silently permit unlimited
+ * guesses (security review P1 #2). When Redis is unreachable this falls back to the
+ * same per-instance in-memory fixed-window counter RateLimitFilter uses for its
+ * fail-closed paths: degraded (not shared across app replicas) but still enforced,
+ * rather than open, for the duration of the outage.
  */
 @Service
 @RequiredArgsConstructor
@@ -70,6 +80,21 @@ public class MfaService {
     private static final int MAX_ATTEMPTS = 5;
     private static final Duration ATTEMPT_WINDOW = Duration.ofMinutes(15);
     private static final Duration PENDING_SECRET_TTL = Duration.ofMinutes(10);
+    private static final int MAX_LOCAL_FALLBACK_KEYS = 10_000;
+
+    private record LocalWindow(AtomicInteger count, Instant windowResetAt) {
+    }
+
+    // Local per-instance fallback counters, used only while Redis is unreachable. Entries are
+    // actively evicted and globally bounded so a prolonged Redis outage cannot grow this map
+    // without limit.
+    private final Map<String, LocalWindow> localFallbackWindows = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedDelay = 60_000L)
+    void evictExpiredLocalWindows() {
+        Instant now = Instant.now();
+        localFallbackWindows.entrySet().removeIf(entry -> now.isAfter(entry.getValue().windowResetAt()));
+    }
 
     private final SecretGenerator secretGenerator = new DefaultSecretGenerator();
     private final QrGenerator qrGenerator = new ZxingPngQrGenerator();
@@ -271,10 +296,20 @@ public class MfaService {
         if (!user.isMfaEnabled()) {
             throw new BadRequestException("MFA is not enabled on this account.");
         }
-        enforceRateLimit(user.getId(), "step-up");
-        if (!codeVerifier.isValidCode(totpEncryptionService.decrypt(user.getTotpSecret()), code)) {
+
+        boolean valid = codeVerifier.isValidCode(
+                totpEncryptionService.decrypt(user.getTotpSecret()),
+                code
+        );
+
+        if (!valid) {
+            // Count failed TOTP attempts only. Successful step-ups must not consume the
+            // brute-force budget because legitimate admins may perform several high-risk
+            // mutations during one session.
+            enforceRateLimit(user.getId(), "step-up");
             throw new BadRequestException("Invalid code.");
         }
+
         grantStepUp(user.getId());
     }
 
@@ -318,10 +353,38 @@ public class MfaService {
         } catch (BadRequestException e) {
             throw e;
         } catch (Exception e) {
-            // Redis unavailable for the counter itself — fail open on rate limiting specifically
-            // (same trade-off as RateLimitFilter): don't let a Redis outage lock everyone out of
-            // MFA entirely, since the TOTP/password checks themselves are still enforced either way.
-            log.warn("MFA rate limiter could not reach Redis, allowing attempt through: {}", e.getMessage());
+            // Redis unavailable for the counter itself. Fail open here would mean unlimited
+            // TOTP guesses against this account's secret for as long as the outage lasts --
+            // exactly what this limiter exists to prevent (security review P1 #2) -- so fall
+            // back to a local per-instance counter instead of letting the attempt straight
+            // through.
+            log.warn("MFA rate limiter could not reach Redis, applying local in-memory fallback for {}: {}",
+                    key, e.getMessage());
+            enforceLocalFallback(key);
+        }
+    }
+
+    private void enforceLocalFallback(String key) {
+        Instant now = Instant.now();
+        if (!localFallbackWindows.containsKey(key) && localFallbackWindows.size() >= MAX_LOCAL_FALLBACK_KEYS) {
+            evictExpiredLocalWindows();
+            if (!localFallbackWindows.containsKey(key) && localFallbackWindows.size() >= MAX_LOCAL_FALLBACK_KEYS) {
+                throw new BadRequestException("Too many MFA attempts — try again in a few minutes.");
+            }
+        }
+
+        LocalWindow window = localFallbackWindows.compute(key, (k, existing) -> {
+            if (existing == null || now.isAfter(existing.windowResetAt())) {
+                if (existing == null && localFallbackWindows.size() >= MAX_LOCAL_FALLBACK_KEYS) {
+                    return new LocalWindow(new AtomicInteger(MAX_ATTEMPTS + 1), now.plus(ATTEMPT_WINDOW));
+                }
+                return new LocalWindow(new AtomicInteger(0), now.plus(ATTEMPT_WINDOW));
+            }
+            return existing;
+        });
+
+        if (window.count().incrementAndGet() > MAX_ATTEMPTS) {
+            throw new BadRequestException("Too many MFA attempts — try again in a few minutes.");
         }
     }
 
@@ -333,3 +396,4 @@ public class MfaService {
         return "mfa_step_up:" + userId;
     }
 }
+
