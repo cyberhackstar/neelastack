@@ -81,6 +81,10 @@ export class EngagementService {
     return this.http.get<ProjectTask[]>(`${this.clientBase}/${id}/tasks`);
   }
 
+  completeClientTask(engagementId: string, taskId: string) {
+    return this.http.post<ProjectTask>(`${this.clientBase}/${engagementId}/tasks/${taskId}/complete`, {});
+  }
+
   getMilestoneApprovals(id: string) {
     return this.http.get<MilestoneApproval[]>(`${this.clientBase}/${id}/milestone-approvals`);
   }

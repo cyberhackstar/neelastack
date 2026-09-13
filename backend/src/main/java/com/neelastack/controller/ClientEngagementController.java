@@ -86,6 +86,11 @@ public class ClientEngagementController {
         return milestoneApprovalService.listForEngagement(id);
     }
 
+    @PostMapping("/{id}/tasks/{taskId}/complete")
+    public ProjectTaskDto completeClientTask(@PathVariable UUID id, @PathVariable UUID taskId) {
+        return projectTaskService.completeClientActionTask(id, taskId);
+    }
+
     @PostMapping("/milestones/{milestoneId}/approve")
     public MilestoneDto approveMilestone(@PathVariable UUID milestoneId) {
         return milestoneApprovalService.approve(milestoneId);

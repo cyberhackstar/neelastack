@@ -64,6 +64,9 @@ public class UpiPaymentService {
         if (qrImage == null || qrImage.isEmpty()) {
             throw new BadRequestException("A QR code image is required");
         }
+        if (qrImage.getSize() > 5L * 1024 * 1024) {
+            throw new BadRequestException("QR image must be 5MB or smaller");
+        }
         FileStorageService.UploadResult upload = fileStorageService.upload(qrImage, "neelastack/upi-qr");
 
         UpiPaymentMethod method = UpiPaymentMethod.builder()
@@ -127,12 +130,31 @@ public class UpiPaymentService {
             throw new BadRequestException("That payment method is no longer active — please choose another");
         }
 
+        if (request.amountClaimed() == null || request.amountClaimed().compareTo(invoice.getAmount()) != 0) {
+            throw new BadRequestException("The payment claim amount must exactly match the invoice amount of "
+                    + invoice.getCurrency() + " " + invoice.getAmount());
+        }
+
+        String utr = request.utrReference() == null ? "" : request.utrReference().trim();
+        if (utr.length() < 6 || utr.length() > 60) {
+            throw new BadRequestException("Enter a valid UTR / transaction reference (6–60 characters)");
+        }
+        if (upiPaymentSubmissionRepository.existsByInvoiceIdAndStatus(invoiceId, UpiSubmissionStatus.PENDING_VERIFICATION)) {
+            throw new BadRequestException("A UPI payment claim for this invoice is already awaiting verification");
+        }
+        if (request.payerUpiId() != null && request.payerUpiId().trim().length() > 100) {
+            throw new BadRequestException("UPI ID is too long");
+        }
+
         User client = currentUserProvider.get();
 
         String screenshotUrl = null;
         String screenshotPublicId = null;
         String screenshotResourceType = null;
         if (screenshot != null && !screenshot.isEmpty()) {
+            if (screenshot.getSize() > 5L * 1024 * 1024) {
+                throw new BadRequestException("Payment proof must be 5MB or smaller");
+            }
             FileStorageService.UploadResult upload = fileStorageService.upload(screenshot, "neelastack/upi-proofs");
             screenshotUrl = upload.url();
             screenshotPublicId = upload.publicId();
@@ -143,7 +165,7 @@ public class UpiPaymentService {
                 .invoice(invoice)
                 .upiMethod(method)
                 .submittedBy(client)
-                .utrReference(request.utrReference().trim())
+                .utrReference(utr)
                 .payerUpiId(request.payerUpiId())
                 .amountClaimed(request.amountClaimed())
                 .screenshotUrl(screenshotUrl)

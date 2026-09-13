@@ -7,6 +7,7 @@ import com.neelastack.entity.Milestone;
 import com.neelastack.entity.ProjectActivityType;
 import com.neelastack.entity.ProjectTask;
 import com.neelastack.entity.ProjectTaskStatus;
+import com.neelastack.entity.NotificationPriority;
 import com.neelastack.entity.Role;
 import com.neelastack.entity.User;
 import com.neelastack.exception.BadRequestException;
@@ -103,6 +104,38 @@ public class ProjectTaskService {
         projectActivityService.recordBestEffort(engagementId, currentUserProvider.get(),
                 ProjectActivityType.TASK_STATUS_CHANGED, summary, null);
 
+        return dto;
+    }
+
+    @Transactional
+    public ProjectTaskDto completeClientActionTask(UUID engagementId, UUID taskId) {
+        ProjectTask task = projectTaskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+        Engagement engagement = engagementService.getEntityWithAccessCheck(engagementId);
+        UUID taskEngagementId = task.getMilestone().getEngagement().getId();
+        if (!engagementId.equals(taskEngagementId)) {
+            throw new ResourceNotFoundException("Task not found for this engagement");
+        }
+        User current = currentUserProvider.get();
+        if (current.getRole() != Role.CLIENT) {
+            throw new org.springframework.security.access.AccessDeniedException("Client access required");
+        }
+        if (!task.isClientActionRequired()) {
+            throw new BadRequestException("This task does not require client action");
+        }
+        if (task.getStatus() == ProjectTaskStatus.DONE) {
+            return toDto(task);
+        }
+
+        task.setStatus(ProjectTaskStatus.DONE);
+        ProjectTaskDto dto = toDto(projectTaskRepository.save(task));
+        projectActivityService.recordBestEffort(engagementId, current, ProjectActivityType.TASK_STATUS_CHANGED,
+                "Client completed task \"" + task.getTitle() + "\"", null);
+        notificationService.notifyAllAdminsBestEffort(engagement, com.neelastack.entity.NotificationType.GENERAL,
+                NotificationPriority.MEDIUM,
+                "Client completed — " + task.getTitle(),
+                current.getFullName() + " completed the client action task \"" + task.getTitle() + "\".",
+                "/admin/engagements/" + engagementId);
         return dto;
     }
 

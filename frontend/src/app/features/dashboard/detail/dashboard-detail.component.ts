@@ -73,6 +73,7 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
   upiOpenInvoiceId = signal<string | null>(null);
   upiSubmittingInvoiceId = signal<string | null>(null);
   upiErrors = signal<Record<string, string>>({});
+  copiedUpiMethodId = signal<string | null>(null);
   upiMethodId = signal<Record<string, string>>({});
   upiUtr = signal<Record<string, string>>({});
   upiAmount = signal<Record<string, number>>({});
@@ -95,6 +96,9 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
   changeRequestError = signal<string | null>(null);
   quotingChangeRequestFor = signal<string | null>(null);
   changeRequestActionFor = signal<string | null>(null);
+  selectedTask = signal<ProjectTask | null>(null);
+  completingClientTask = signal(false);
+  clientTaskError = signal<string | null>(null);
 
   private messagePollHandle?: ReturnType<typeof setInterval>;
 
@@ -258,6 +262,31 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
   }
 
   openAction(item: ActionItem): void {
+    // Task actions should open the actual task dialog instead of navigating to a
+    // query-string-only URL. The old deep link (/dashboard/:id?tab=tasks) had no
+    // corresponding tab state in this component, so clicking a task appeared to do
+    // nothing.
+    if (item.kind === 'TASK_ACTION') {
+      const task = this.tasks().find((t) => t.id === item.relatedId);
+      if (task) {
+        this.openTask(task);
+        return;
+      }
+      // Action-center data and task data load independently. If the user clicks the
+      // action card before the task request has completed, fetch it once rather than
+      // making the click appear to do nothing.
+      this.engagementService.getTasks(this.engagementId).subscribe({
+        next: (tasks) => {
+          this.tasks.set(tasks);
+          const loaded = tasks.find((t) => t.id === item.relatedId);
+          if (loaded) this.openTask(loaded);
+          else this.clientTaskError.set('This task is no longer available. Refresh the project and try again.');
+        },
+        error: () => this.clientTaskError.set('Could not load this task. Please refresh the project and try again.'),
+      });
+      return;
+    }
+
     if (!item.deepLink) return;
     if (item.deepLink.startsWith('http')) window.location.assign(item.deepLink); else this.router.navigateByUrl(item.deepLink);
   }
@@ -293,9 +322,40 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
     const value = (event.target as HTMLInputElement).value;
     this.upiPayerId.set({ ...this.upiPayerId(), [invoiceId]: value });
   }
+  openUpiApp(invoice: Invoice, method: UpiPaymentMethod): void {
+    const intent = this.upiIntentUrl(invoice, method);
+    if (intent) window.location.href = intent;
+  }
+
+  upiIntentUrl(invoice: Invoice, method: UpiPaymentMethod): string | null {
+    if (!method.vpa || invoice.currency.toUpperCase() !== 'INR') return null;
+    const params = new URLSearchParams({
+      pa: method.vpa,
+      pn: method.payeeName || 'Neelastack',
+      am: Number(invoice.amount).toFixed(2),
+      cu: 'INR',
+      tn: `Neelastack ${invoice.invoiceNumber}`,
+    });
+    return `upi://pay?${params.toString()}`;
+  }
+
+  async copyUpiId(method: UpiPaymentMethod): Promise<void> {
+    if (!method.vpa) return;
+    try {
+      await navigator.clipboard.writeText(method.vpa);
+      this.copiedUpiMethodId.set(method.id);
+      window.setTimeout(() => {
+        if (this.copiedUpiMethodId() === method.id) this.copiedUpiMethodId.set(null);
+      }, 1800);
+    } catch {
+      this.upiErrors.set({ ...this.upiErrors(), [method.id]: 'Could not copy automatically. Please copy the UPI ID manually.' });
+    }
+  }
+
   submitUpi(invoice: Invoice): void {
     const utr = (this.upiUtr()[invoice.id] ?? '').trim(); const methodId = this.upiMethodId()[invoice.id]; const amount = Number(this.upiAmount()[invoice.id] ?? invoice.amount);
     if (!methodId || !utr || !Number.isFinite(amount) || amount <= 0) { this.upiErrors.set({ ...this.upiErrors(), [invoice.id]: 'Choose a UPI method, enter the UTR and a valid amount.' }); return; }
+    if (Math.abs(amount - Number(invoice.amount)) > 0.001) { this.upiErrors.set({ ...this.upiErrors(), [invoice.id]: `For this invoice, enter the exact amount: ${invoice.currency} ${invoice.amount}.` }); return; }
     this.upiSubmittingInvoiceId.set(invoice.id);
     this.upiPaymentService.submitPayment(invoice.id, { upiMethodId: methodId, utrReference: utr, payerUpiId: (this.upiPayerId()[invoice.id] ?? '').trim() || undefined, amountClaimed: amount }, this.upiScreenshot()[invoice.id]).subscribe({
       next: (submission) => {
@@ -325,12 +385,19 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
     return this.tasks().filter((t) => t.milestoneId === milestoneId);
   }
 
-  addTask(milestoneId: string, titleInput: HTMLInputElement, dueDateInput: HTMLInputElement, clientActionInput: HTMLInputElement): void {
+  addTask(
+    milestoneId: string,
+    titleInput: HTMLInputElement,
+    descriptionInput: HTMLInputElement,
+    dueDateInput: HTMLInputElement,
+    clientActionInput: HTMLInputElement,
+  ): void {
     const title = titleInput.value.trim();
     if (!title) return;
 
     const payload: ProjectTaskPayload = {
       title,
+      description: descriptionInput.value.trim() || undefined,
       dueDate: dueDateInput.value || undefined,
       clientActionRequired: clientActionInput.checked,
     };
@@ -341,10 +408,45 @@ export class DashboardDetailComponent implements OnInit, OnDestroy {
         this.addingTaskForMilestone.set(null);
         this.tasks.set([...this.tasks(), task]);
         titleInput.value = '';
+        descriptionInput.value = '';
         dueDateInput.value = '';
         clientActionInput.checked = false;
       },
       error: () => this.addingTaskForMilestone.set(null),
+    });
+  }
+
+  openTask(task: ProjectTask): void {
+    if (this.isAdmin || !task.clientActionRequired) return;
+    this.selectedTask.set(task);
+    this.clientTaskError.set(null);
+  }
+
+  closeTask(): void {
+    if (this.completingClientTask()) return;
+    this.selectedTask.set(null);
+    this.clientTaskError.set(null);
+  }
+
+  completeClientTask(): void {
+    const task = this.selectedTask();
+    if (!task || this.isAdmin) return;
+    if (task.status === 'DONE') {
+      this.closeTask();
+      return;
+    }
+    this.completingClientTask.set(true);
+    this.clientTaskError.set(null);
+    this.engagementService.completeClientTask(this.engagementId, task.id).subscribe({
+      next: (updated) => {
+        this.tasks.set(this.tasks().map((t) => (t.id === updated.id ? updated : t)));
+        this.completingClientTask.set(false);
+        this.selectedTask.set(updated);
+      },
+      error: (err) => {
+        this.completingClientTask.set(false);
+        this.clientTaskError.set(err?.error?.message ?? 'Could not complete this task. Please try again.');
+      },
     });
   }
 

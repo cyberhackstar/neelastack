@@ -62,7 +62,12 @@ public class TeamMemberService {
         CloudImage image = upload(photo);
         member.setPhotoUrl(image.url());
         member.setPhotoPublicId(image.publicId());
-        return toDto(repository.save(member));
+        try {
+            return toDto(repository.save(member));
+        } catch (RuntimeException e) {
+            deletePublicAsset(image.publicId());
+            throw e;
+        }
     }
 
     @Transactional
@@ -85,11 +90,17 @@ public class TeamMemberService {
             member.setPhotoUrl(image.url());
             member.setPhotoPublicId(image.publicId());
         }
-        TeamMember saved = repository.save(member);
-        if (image != null && oldPublicId != null && !oldPublicId.equals(image.publicId())) {
-            deletePublicAsset(oldPublicId);
+        try {
+            TeamMember saved = repository.save(member);
+            if (image != null && oldPublicId != null && !oldPublicId.equals(image.publicId())) {
+                deletePublicAsset(oldPublicId);
+            }
+            return toDto(saved);
+        } catch (RuntimeException e) {
+            // Never leave a newly uploaded Cloudinary asset orphaned when the DB update fails.
+            if (image != null) deletePublicAsset(image.publicId());
+            throw e;
         }
-        return toDto(saved);
     }
 
     @Transactional
@@ -139,6 +150,7 @@ public class TeamMemberService {
             byte[] bytes = file.getBytes();
             String type = tika.detect(bytes);
             if (!ALLOWED_IMAGE_TYPES.contains(type)) throw new BadRequestException("Only JPG, PNG and WebP team photos are allowed");
+            log.info("Uploading team image to Cloudinary ({} bytes)", bytes.length);
             Map<?, ?> result = cloudinary.uploader().upload(bytes, ObjectUtils.asMap(
                     "folder", "neelastack/team",
                     "resource_type", "image",
@@ -148,6 +160,7 @@ public class TeamMemberService {
                     "overwrite", false,
                     "quality", "auto:good",
                     "fetch_format", "auto"));
+            log.info("Team image uploaded to Cloudinary as {}", result.get("public_id"));
             return new CloudImage(String.valueOf(result.get("secure_url")), String.valueOf(result.get("public_id")));
         } catch (IOException e) {
             log.error("Cloudinary team image upload failed", e);

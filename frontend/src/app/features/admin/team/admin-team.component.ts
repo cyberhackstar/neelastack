@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { SeoService } from '../../../core/services/seo.service';
 import { TeamMember } from '../../../core/models/content.model';
+import { timeout } from 'rxjs';
 
 @Component({
   selector: 'app-admin-team',
@@ -97,66 +98,110 @@ export class AdminTeamComponent implements OnInit {
     if (file) this.previewUrl.set(URL.createObjectURL(file));
   }
 
-  save(): void {
+  async save(): Promise<void> {
     this.error.set(null);
     this.message.set(null);
     if (!this.name.trim() || !this.role.trim() || !this.bio.trim()) {
       this.error.set('Name, role and bio are required.');
       return;
     }
-    const photo = this.selectedPhoto();
-    if (!this.editingId() && !photo) {
+    const selected = this.selectedPhoto();
+    if (!this.editingId() && !selected) {
       this.error.set('Please choose a profile photo for a new team member.');
       return;
     }
-    if (photo) {
+    if (selected) {
       const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
-      if (!allowedTypes.has(photo.type)) {
+      if (!allowedTypes.has(selected.type)) {
         this.error.set('Profile photo must be JPG, PNG or WebP.');
         return;
       }
-      if (photo.size > 5 * 1024 * 1024) {
+      if (selected.size > 5 * 1024 * 1024) {
         this.error.set('Profile photo must be 5MB or smaller.');
         return;
       }
     }
 
-    const body = new FormData();
-    body.append('name', this.name.trim());
-    body.append('role', this.role.trim());
-    body.append('bio', this.bio.trim());
-    body.append('skills', this.skillsText);
-    body.append('sortOrder', String(Number.isFinite(this.sortOrder) ? this.sortOrder : 0));
-    body.append('active', String(this.active));
-    if (photo) body.append('photo', photo, photo.name);
-
     this.saving.set(true);
-    const id = this.editingId();
-    const request = id
-      ? this.http.put<TeamMember>(`${this.base}/${id}`, body)
-      : this.http.post<TeamMember>(this.base, body);
+    let photo = selected;
+    try {
+      // Keep the request comfortably below reverse-proxy and mobile-network limits.
+      // The server still enforces the authoritative 5 MB image limit.
+      if (photo && photo.size > 1.75 * 1024 * 1024) {
+        photo = await this.compressPhoto(photo);
+      }
 
-    request.subscribe({
-      next: (member) => {
-        this.saving.set(false);
-        this.formOpen.set(false);
-        this.editingId.set(null);
-        this.revokePreview();
-        this.previewUrl.set(null);
-        this.resetForm();
-        this.message.set(id ? 'Team member updated.' : 'Team member added.');
-        this.members.set(
-          id ? this.members().map((item) => (item.id === member.id ? member : item)) : [...this.members(), member],
-        );
-      },
-      error: (err) => {
-        this.saving.set(false);
-        if (err?.status === 413) {
-          this.error.set('The upload is too large for the server. Please choose a profile photo of 5MB or smaller.');
-          return;
-        }
-        this.error.set(err?.error?.message ?? 'Could not save team member.');
-      },
+      const body = new FormData();
+      body.append('name', this.name.trim());
+      body.append('role', this.role.trim());
+      body.append('bio', this.bio.trim());
+      body.append('skills', this.skillsText);
+      body.append('sortOrder', String(Number.isFinite(this.sortOrder) ? this.sortOrder : 0));
+      body.append('active', String(this.active));
+      if (photo) body.append('photo', photo, photo.name);
+
+      const id = this.editingId();
+      const request = id
+        ? this.http.put<TeamMember>(`${this.base}/${id}`, body)
+        : this.http.post<TeamMember>(this.base, body);
+
+      request.pipe(timeout(90_000)).subscribe({
+        next: (member) => {
+          this.saving.set(false);
+          this.formOpen.set(false);
+          this.editingId.set(null);
+          this.revokePreview();
+          this.previewUrl.set(null);
+          this.resetForm();
+          this.message.set(id ? 'Team member updated.' : 'Team member added.');
+          this.members.set(
+            id ? this.members().map((item) => (item.id === member.id ? member : item)) : [...this.members(), member],
+          );
+        },
+        error: (err) => {
+          this.saving.set(false);
+          if (err?.name === 'TimeoutError') {
+            this.error.set('The upload is taking too long. Please try a smaller photo and try again.');
+            return;
+          }
+          if (err?.status === 413) {
+            this.error.set('The upload is too large for the server. Please choose a profile photo of 5MB or smaller.');
+            return;
+          }
+          this.error.set(err?.error?.message ?? 'Could not save team member.');
+        },
+      });
+    } catch (err) {
+      this.saving.set(false);
+      this.error.set('Could not prepare the profile photo. Please try another JPG or PNG image.');
+    }
+  }
+
+  private compressPhoto(file: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        if (!context) { reject(new Error('Canvas unavailable')); return; }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error('Image compression failed')); return; }
+          const base = file.name.replace(/\.[^.]+$/, '') || 'team-photo';
+          resolve(new File([blob], `${base}.jpg`, { type: 'image/jpeg', lastModified: Date.now() }));
+        }, 'image/jpeg', 0.82);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Image could not be decoded'));
+      };
+      image.src = objectUrl;
     });
   }
 

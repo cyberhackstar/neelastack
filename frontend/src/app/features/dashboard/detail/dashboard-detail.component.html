@@ -150,19 +150,23 @@
               @if (tasksForMilestone(milestone.id).length > 0) {
                 <ul class="task-list">
                   @for (task of tasksForMilestone(milestone.id); track task.id) {
-                    <li class="task-item">
-                      <div class="task-main">
-                        <span class="task-title">{{ task.title }}</span>
-                        @if (task.clientActionRequired) {
+                    <li class="task-item" [class.actionable]="!isAdmin && task.clientActionRequired" [class.completed]="task.status === 'DONE'">
+                      @if (!isAdmin && task.clientActionRequired) {
+                        <button type="button" class="task-main task-button" (click)="openTask(task)">
+                          <span class="task-title">{{ task.title }}</span>
                           <span class="tag tag-action">Client action</span>
-                        }
-                        @if (task.dueDate) {
-                          <span class="due">Due {{ task.dueDate | date: 'mediumDate' }}</span>
-                        }
-                        @if (task.assigneeName) {
-                          <span class="meta">Assigned to {{ task.assigneeName }}</span>
-                        }
-                      </div>
+                          @if (task.dueDate) { <span class="due">Due {{ task.dueDate | date: 'mediumDate' }}</span> }
+                          @if (task.assigneeName) { <span class="meta">Assigned to {{ task.assigneeName }}</span> }
+                          <span class="task-open-hint">{{ task.status === 'DONE' ? 'View' : 'Open task →' }}</span>
+                        </button>
+                      } @else {
+                        <div class="task-main">
+                          <span class="task-title">{{ task.title }}</span>
+                          @if (task.clientActionRequired) { <span class="tag tag-action">Client action</span> }
+                          @if (task.dueDate) { <span class="due">Due {{ task.dueDate | date: 'mediumDate' }}</span> }
+                          @if (task.assigneeName) { <span class="meta">Assigned to {{ task.assigneeName }}</span> }
+                        </div>
+                      }
 
                       @if (isAdmin) {
                         <div class="task-controls">
@@ -186,9 +190,28 @@
                 </ul>
               }
 
+              @if (!isAdmin && selectedTask(); as task) {
+                <div class="task-modal-backdrop" (click)="closeTask()">
+                  <section class="task-modal card" role="dialog" aria-modal="true" aria-labelledby="task-modal-title" (click)="$event.stopPropagation()">
+                    <div class="task-modal-head">
+                      <div><span class="eyebrow">// CLIENT ACTION</span><h2 id="task-modal-title">{{ task.title }}</h2></div>
+                      <button type="button" class="text-button" (click)="closeTask()" [disabled]="completingClientTask()">Close</button>
+                    </div>
+                    <div class="task-modal-meta"><span class="tag">{{ task.status.replace('_', ' ') }}</span>@if(task.dueDate){<span class="meta">Due {{task.dueDate|date:'mediumDate'}}</span>}</div>
+                    @if(task.description){<p class="task-description">{{task.description}}</p>} @else {<p class="muted">This task needs your action. Complete it after you have provided the requested input or approval through the project workspace.</p>}
+                    @if(clientTaskError()){<p class="error">{{clientTaskError()}}</p>}
+                    <div class="task-modal-actions">
+                      <button type="button" class="btn btn-ghost" (click)="closeTask()" [disabled]="completingClientTask()">Cancel</button>
+                      @if(task.status !== 'DONE'){<button type="button" class="btn btn-primary" (click)="completeClientTask()" [disabled]="completingClientTask()">{{completingClientTask()?'Completing…':'Mark completed'}}</button>}
+                    </div>
+                  </section>
+                </div>
+              }
+
               @if (isAdmin) {
                 <div class="task-add-row">
                   <input #taskTitle type="text" placeholder="Add a task…" />
+                  <input #taskDescription type="text" placeholder="Client instruction (optional)" />
                   <input #taskDueDate type="date" />
                   <label class="task-action-check">
                     <input #taskClientAction type="checkbox" /> Client action
@@ -197,7 +220,7 @@
                     type="button"
                     class="btn btn-ghost"
                     [disabled]="addingTaskForMilestone() === milestone.id"
-                    (click)="addTask(milestone.id, taskTitle, taskDueDate, taskClientAction)"
+                    (click)="addTask(milestone.id, taskTitle, taskDescription, taskDueDate, taskClientAction)"
                   >
                     {{ addingTaskForMilestone() === milestone.id ? 'Adding…' : '+ Add task' }}
                   </button>
@@ -458,7 +481,7 @@
               @if (!isAdmin && upiOpenInvoiceId() === invoice.id) {
                 <div class="upi-panel card">
                   <h3>Pay directly via UPI</h3><p class="muted">Pay using the QR/VPA below, then submit the UTR. The payment remains pending until verified by Neelastack.</p>
-                  <div class="upi-methods">@for(m of upiMethods();track m.id){<button type="button" class="upi-method" [class.selected]="upiMethodId()[invoice.id]===m.id" (click)="setUpiMethod(invoice.id,m.id)"><img [src]="m.qrImageUrl" [alt]="m.label+' QR'"/><span><strong>{{m.label}}</strong><small>{{m.vpa||'No VPA'}}{{m.payeeName?' · '+m.payeeName:''}}</small></span></button>}</div>
+                  <div class="upi-methods">@for(m of upiMethods();track m.id){<div class="upi-method-wrap"><button type="button" class="upi-method" [class.selected]="upiMethodId()[invoice.id]===m.id" (click)="setUpiMethod(invoice.id,m.id)"><img [src]="m.qrImageUrl" [alt]="m.label+' QR'"/><span><strong>{{m.label}}</strong><small>{{m.vpa||'No VPA'}}{{m.payeeName?' · '+m.payeeName:''}}</small></span></button>@if(m.vpa){<div class="upi-method-actions"><button type="button" class="btn btn-primary" (click)="openUpiApp(invoice,m)" [disabled]="!upiIntentUrl(invoice,m)">Open UPI app</button><button type="button" class="btn btn-ghost" (click)="copyUpiId(m)">{{copiedUpiMethodId()===m.id?'Copied':'Copy UPI ID'}}</button></div>}</div>}</div>
                   <div class="row two"><label>UTR / reference<input [value]="upiUtr()[invoice.id]||''" (input)="setUpiUtr(invoice.id,$event)" maxlength="100" /></label><label>Amount<input type="number" min="1" [value]="upiAmount()[invoice.id]||invoice.amount" (input)="setUpiAmount(invoice.id,$event)" /></label></div>
                   <div class="row two"><label>Your UPI ID (optional)<input [value]="upiPayerId()[invoice.id]||''" (input)="setUpiPayerId(invoice.id,$event)" /></label><label>Payment screenshot (optional)<input type="file" accept="image/*" (change)="onUpiScreenshot(invoice.id,$event)" /></label></div>
                   @if(upiErrors()[invoice.id]){<p class="error">{{upiErrors()[invoice.id]}}</p>}

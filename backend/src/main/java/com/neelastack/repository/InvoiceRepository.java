@@ -74,6 +74,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             """, nativeQuery = true)
     long nextInvoiceSequenceForYear(@Param("year") int year);
 
+    @Query("SELECT i FROM Invoice i JOIN FETCH i.engagement e JOIN FETCH e.client " +
+            "WHERE i.status = 'PAID' ORDER BY i.paidAt DESC, i.createdAt DESC")
+    List<Invoice> findPaidWithEngagementAndClient();
+
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Invoice i WHERE i.status = 'PAID'")
     BigDecimal sumPaidAmount();
 

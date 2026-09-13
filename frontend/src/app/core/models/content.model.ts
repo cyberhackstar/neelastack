@@ -519,6 +519,22 @@ export interface InvoicePayload {
   dueDate?: string;
 }
 
+export interface PaymentHistoryItem {
+  id: string;
+  invoiceNumber: string;
+  description: string;
+  engagementId: string;
+  projectTitle: string;
+  clientName: string;
+  clientEmail: string;
+  amount: number;
+  currency: string;
+  paymentSource: string;
+  paymentMethod: string;
+  paymentReference?: string;
+  paidAt?: string;
+}
+
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE';
 
 export interface ProjectTask {
