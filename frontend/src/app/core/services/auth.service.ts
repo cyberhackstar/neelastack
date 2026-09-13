@@ -131,6 +131,18 @@ export class AuthService {
     this.currentUser.set(null);
   }
 
+  /**
+   * Handles an unrecoverable authenticated session (for example an expired/revoked
+   * refresh token). Clear local credentials and take the user back to login rather than
+   * leaving protected admin pages rendering a cascade of 401 errors.
+   */
+  handleSessionExpired(): void {
+    this.clearLocalSession();
+    if (this.isBrowser && !this.router.url.startsWith('/login')) {
+      void this.router.navigate(['/login']);
+    }
+  }
+
   exchangeOAuthCode(code: string) {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/oauth-exchange`, { code })

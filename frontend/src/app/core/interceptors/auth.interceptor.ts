@@ -63,7 +63,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         refreshInFlight$ = authService.refreshSession().pipe(
           map((response) => response?.accessToken ?? authService.getAccessToken()),
           catchError((refreshError: unknown) => {
-            authService.clearLocalSession();
+            authService.handleSessionExpired();
             return throwError(() => refreshError);
           }),
           finalize(() => {

@@ -151,6 +151,10 @@ export class AdminTeamComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
+        if (err?.status === 413) {
+          this.error.set('The upload is too large for the server. Please choose a profile photo of 5MB or smaller.');
+          return;
+        }
         this.error.set(err?.error?.message ?? 'Could not save team member.');
       },
     });

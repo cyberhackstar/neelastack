@@ -216,6 +216,26 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
   # ---------------------------------------------------------------------------
+  # INFRA CONFIG VALIDATION
+  # ---------------------------------------------------------------------------
+
+  nginx-config-test:
+    name: Nginx config validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Nginx configuration syntax
+        shell: bash
+        run: |
+          docker run --rm \
+            -v "$PWD/infra/nginx/neelastack.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginx:1.27-alpine nginx -t
+
+  # ---------------------------------------------------------------------------
   # TESTS
   # ---------------------------------------------------------------------------
 
@@ -461,6 +481,7 @@ jobs:
       - frontend-build-and-test
       - container-scan
       - e2e
+      - nginx-config-test
 
     permissions:
       contents: read
