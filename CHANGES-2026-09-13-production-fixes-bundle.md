@@ -23,3 +23,8 @@ GitHub Actions run #61 being stuck in `Queued` is a GitHub-hosted runner/schedul
 - Production Nginx config contains the 10 MB request limit.
 - No remaining application references to the nonexistent `/api/v1/admin/staff` endpoint were found; the remaining `/admin/staff` occurrence is the legitimate Angular admin route.
 - Docker/Nginx runtime tests could not be executed here because Docker is not installed in this execution environment.
+
+### 5. Fixed CI Nginx validation false failure
+The CI `nginx-config-test` job previously ran the production Nginx config inside a standalone `nginx:1.27-alpine` container. Because that container was not on the production Compose network, Docker DNS could not resolve the intentional production upstream names `backend` and `frontend`, causing `nginx -t` to fail with `host not found in upstream "backend"` even though the production Compose topology is correct.
+
+The validation container now maps `backend` and `frontend` to loopback solely for the static configuration test. This keeps the production config unchanged while allowing `nginx -t` to validate syntax successfully in CI.

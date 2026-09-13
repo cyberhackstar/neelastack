@@ -231,7 +231,15 @@ jobs:
       - name: Validate Nginx configuration syntax
         shell: bash
         run: |
+          # The production config intentionally references Docker Compose service names
+          # (backend/frontend). A standalone nginx container does not have Docker DNS for
+          # those names, so nginx -t would otherwise fail with "host not found in upstream"
+          # before it can even validate the configuration syntax. Map both names to loopback
+          # solely for this static config test; production Compose provides the real service
+          # DNS records on neelastack-net.
           docker run --rm \
+            --add-host backend:127.0.0.1 \
+            --add-host frontend:127.0.0.1 \
             -v "$PWD/infra/nginx/neelastack.conf:/etc/nginx/conf.d/default.conf:ro" \
             nginx:1.27-alpine nginx -t
 
