@@ -247,7 +247,7 @@ public class UpiPaymentService {
                 submission.getSubmittedBy().getFullName() + " claims to have paid " + invoice.getCurrency()
                         + " " + submission.getAmountClaimed() + " via " + submission.getUpiMethod().getLabel()
                         + " (UTR: " + submission.getUtrReference() + "). Please verify against your bank statement.",
-                "/admin/upi-verification");
+                "/admin/payments");
     }
 
     private Invoice getInvoiceWithAccessCheck(UUID invoiceId) {

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { clientGuard } from './core/guards/client.guard';
+import { superAdminGuard } from './core/guards/super-admin.guard';
 
 export const routes: Routes = [
   {
@@ -209,6 +210,13 @@ export const routes: Routes = [
         title: 'Staff Management — Neelastack Admin',
       },
       {
+        path: 'team',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/team/admin-team.component').then((m) => m.AdminTeamComponent),
+        title: 'Team Members — Neelastack Admin',
+      },
+      {
         path: 'content/projects',
         loadComponent: () =>
           import('./features/admin/content/projects/admin-projects.component').then(
@@ -229,6 +237,14 @@ export const routes: Routes = [
             (m) => m.AdminSolutionsComponent,
           ),
         title: 'Manage Solutions — Neelastack Admin',
+      },
+      {
+        path: 'engagements/:id',
+        loadComponent: () =>
+          import('./features/dashboard/detail/dashboard-detail.component').then(
+            (m) => m.DashboardDetailComponent,
+          ),
+        title: 'Client Project — Neelastack Admin',
       },
       {
         path: 'engagements',

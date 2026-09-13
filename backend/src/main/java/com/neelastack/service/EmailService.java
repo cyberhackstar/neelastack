@@ -314,7 +314,7 @@ public class EmailService {
 
                 %s
 
-                <p><a class="button" href="%s/admin/quotations">Open admin dashboard</a></p>
+                <p><a class="button" href="%s/admin/inquiries/%s">Open quotation inquiry</a></p>
                 """.formatted(
                 esc(quotation.getInquiry().getName()),
                 action,
@@ -324,7 +324,8 @@ public class EmailService {
                 esc(quotation.getTotalAmount()),
                 esc(action.toUpperCase()),
                 reasonBlock,
-                escAttr(frontendUrl)
+                escAttr(frontendUrl),
+                escAttr(quotation.getInquiry().getId().toString())
         );
 
         sendHtml(adminAddress, title, htmlEmail(title, content, "Quotation activity from the Neelastack client pipeline."));

@@ -57,6 +57,7 @@ export class AdminLayoutComponent {
         { label: 'Pricing rules', path: '/admin/pricing-rules', icon: 'tag' },
         { label: 'Security', path: '/admin/security', icon: 'shield' },
         { label: 'Staff', path: '/admin/staff', icon: 'users' },
+        { label: 'Team members', path: '/admin/team', icon: 'users' },
       ],
     },
   ];

@@ -5,6 +5,9 @@
 
     <meta charset="utf-8" />
 
+    <!-- Must stay synchronous: applies the saved theme before Angular/SSR paints.
+         This is a same-origin external asset so the production CSP does not need
+         unsafe-inline just to support the theme preference. -->
     <script src="/assets/theme-bootstrap.js"></script>
 
     <title>

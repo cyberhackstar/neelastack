@@ -3,6 +3,7 @@ package com.neelastack.repository;
 import com.neelastack.entity.Quotation;
 import com.neelastack.entity.QuotationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +19,14 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID> {
     Optional<Quotation> findByPublicToken(String publicToken);
     List<Quotation> findByStatusAndValidUntilBefore(QuotationStatus status, LocalDate cutoff);
     List<Quotation> findByStatus(QuotationStatus status);
+
+    @EntityGraph(attributePaths = "inquiry")
+    @Query("select q from Quotation q")
+    List<Quotation> findAllWithInquiry();
+
+    @EntityGraph(attributePaths = "inquiry")
+    @Query("select q from Quotation q where q.status = :status")
+    List<Quotation> findByStatusWithInquiry(@Param("status") QuotationStatus status);
 
     /**
      * Atomic, one-time accept/reject of a SENT quotation. Deliberately a conditional UPDATE
@@ -47,6 +56,7 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID> {
      * unviewed proposals" case. viewCount is used (not firstViewedAt) so it also
      * catches any legacy row where firstViewedAt wasn't backfilled.
      */
+    @EntityGraph(attributePaths = "inquiry")
     List<Quotation> findByStatusAndViewCountAndSentAtBefore(
             QuotationStatus status, Integer viewCount, LocalDateTime cutoff);
 
@@ -55,6 +65,7 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID> {
      * the "priority alert for viewed-but-unanswered" case. Ordered so the longest-silent,
      * most-viewed proposals surface first.
      */
+    @EntityGraph(attributePaths = "inquiry")
     List<Quotation> findByStatusAndViewCountGreaterThanAndLastViewedAtBeforeOrderByLastViewedAtAsc(
             QuotationStatus status, Integer viewCount, LocalDateTime cutoff);
 

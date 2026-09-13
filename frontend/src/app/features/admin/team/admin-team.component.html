@@ -1,0 +1,81 @@
+<section class="admin-page team-admin-page">
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <span class="eyebrow">// SUPERADMIN</span>
+        <h1 class="section-heading">Team members</h1>
+        <p class="muted">Manage the people shown on the public <a routerLink="/team">Team</a> page.</p>
+      </div>
+      <button class="btn btn-primary" type="button" (click)="startCreate()">+ Add team member</button>
+    </div>
+
+    @if (error()) { <p class="error-text">{{ error() }}</p> }
+    @if (message()) { <p class="success-text">{{ message() }}</p> }
+
+    @if (formOpen()) {
+      <form class="card member-form" (ngSubmit)="save()" novalidate>
+        <div class="form-heading">
+          <div>
+            <span class="eyebrow">// {{ editingId() ? 'EDIT' : 'NEW' }}</span>
+            <h2>{{ editingId() ? 'Edit team member' : 'Add team member' }}</h2>
+          </div>
+          @if (previewUrl()) {
+            <div class="photo-preview"><img [src]="previewUrl()!" alt="Profile preview" /></div>
+          }
+        </div>
+        <div class="row two">
+          <label>Name<input [(ngModel)]="name" name="name" maxlength="120" required /></label>
+          <label>Role<input [(ngModel)]="role" name="role" maxlength="120" required /></label>
+        </div>
+        <label>Bio<textarea [(ngModel)]="bio" name="bio" rows="5" maxlength="4000" required></textarea></label>
+        <div class="row two">
+          <label>Skills <span class="hint">comma-separated</span><input [(ngModel)]="skillsText" name="skills" placeholder="Spring Boot, Angular, PostgreSQL" /></label>
+          <label>Display order<input type="number" [(ngModel)]="sortOrder" name="sortOrder" /></label>
+        </div>
+        <div class="row two">
+          <label>Profile photo <span class="hint">JPG, PNG or WebP · max 5MB</span><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" (change)="onPhotoSelected($event)" [required]="!editingId()" /></label>
+          <label class="checkbox-label"><input type="checkbox" [(ngModel)]="active" name="active" /> Visible on public Team page</label>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save team member' }}</button>
+          <button class="btn btn-ghost" type="button" (click)="cancel()" [disabled]="saving()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    <div class="list-heading">
+      <div><span class="eyebrow">// DIRECTORY</span><h2>Current team</h2></div>
+      @if (loading()) { <span class="muted">Loading…</span> }
+    </div>
+
+    @if (!loading()) {
+      @if (members().length) {
+        <div class="member-grid">
+          @for (member of members(); track member.id) {
+            <article class="card member-card" [class.inactive]="!member.active">
+              <div class="member-card-top">
+                <div class="avatar">
+                  @if (member.photoUrl) { <img [src]="member.photoUrl" [alt]="member.name" loading="lazy" /> }
+                  @else { <span>{{ initials(member) }}</span> }
+                </div>
+                <div class="member-main"><h3>{{ member.name }}</h3><span class="role">{{ member.role }}</span></div>
+                <span class="status-pill" [class.active]="member.active">{{ member.active ? 'Visible' : 'Hidden' }}</span>
+              </div>
+              <p>{{ member.bio }}</p>
+              <div class="tags">@for (skill of member.skills; track skill) { <span class="tag">{{ skill }}</span> }</div>
+              <div class="card-footer">
+                <small>Order {{ member.sortOrder }}</small>
+                <div class="actions">
+                  <button type="button" class="link-btn" (click)="startEdit(member)">Edit</button>
+                  <button type="button" class="link-btn danger" (click)="remove(member)" [disabled]="deletingId() === member.id">{{ deletingId() === member.id ? 'Deleting…' : 'Delete' }}</button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="card empty-state"><h3>No team members</h3><p class="muted">Add the first public team member.</p></div>
+      }
+    }
+  </div>
+</section>

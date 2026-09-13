@@ -63,3 +63,5 @@
 .cta-inner {
   text-align: center;
 }
+
+.avatar-fallback { width:96px; height:96px; display:grid; place-items:center; border-radius:50%; background:var(--color-panel-raised); color:var(--color-text); font-weight:700; font-size:1.6rem; }

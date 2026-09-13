@@ -1,7 +1,7 @@
 @if (engagement(); as engagement) {
   <section class="dashboard-page">
     <div class="container">
-      <a routerLink="/dashboard" class="back-link">&larr; All projects</a>
+      <a [routerLink]="isAdmin ? ['/admin/engagements'] : ['/dashboard']" class="back-link">&larr; {{ isAdmin ? 'All client projects' : 'All projects' }}</a>
 
       <div class="header-row">
         <div>

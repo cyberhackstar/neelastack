@@ -44,9 +44,9 @@ export class ThemeService {
   private readInitialMode(): ThemeMode {
     if (!this.isBrowser) return 'dark';
 
-    // The inline bootstrap script already set data-theme on <html> before
-    // Angular loaded — read that back so hydration matches what's on screen
-    // instead of re-deriving it (and risking a mismatch/flash).
+    // theme-bootstrap.js already set data-theme on <html> before Angular loaded.
+    // Read that value back so hydration matches the first paint instead of
+    // re-deriving it and risking a mismatch/flash.
     const attr = this.document.documentElement.getAttribute('data-theme');
     if (attr === 'light' || attr === 'dark') return attr;
 

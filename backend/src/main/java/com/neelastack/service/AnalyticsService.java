@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -120,9 +121,9 @@ public class AnalyticsService {
      * thousands of quotations); revisit with real aggregate queries if that changes.
      */
     public SalesIntelligenceDto salesIntelligence() {
-        List<Quotation> sent = quotationRepository.findByStatus(QuotationStatus.SENT);
-        List<Quotation> accepted = quotationRepository.findByStatus(QuotationStatus.ACCEPTED);
-        List<Quotation> rejected = quotationRepository.findByStatus(QuotationStatus.REJECTED);
+        List<Quotation> sent = quotationRepository.findByStatusWithInquiry(QuotationStatus.SENT);
+        List<Quotation> accepted = quotationRepository.findByStatusWithInquiry(QuotationStatus.ACCEPTED);
+        List<Quotation> rejected = quotationRepository.findByStatusWithInquiry(QuotationStatus.REJECTED);
 
         BigDecimal openPipeline = sumAmounts(sent);
         BigDecimal weightedPipeline = openPipeline.multiply(SENT_STAGE_PROBABILITY)
@@ -195,7 +196,7 @@ public class AnalyticsService {
      */
     public List<AttributionBreakdownDto> revenueByAttribution(AttributionDimension dimension) {
         List<Inquiry> inquiries = inquiryRepository.findAll();
-        List<Quotation> allQuotations = quotationRepository.findAll();
+        List<Quotation> allQuotations = quotationRepository.findAllWithInquiry();
 
         Map<UUID, List<Quotation>> quotationsByInquiry = new LinkedHashMap<>();
         for (Quotation q : allQuotations) {
@@ -261,6 +262,7 @@ public class AnalyticsService {
      * AdminAnalyticsController (on-demand dashboard view) and LeadFollowUpService (daily
      * digest email) so both surfaces agree on exactly the same candidate set.
      */
+    @Transactional(readOnly = true)
     public List<FollowUpTaskDto> followUpTasks() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime unviewedCutoff = now.minusDays(unviewedReminderDays);

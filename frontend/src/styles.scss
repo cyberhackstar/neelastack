@@ -5,7 +5,7 @@
 /* =====================================================================
    Theme tokens — "ink & bone" with a bronze accent.
    Dark is the default (matches the SSR-rendered shell so there's no
-   flash before the inline bootstrap script in index.html applies the
+   flash before the synchronous theme-bootstrap.js asset applies the
    visitor's saved preference). [data-theme="light"] overrides every
    token below it. Every color a component needs lives in one of these
    two blocks — components should never hardcode a hex value.

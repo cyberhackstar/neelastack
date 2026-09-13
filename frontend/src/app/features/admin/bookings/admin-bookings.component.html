@@ -26,7 +26,7 @@
         }
       </select>
       <input type="text" placeholder="Search name, email, company…" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" />
-      <button type="button" class="btn-ghost btn-sm" (click)="onSearch()">Search</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="onSearch()">Search</button>
     </div>
 
     @if (loading()) {
@@ -70,9 +70,9 @@
                     @if (b.internalNotes) { <p><strong>Notes:</strong> {{ b.internalNotes }}</p> }
 
                     <div class="detail-actions">
-                      <button type="button" class="btn-ghost btn-sm" (click)="markStatus(b, 'COMPLETED')">Mark completed</button>
-                      <button type="button" class="btn-ghost btn-sm" (click)="markStatus(b, 'NO_SHOW')">Mark no-show</button>
-                      <select class="btn-ghost btn-sm" (change)="setOutcome(b, $any($event.target).value, b.internalNotes || '')">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="markStatus(b, 'COMPLETED')">Mark completed</button>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="markStatus(b, 'NO_SHOW')">Mark no-show</button>
+                      <select class="btn btn-ghost btn-sm" (change)="setOutcome(b, $any($event.target).value, b.internalNotes || '')">
                         <option value="">Set outcome…</option>
                         @for (o of outcomeOptions; track o) {
                           <option [value]="o" [selected]="b.outcome === o">{{ o }}</option>
@@ -88,9 +88,9 @@
       </table>
 
       <div class="pagination">
-        <button type="button" class="btn-ghost btn-sm" [disabled]="page() === 0" (click)="goToPage(-1)">Previous</button>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() === 0" (click)="goToPage(-1)">Previous</button>
         <span class="muted small">Page {{ page() + 1 }} of {{ totalPages() || 1 }}</span>
-        <button type="button" class="btn-ghost btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="goToPage(1)">Next</button>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="goToPage(1)">Next</button>
       </div>
     }
   </div>

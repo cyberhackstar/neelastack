@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
+import { randomBytes } from "node:crypto";
 
 import {
   AngularNodeAppEngine,
@@ -37,11 +38,16 @@ const app = express();
 app.disable("x-powered-by");
 
 app.use((_req: Request, res: Response, next: NextFunction) => {
+  const nonce = randomBytes(32).toString("base64");
+
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://api.razorpay.com; frame-src https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
+  res.setHeader(
+    "Content-Security-Policy",
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com https://static.cloudflareinsights.com; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://api.razorpay.com; frame-src https://checkout.razorpay.com https://accounts.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'`,
+  );
   next();
 });
 
@@ -393,16 +399,11 @@ app.use("*", (req: Request, res: Response, next: NextFunction) => {
   if (isNoCachePath) {
     res.setHeader("Cache-Control", "no-store");
   } else {
-    /**
-     * Public content:
-     * - fresh for 60 seconds
-     * - may be served stale for up to 1 hour while a new response is
-     *   revalidated by the edge/cache layer
-     */
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=60, stale-while-revalidate=3600",
-    );
+    // Each HTML response carries a fresh CSP nonce so Cloudflare can safely
+    // authorize its injected JavaScript Detection snippet. Never reuse an HTML
+    // response/nonce from a shared cache. Static hashed JS/CSS remains long-lived
+    // cacheable by Nginx/CDN.
+    res.setHeader("Cache-Control", "no-store");
   }
 
   angularApp

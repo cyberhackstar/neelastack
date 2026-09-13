@@ -12,16 +12,14 @@
 </section>
 <section class="team-grid-section">
   <div class="container grid">
-    @for (member of team; track member.name) {
+    @for (member of team(); track member.name) {
       <article class="card card-tilt member-card">
         <div class="avatar">
-          <img
-            [src]="member.photoUrl"
-            [alt]="member.name"
-            loading="lazy"
-            width="96"
-            height="96"
-          />
+          @if (member.photoUrl) {
+            <img [src]="member.photoUrl" [alt]="member.name" loading="lazy" width="96" height="96" />
+          } @else {
+            <span class="avatar-fallback">{{ member.initials }}</span>
+          }
         </div>
         <h2>{{ member.name }}</h2>
         <span class="role">{{ member.role }}</span>

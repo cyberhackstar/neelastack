@@ -16,16 +16,16 @@
         <p class="meta-line">{{ formatDateTime(booking()!.startAt, booking()!.clientTimezone) }}</p>
         <p class="muted">Booking ID: {{ booking()!.bookingNumber }}</p>
         @if (booking()!.meetingUrl) {
-          <p><a class="btn-primary btn-sm" [href]="booking()!.meetingUrl!" target="_blank" rel="noopener">Join meeting link</a></p>
+          <p><a class="btn btn-primary btn-sm" [href]="booking()!.meetingUrl!" target="_blank" rel="noopener">Join meeting link</a></p>
         }
 
         @if (mode() === 'view') {
           <div class="actions">
             @if (booking()!.reschedulable) {
-              <button type="button" class="btn-ghost" (click)="startReschedule()">Reschedule</button>
+              <button type="button" class="btn btn-ghost" (click)="startReschedule()">Reschedule</button>
             }
             @if (booking()!.cancellable) {
-              <button type="button" class="btn-ghost" (click)="startCancel()">Cancel</button>
+              <button type="button" class="btn btn-ghost" (click)="startCancel()">Cancel</button>
             }
             @if (!booking()!.cancellable && booking()!.status !== 'CANCELLED') {
               <p class="muted small">This booking is inside the cancellation window — please contact us directly to make changes.</p>
@@ -53,7 +53,7 @@
               }
             </div>
             @if (actionError()) { <p class="error-text">{{ actionError() }}</p> }
-            <button type="button" class="btn-ghost btn-sm" (click)="backToView()">Cancel, keep original time</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="backToView()">Cancel, keep original time</button>
           </div>
         }
 
@@ -66,10 +66,10 @@
             </label>
             @if (actionError()) { <p class="error-text">{{ actionError() }}</p> }
             <div class="actions">
-              <button type="button" class="btn-primary" [disabled]="actionInFlight()" (click)="confirmCancel()">
+              <button type="button" class="btn btn-primary" [disabled]="actionInFlight()" (click)="confirmCancel()">
                 {{ actionInFlight() ? 'Cancelling…' : 'Yes, cancel booking' }}
               </button>
-              <button type="button" class="btn-ghost" (click)="backToView()">No, keep it</button>
+              <button type="button" class="btn btn-ghost" (click)="backToView()">No, keep it</button>
             </div>
           </div>
         }

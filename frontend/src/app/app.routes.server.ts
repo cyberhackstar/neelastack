@@ -28,7 +28,7 @@ import { RenderMode, ServerRoute } from "@angular/ssr";
 export const serverRoutes: ServerRoute[] = [
   // ---- Prerendered at build time: no DB dependency ----
   { path: "about", renderMode: RenderMode.Prerender },
-  { path: "team", renderMode: RenderMode.Prerender },
+  { path: "team", renderMode: RenderMode.Server },
   { path: "contact", renderMode: RenderMode.Prerender },
   { path: "estimate", renderMode: RenderMode.Prerender },
   { path: "architecture-review", renderMode: RenderMode.Prerender },
@@ -70,9 +70,11 @@ export const serverRoutes: ServerRoute[] = [
   { path: "admin/pricing-rules", renderMode: RenderMode.Client },
   { path: "admin/security", renderMode: RenderMode.Client },
   { path: "admin/staff", renderMode: RenderMode.Client },
+  { path: "admin/team", renderMode: RenderMode.Client },
   { path: "admin/inquiries", renderMode: RenderMode.Client },
   { path: "admin/inquiries/:id", renderMode: RenderMode.Client },
   { path: "admin/engagements", renderMode: RenderMode.Client },
+  { path: "admin/engagements/:id", renderMode: RenderMode.Client },
   { path: "admin/bookings", renderMode: RenderMode.Client },
   { path: "admin/booking-settings", renderMode: RenderMode.Client },
   { path: "admin/payments", renderMode: RenderMode.Client },

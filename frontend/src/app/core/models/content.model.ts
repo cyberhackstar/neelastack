@@ -682,6 +682,19 @@ export interface AdminStaff {
   mfaEnabled: boolean; mustChangePassword: boolean; createdAt: string | null;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  skills: string[];
+  photoUrl: string | null;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 // ---------------- Direct UPI QR payments ----------------
 
 export interface UpiPaymentMethod {
