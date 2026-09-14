@@ -5,6 +5,7 @@ import com.neelastack.dto.inquiry.InquiryStatusUpdateRequest;
 import com.neelastack.dto.inquiry.QuotationDto;
 import com.neelastack.dto.inquiry.QuotationRequest;
 import com.neelastack.service.InquiryService;
+import com.neelastack.service.QuotationPdfService;
 import com.neelastack.service.QuotationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,6 +31,7 @@ public class AdminInquiryController {
 
     private final InquiryService inquiryService;
     private final QuotationService quotationService;
+    private final QuotationPdfService quotationPdfService;
 
     @GetMapping("/inquiries")
     public Page<InquiryDto> listInquiries(@RequestParam(defaultValue = "0") int page,
@@ -73,5 +75,15 @@ public class AdminInquiryController {
     @PostMapping("/quotations/{id}/send")
     public QuotationDto sendQuotation(@PathVariable UUID id) {
         return quotationService.send(id);
+    }
+
+    @GetMapping(value = "/quotations/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> quotationPdf(@PathVariable UUID id) {
+        byte[] pdf = quotationPdfService.generateById(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("neelastack-proposal-" + id + ".pdf").build().toString())
+                .body(pdf);
     }
 }

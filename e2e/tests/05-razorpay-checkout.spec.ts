@@ -115,7 +115,7 @@ test.describe("Razorpay checkout (mocked)", () => {
       );
     });
 
-    await page.goto("/login");
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
 
     await page.getByLabel("Email", { exact: true }).fill(fixture.clientEmail);
 
@@ -229,7 +229,7 @@ test.describe("Razorpay checkout (mocked)", () => {
 
     expect(invoiceRes.ok()).toBeTruthy();
 
-    await page.goto("/login");
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
 
     await page.getByLabel("Email", { exact: true }).fill(fixture.clientEmail);
 

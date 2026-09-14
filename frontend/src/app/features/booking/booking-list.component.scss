@@ -1,111 +1,25 @@
-.page-header {
-  padding: 4.5rem 0 2.5rem;
-}
-
-.booking-types-section {
-  padding-bottom: 4rem;
-}
-
-.meeting-types-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.meeting-type-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 320px;
-}
-
-.meeting-type-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  font-weight: 700;
-}
-
-.price {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--color-amber);
-}
-
-.meeting-type-card h2 {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  margin: 0 0 0.75rem;
-}
-
-.description {
-  color: var(--color-text-muted);
-  line-height: 1.65;
-  margin: 0;
-}
-
-.meeting-type-details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin-top: auto;
-  padding: 1.25rem 0;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-}
-
-.meeting-type-details span {
-  position: relative;
-}
-
-.meeting-type-details span + span::before {
-  content: '·';
-  position: absolute;
-  left: -0.65rem;
-}
-
-.book-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  width: 100%;
-}
-
-.state-card {
-  max-width: 680px;
-}
-
-.error-card h2 {
-  margin-top: 0;
-}
-
-.cta-band {
-  background: var(--color-panel);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-  padding: 4rem 0;
-}
-
-.cta-inner {
-  text-align: center;
-}
-
-@media (max-width: 640px) {
-  .meeting-types-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .meeting-type-card {
-    min-height: 0;
-  }
-}
+ .booking-hero { padding: 5rem 0 3rem; border-bottom: 1px solid var(--color-border); }
+.booking-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:3rem; align-items:end; }
+.trust-row { display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1.2rem; }
+.trust-row span { padding:.5rem .7rem; border:1px solid var(--color-border); border-radius:999px; color:var(--color-text-muted); font-size:.78rem; background:rgba(var(--color-panel-rgb),.62); }
+.hero-note { padding:1.4rem; border:1px solid rgba(var(--color-amber-rgb),.22); background:linear-gradient(145deg,rgba(var(--color-amber-rgb),.1),rgba(var(--color-panel-rgb),.82)); border-radius:14px; box-shadow:var(--shadow-md); }
+.note-kicker,.label { font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; color:var(--color-text-muted); text-transform:uppercase; }
+.hero-note strong { display:block; font-family:var(--font-display); font-size:1.2rem; margin:.55rem 0 .3rem; }
+.hero-note p { margin:0; color:var(--color-text-muted); line-height:1.55; font-size:.84rem; }
+.booking-types-section { padding:3rem 0 4rem; }
+.meeting-types-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:1.1rem; }
+.meeting-type-card { position:relative; overflow:hidden; padding:1.5rem; box-shadow:var(--shadow-sm); transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.meeting-type-card:hover { transform:translateY(-4px); border-color:rgba(var(--color-amber-rgb),.38); box-shadow:var(--shadow-md); }
+.card-accent { width:52px; height:3px; background:var(--color-amber); border-radius:3px; margin-bottom:1.15rem; }
+.meeting-type-meta { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+.price { font-family:var(--font-mono); color:var(--color-amber); font-size:.85rem; }
+.meeting-type-card h2 { font-family:var(--font-display); font-size:1.45rem; margin:.75rem 0 .5rem; }
+.description { color:var(--color-text-muted); line-height:1.6; min-height:5rem; }
+.meeting-type-details { display:flex; flex-wrap:wrap; gap:.5rem .8rem; padding:1rem 0; margin:1.1rem 0 1rem; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border); color:var(--color-text-muted); font-size:.76rem; }
+.card-footer-row { display:flex; justify-content:space-between; align-items:center; gap:.75rem; }
+.private-note { color:var(--color-text-muted); font-size:.72rem; }
+.book-button { white-space:nowrap; }
+.premium-cta { border-top:1px solid var(--color-border); }
+.state-card { max-width:680px; margin:0 auto; padding:2rem; }
+@media(max-width:860px){.booking-hero-grid{grid-template-columns:1fr}.hero-note{max-width:none}}
+@media(max-width:640px){.booking-hero{padding-top:3.5rem}.card-footer-row{flex-direction:column;align-items:stretch}.book-button{justify-content:center}.description{min-height:0}}

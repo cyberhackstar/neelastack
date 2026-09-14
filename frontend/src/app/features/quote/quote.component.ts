@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PublicQuotationService } from '../../core/services/public-quotation.service';
 import { SeoService } from '../../core/services/seo.service';
@@ -7,7 +8,7 @@ import { PublicQuotation } from '../../core/models/content.model';
 @Component({
   selector: 'app-quote',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe],
   templateUrl: './quote.component.html',
   styleUrl: './quote.component.scss',
 })
@@ -22,6 +23,7 @@ export class QuoteComponent implements OnInit {
   responding = signal(false);
   showRejectReason = signal(false);
   rejectReason = signal('');
+  responseError = signal<string | null>(null);
 
   private token = '';
 
@@ -55,7 +57,12 @@ export class QuoteComponent implements OnInit {
     });
   }
 
+  pdfUrl(): string {
+    return `${this.quotationService.base}/${this.token}/pdf`;
+  }
+
   accept(): void {
+    this.responseError.set(null);
     if (!confirm('Accept this quotation? This confirms you want to proceed at the price and scope shown.')) {
       return;
     }
@@ -65,11 +72,12 @@ export class QuoteComponent implements OnInit {
         this.quotation.set(data);
         this.responding.set(false);
       },
-      error: () => this.responding.set(false),
+      error: (err) => { this.responseError.set(err?.error?.message || 'We could not record your response. Please try again.'); this.responding.set(false); },
     });
   }
 
   reject(): void {
+    this.responseError.set(null);
     this.responding.set(true);
     this.quotationService.respond(this.token, false, this.rejectReason() || undefined).subscribe({
       next: (data) => {

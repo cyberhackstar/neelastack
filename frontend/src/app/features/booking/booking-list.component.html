@@ -1,64 +1,43 @@
-<section class="page-header">
-  <div class="container">
-    <span class="eyebrow">// SCHEDULE</span>
-    <h1 class="section-heading">Choose a time to talk.</h1>
-    <p class="section-sub">
-      No account required. Pick the conversation that fits, choose a real available time, and
-      confirm your meeting directly.
-    </p>
+<section class="booking-hero bg-grid">
+  <div class="container booking-hero-grid">
+    <div>
+      <span class="eyebrow eyebrow-amber">// PRIVATE CONSULTATION</span>
+      <h1 class="section-heading">Choose a time to talk.</h1>
+      <p class="section-sub">A focused conversation with Neelastack to understand the outcome, constraints, and the smartest path forward — without a sales script.</p>
+      <div class="trust-row" aria-label="Booking benefits">
+        <span>✓ No account required</span><span>✓ Real-time availability</span><span>✓ Google Meet</span>
+      </div>
+    </div>
+    <div class="hero-note">
+      <span class="note-kicker">WHAT TO EXPECT</span>
+      <strong>Bring the problem.</strong>
+      <p>We will use the call to clarify scope, surface risks, and leave you with a concrete next step.</p>
+    </div>
   </div>
 </section>
 
 <section class="booking-types-section">
   <div class="container">
     @if (loading()) {
-      <div class="card state-card">
-        <p>Loading available consultations…</p>
-      </div>
+      <div class="card state-card"><p>Loading available consultations…</p></div>
     } @else if (error()) {
-      <div class="card state-card error-card">
-        <h2>Booking is temporarily unavailable.</h2>
-        <p>{{ error() }}</p>
-      </div>
+      <div class="card state-card error-card"><h2>Booking is temporarily unavailable.</h2><p>{{ error() }}</p></div>
     } @else if (meetingTypes().length === 0) {
-      <div class="card state-card">
-        <h2>No consultations are currently open.</h2>
-        <p>Please use the contact form and we will arrange the right time.</p>
-        <a routerLink="/contact" class="btn btn-primary">Contact Neelastack</a>
-      </div>
+      <div class="card state-card"><h2>No consultations are currently open.</h2><p>Please use the contact form and we will arrange the right time.</p><a routerLink="/contact" class="btn btn-primary">Contact Neelastack</a></div>
     } @else {
       <div class="meeting-types-grid">
         @for (type of meetingTypes(); track type.id) {
           <article class="card meeting-type-card">
-            <div class="meeting-type-meta">
-              <span class="label">{{ type.durationMinutes }} MINUTES</span>
-              <span class="price">{{ formatPrice(type) }}</span>
-            </div>
-
+            <div class="card-accent"></div>
+            <div class="meeting-type-meta"><span class="label">{{ type.durationMinutes }} MINUTES</span><span class="price">{{ formatPrice(type) }}</span></div>
             <h2>{{ type.name }}</h2>
-            @if (type.description) {
-              <p class="description">{{ type.description }}</p>
-            } @else {
-              <p class="description">
-                A focused conversation to understand your goals, constraints, and the right next
-                step.
-              </p>
-            }
-
+            <p class="description">{{ type.description || 'A focused conversation to understand your goals, constraints, and the right next step.' }}</p>
             <div class="meeting-type-details">
-              @if (type.locationType === 'GOOGLE_MEET') {
-                <span>Google Meet</span>
-              } @else if (type.locationDetail) {
-                <span>{{ type.locationDetail }}</span>
-              } @else {
-                <span>Online meeting</span>
-              }
-              <span>{{ type.maxHorizonDays }}-day booking window</span>
+              <span>◷ {{ type.durationMinutes }} min</span>
+              @if (type.locationType === 'GOOGLE_MEET') { <span>Google Meet</span> } @else if (type.locationDetail) { <span>{{ type.locationDetail }}</span> } @else { <span>Online meeting</span> }
+              <span>{{ type.maxHorizonDays }}-day window</span>
             </div>
-
-            <a [routerLink]="['/book', type.slug]" class="btn btn-primary book-button">
-              Choose a time <span aria-hidden="true">→</span>
-            </a>
+            <div class="card-footer-row"><span class="private-note">Private consultation</span><a [routerLink]="['/book', type.slug]" class="btn btn-primary book-button">Choose a time <span aria-hidden="true">→</span></a></div>
           </article>
         }
       </div>
@@ -66,12 +45,9 @@
   </div>
 </section>
 
-<section class="cta-band">
+<section class="cta-band premium-cta">
   <div class="container cta-inner">
-    <h2 class="section-heading">Not sure which conversation fits?</h2>
-    <p class="section-sub">
-      Start with a message and we will point you to the right consultation.
-    </p>
-    <a routerLink="/contact" class="btn btn-ghost">Talk to us first</a>
+    <div><span class="eyebrow eyebrow-amber">NOT SURE YET?</span><h2 class="section-heading">Start with the project brief.</h2><p class="section-sub">Share the context once. We will route you to the right conversation.</p></div>
+    <a routerLink="/contact" class="btn btn-ghost">Start a conversation <span aria-hidden="true">→</span></a>
   </div>
 </section>

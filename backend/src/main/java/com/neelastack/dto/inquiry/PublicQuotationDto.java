@@ -12,6 +12,13 @@ import java.util.List;
 public record PublicQuotationDto(
         String title,
         String scopeSummary,
+        String executiveSummary,
+        String deliverables,
+        String timeline,
+        String paymentTerms,
+        String assumptions,
+        String exclusions,
+        String nextSteps,
         List<QuotationLineItemDto> lineItems,
         BigDecimal totalAmount,
         String currency,

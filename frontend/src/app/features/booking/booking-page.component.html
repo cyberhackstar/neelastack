@@ -1,158 +1,51 @@
-<section class="page-header">
+<section class="booking-hero bg-grid">
   <div class="container">
-    @if (loading()) {
-      <p>Loading…</p>
-    } @else if (loadError()) {
-      <div class="card error-card">
-        <h1>Can't load this booking page</h1>
-        <p>{{ loadError() }}</p>
+    @if (loading()) { <p>Loading…</p> } @else if (loadError()) { <div class="card error-card"><h1>Can't load this booking page</h1><p>{{ loadError() }}</p></div> } @else if (meetingType()) {
+      <div class="booking-hero-top">
+        <div>
+          <span class="eyebrow eyebrow-amber">// PRIVATE CONSULTATION</span>
+          <h1 class="section-heading">{{ meetingType()!.name }}</h1>
+          @if (meetingType()!.description) { <p class="lede">{{ meetingType()!.description }}</p> }
+        </div>
+        <div class="session-summary"><span>{{ meetingType()!.durationMinutes }} minutes</span><span>{{ meetingType()!.locationType === 'GOOGLE_MEET' ? 'Google Meet' : 'Online meeting' }}</span><span>{{ meetingType()!.price ? meetingType()!.currency + ' ' + meetingType()!.price : 'Free' }}</span></div>
       </div>
-    } @else if (meetingType()) {
-      <h1>{{ meetingType()!.name }}</h1>
-      @if (meetingType()!.description) {
-        <p class="lede">{{ meetingType()!.description }}</p>
-      }
-      <p class="meta-line">
-        {{ meetingType()!.durationMinutes }} minutes
-        @if (meetingType()!.locationType === 'GOOGLE_MEET') { · Google Meet }
-        @if (meetingType()!.price) { · {{ meetingType()!.currency }} {{ meetingType()!.price }} }
-        @if (!meetingType()!.price) { · Free }
-      </p>
+      <div class="progress-steps" aria-label="Booking progress">
+        <span [class.active]="step() === 'pick-time'">1 <b>Time</b></span><i></i><span [class.active]="step() === 'details'">2 <b>Details</b></span><i></i><span>3 <b>Confirmed</b></span>
+      </div>
     }
   </div>
 </section>
 
 @if (meetingType() && step() !== 'confirmed') {
-  <section class="booking-section">
-    <div class="container booking-grid">
-
-      <!-- Step 1: pick a date + time -->
-      @if (step() === 'pick-time') {
-        <div class="card date-picker">
-          <div class="label">PICK A DATE</div>
-          @if (loadingSlots()) {
-            <p>Finding available times…</p>
-          } @else if (availabilityError()) {
-            <p class="error-text">{{ availabilityError() }}</p>
-            <button type="button" class="btn btn-ghost btn-sm" (click)="loadAvailability(meetingType()!.slug)">Try again</button>
-          } @else if (visibleDays().length === 0) {
-            <p>No available times in the next {{ meetingType()!.maxHorizonDays }} days. Please check back soon.</p>
-          } @else {
-            <div class="day-chips">
-              @for (day of visibleDays(); track day.date) {
-                <button
-                  type="button"
-                  class="day-chip"
-                  [class.active]="selectedDate() === day.date"
-                  (click)="selectDate(day.date)"
-                >
-                  {{ formatDayLabel(day.date) }}
-                </button>
-              }
-            </div>
-
-            <div class="label" style="margin-top: 1.5rem;">AVAILABLE TIMES ({{ timezone }})</div>
-            <div class="slot-grid">
-              @for (slot of slotsForSelectedDate(); track slot) {
-                <button type="button" class="slot-btn" (click)="selectSlot(slot)">
-                  {{ formatSlotTime(slot) }}
-                </button>
-              }
-              @if (slotsForSelectedDate().length === 0) {
-                <p class="muted">No times available on this date.</p>
-              }
-            </div>
-          }
-        </div>
-      }
-
-      <!-- Step 2: details form -->
-      @if (step() === 'details' && selectedSlot()) {
-        <div class="card details-form">
-          <button type="button" class="btn btn-ghost btn-sm" (click)="backToTimePicker()">&larr; Change time</button>
-          <div class="label" style="margin-top: 1rem;">
-            {{ formatDayLabel(selectedDate()!) }} at {{ formatSlotTime(selectedSlot()!) }}
-          </div>
-
-          <form [formGroup]="detailsForm" (ngSubmit)="submit()" class="form-fields">
-            <label [class.field-invalid]="detailsForm.controls.clientName.invalid && detailsForm.controls.clientName.touched">
-              <span>Full name <span class="required-mark" aria-hidden="true">*</span></span>
-              <input type="text" formControlName="clientName" autocomplete="name" />
-              @if (detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('required')) { <span class="field-error">Full name is required.</span> }
-              @else if (detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('minlength')) { <span class="field-error">Enter at least 2 characters.</span> }
-            </label>
-            <label [class.field-invalid]="detailsForm.controls.clientEmail.invalid && detailsForm.controls.clientEmail.touched">
-              <span>Email <span class="required-mark" aria-hidden="true">*</span></span>
-              <input type="email" formControlName="clientEmail" autocomplete="email" />
-              @if (detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('required')) { <span class="field-error">Email address is required.</span> }
-              @else if (detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('email')) { <span class="field-error">Enter a valid email address.</span> }
-            </label>
-            <div class="row two">
-              <label [class.field-invalid]="detailsForm.controls.clientPhone.invalid && detailsForm.controls.clientPhone.touched">
-                <span>Phone <span class="optional-mark" aria-hidden="true">Optional</span></span>
-                <input type="tel" formControlName="clientPhone" autocomplete="tel" />
-                @if (detailsForm.controls.clientPhone.touched && detailsForm.controls.clientPhone.hasError('pattern')) { <span class="field-error">Enter a valid phone number.</span> }
-              </label>
-              <label [class.field-invalid]="detailsForm.controls.clientCompany.invalid && detailsForm.controls.clientCompany.touched">
-                <span>Company <span class="optional-mark" aria-hidden="true">Optional</span></span>
-                <input type="text" formControlName="clientCompany" autocomplete="organization" />
-                @if (detailsForm.controls.clientCompany.touched && detailsForm.controls.clientCompany.hasError('maxlength')) { <span class="field-error">Company must be 120 characters or fewer.</span> }
-              </label>
-            </div>
-
-            @for (field of meetingType()!.formFields; track field.fieldKey) {
-              <label>
-                {{ field.label }}
-                @if (field.fieldType === 'TEXTAREA') {
-                  <textarea rows="3" [required]="field.isRequired" (input)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)"></textarea>
-                } @else if (field.fieldType === 'SELECT' && field.options) {
-                  <select [required]="field.isRequired" (change)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)">
-                    <option value="">Select…</option>
-                    @for (opt of field.options; track opt) {
-                      <option [value]="opt">{{ opt }}</option>
-                    }
-                  </select>
-                } @else {
-                  <input type="text" [required]="field.isRequired" (input)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)" />
-                }
-              </label>
-            }
-
-            @if (submitError()) {
-              <p class="error-text">{{ submitError() }}</p>
-            }
-
-            <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-              {{ submitting() ? 'Booking…' : 'Confirm booking' }}
-            </button>
-          </form>
-        </div>
+<section class="booking-section"><div class="container booking-grid">
+  @if (step() === 'pick-time') {
+    <div class="card date-picker premium-panel">
+      <div class="panel-title"><div><span class="label">STEP 1 · CHOOSE A TIME</span><h2>Find a time that works.</h2></div><span class="timezone-pill">{{ timezone }}</span></div>
+      <p class="panel-help">Times are shown in your local timezone. Availability is checked against the live Neelastack calendar.</p>
+      @if (loadingSlots()) { <p>Finding available times…</p> } @else if (availabilityError()) { <p class="error-text">{{ availabilityError() }}</p><button type="button" class="btn btn-ghost btn-sm" (click)="loadAvailability(meetingType()!.slug)">Try again</button> } @else if (visibleDays().length === 0) { <p>No available times in the next {{ meetingType()!.maxHorizonDays }} days. Please check back soon.</p> } @else {
+        <div class="day-chips">@for (day of visibleDays(); track day.date) { <button type="button" class="day-chip" [class.active]="selectedDate() === day.date" (click)="selectDate(day.date)">{{ formatDayLabel(day.date) }}</button> }</div>
+        <div class="label slot-label">AVAILABLE TIMES</div><div class="slot-grid">@for (slot of slotsForSelectedDate(); track slot) { <button type="button" class="slot-btn" (click)="selectSlot(slot)">{{ formatSlotTime(slot) }}</button> } @if (slotsForSelectedDate().length === 0) { <p class="muted">No times available on this date.</p> }</div>
       }
     </div>
-  </section>
+  }
+
+  @if (step() === 'details' && selectedSlot()) {
+    <div class="card details-form premium-panel">
+      <div class="selected-time"><div><span class="label">STEP 2 · YOUR DETAILS</span><strong>{{ formatDayLabel(selectedDate()!) }} · {{ formatSlotTime(selectedSlot()!) }}</strong></div><button type="button" class="btn btn-ghost btn-sm" (click)="backToTimePicker()">Change time</button></div>
+      <p class="panel-help">We only use these details to prepare for the conversation and send the calendar invitation.</p>
+      <form [formGroup]="detailsForm" (ngSubmit)="submit()" class="form-fields" novalidate>
+        <label [class.field-invalid]="detailsForm.controls.clientName.invalid && detailsForm.controls.clientName.touched"><span>Full name <span class="required-mark" aria-hidden="true">*</span></span><input type="text" formControlName="clientName" autocomplete="name" aria-label="Full name"/><small class="field-error" *ngIf="detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('required')">Full name is required.</small><small class="field-error" *ngIf="detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('minlength')">Enter at least 2 characters.</small></label>
+        <label [class.field-invalid]="detailsForm.controls.clientEmail.invalid && detailsForm.controls.clientEmail.touched"><span>Email <span class="required-mark" aria-hidden="true">*</span></span><input type="email" formControlName="clientEmail" autocomplete="email" aria-label="Email"/><small class="field-error" *ngIf="detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('required')">Email address is required.</small><small class="field-error" *ngIf="detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('email')">Enter a valid email address.</small></label>
+        <div class="row two"><label [class.field-invalid]="detailsForm.controls.clientPhone.invalid && detailsForm.controls.clientPhone.touched"><span>Phone <span class="optional-mark">Optional</span></span><input type="tel" formControlName="clientPhone" autocomplete="tel" aria-label="Phone"/><small class="field-error" *ngIf="detailsForm.controls.clientPhone.touched && detailsForm.controls.clientPhone.hasError('pattern')">Enter a valid phone number.</small></label><label [class.field-invalid]="detailsForm.controls.clientCompany.invalid && detailsForm.controls.clientCompany.touched"><span>Company <span class="optional-mark">Optional</span></span><input type="text" formControlName="clientCompany" autocomplete="organization" aria-label="Company"/><small class="field-error" *ngIf="detailsForm.controls.clientCompany.touched && detailsForm.controls.clientCompany.hasError('maxlength')">Company must be 120 characters or fewer.</small></label></div>
+        @for (field of meetingType()!.formFields; track field.fieldKey) { <label><span>{{ field.label }} @if(field.isRequired){<span class="required-mark" aria-hidden="true">*</span>}</span>@if(field.fieldType === 'TEXTAREA'){<textarea rows="3" [required]="field.isRequired" (input)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)"></textarea>} @else if(field.fieldType === 'SELECT' && field.options){<select [required]="field.isRequired" (change)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)"><option value="">Select…</option>@for(opt of field.options; track opt){<option [value]="opt">{{ opt }}</option>}</select>} @else {<input type="text" [required]="field.isRequired" (input)="onDynamicFieldChange(field.fieldKey, $any($event.target).value)"/>}</label> }
+        @if(submitError()){<p class="error-text" role="alert">{{ submitError() }}</p>}
+        <div class="submit-row"><div><strong>Ready to confirm?</strong><span>Calendar invite + secure booking link will be sent.</span></div><button type="submit" class="btn btn-primary" [disabled]="submitting()">{{ submitting() ? 'Booking…' : 'Confirm booking' }} <span aria-hidden="true">→</span></button></div>
+      </form>
+    </div>
+  }
+</div></section>
 }
 
 @if (step() === 'confirmed' && confirmation()) {
-  <section class="booking-section">
-    <div class="container">
-      <div class="card confirmation-card">
-        <div class="label">BOOKING CONFIRMED ✓</div>
-        <h2>{{ confirmation()!.meetingTypeName }}</h2>
-        <p class="meta-line">
-          {{ formatDayLabel(confirmation()!.startAt.slice(0, 10)) }} at {{ formatSlotTime(confirmation()!.startAt) }}
-        </p>
-        <p class="muted">Booking ID: {{ confirmation()!.bookingNumber }}</p>
-        @if (confirmation()!.meetingUrl) {
-          <p><a class="btn btn-primary" [href]="confirmation()!.meetingUrl" target="_blank" rel="noopener">Join meeting link</a></p>
-        }
-        <p>
-          <a class="btn btn-ghost" [href]="googleCalendarUrl(confirmation()!)" target="_blank" rel="noopener">Add to Google Calendar</a>
-        </p>
-        <p class="muted">
-          A confirmation email is on its way to {{ confirmation()!.clientEmail }} with a link to reschedule or cancel.
-        </p>
-        <a class="btn btn-ghost" [routerLink]="['/booking', confirmation()!.viewToken]">View booking details</a>
-      </div>
-    </div>
-  </section>
+<section class="booking-section"><div class="container"><div class="card confirmation-card premium-confirmation"><span class="eyebrow eyebrow-amber">// CONFIRMED</span><div class="confirmation-mark">✓</div><h2>You're booked.</h2><p class="confirmation-lede">{{ confirmation()!.meetingTypeName }} is confirmed for <strong>{{ formatDayLabel(confirmation()!.startAt.slice(0,10)) }}</strong> at <strong>{{ formatSlotTime(confirmation()!.startAt) }}</strong>.</p><div class="confirmation-meta"><div><span>BOOKING</span><strong>{{ confirmation()!.bookingNumber }}</strong></div><div><span>TIMEZONE</span><strong>{{ timezone }}</strong></div><div><span>FORMAT</span><strong>{{ confirmation()!.locationType === 'GOOGLE_MEET' ? 'Google Meet' : 'Online' }}</strong></div></div><div class="confirmation-actions">@if(confirmation()!.meetingUrl){<a class="btn btn-primary" [href]="confirmation()!.meetingUrl" target="_blank" rel="noopener">Join Google Meet →</a>}<a class="btn btn-ghost" [href]="googleCalendarUrl(confirmation()!)" target="_blank" rel="noopener">Add to Google Calendar</a><a class="btn btn-ghost" [routerLink]="['/booking', confirmation()!.viewToken]">Manage booking</a></div><p class="muted">A confirmation email is on its way to {{ confirmation()!.clientEmail }} with your secure reschedule and cancellation options.</p></div></div></section>
 }

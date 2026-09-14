@@ -1,165 +1,53 @@
 @if (inquiry(); as inquiry) {
-  <section class="admin-page">
-    <div class="container">
-      <a routerLink="/admin/inquiries" class="back-link">&larr; All inquiries</a>
+<section class="admin-page"><div class="container">
+  <a routerLink="/admin/inquiries" class="back-link">← All inquiries</a>
+  <div class="lead-hero"><div><span class="eyebrow eyebrow-amber">// OPPORTUNITY WORKSPACE</span><h1 class="section-heading">{{ inquiry.company || inquiry.name }}</h1><p class="section-sub">Qualify the opportunity, prepare the right proposal, and move the engagement forward from one place.</p></div><div class="lead-score" *ngIf="inquiry.leadTier"><span>{{ inquiry.leadTier }}</span><strong>{{ inquiry.leadScore }}/100</strong><small>Lead score</small></div></div>
 
-      <span class="eyebrow">// INQUIRY</span>
-      <h1 class="section-heading">{{ inquiry.name }}</h1>
-
-      <div class="card details">
-        <dl>
-          <dt>Email</dt><dd>{{ inquiry.email }}</dd>
-          <dt>Phone</dt><dd>{{ inquiry.phone || '—' }}</dd>
-          <dt>Company</dt><dd>{{ inquiry.company || '—' }}</dd>
-          <dt>Intent</dt><dd>{{ inquiry.intent || '—' }}</dd>
-          <dt>Project type</dt><dd>{{ inquiry.projectType || '—' }}</dd>
-          <dt>Budget range</dt><dd>{{ inquiry.budgetRange || '—' }}</dd>
-          @if (inquiry.leadTier) {
-            <dt>Lead score</dt><dd>{{ inquiry.leadTier }} · {{ inquiry.leadScore }}/100</dd>
-          }
-          @if (inquiry.estimate && (inquiry.estimate.low || inquiry.estimate.high)) {
-            <dt>Preliminary estimate</dt>
-            <dd>₹{{ inquiry.estimate.low | number: '1.0-0' }} – ₹{{ inquiry.estimate.high | number: '1.0-0' }}</dd>
-          }
-          <dt>Received</dt><dd>{{ inquiry.createdAt | date: 'medium' }}</dd>
-        </dl>
-        <p class="message">{{ inquiry.message }}</p>
-
-        <div class="status-control">
-          <label for="status">Status</label>
-          <select id="status" [ngModel]="inquiry.status" (ngModelChange)="updateStatus($event)">
-            @for (status of statuses; track status) {
-              <option [value]="status">{{ status }}</option>
-            }
-          </select>
-        </div>
+  <div class="workspace-grid">
+    <div>
+      <div class="card details premium-card">
+        <div class="card-head"><div><span class="eyebrow">CLIENT CONTEXT</span><h2>Opportunity brief</h2></div><div class="status-control"><label for="status">Stage</label><select id="status" [ngModel]="inquiry.status" (ngModelChange)="updateStatus($event)">@for(status of statuses; track status){<option [value]="status">{{ status }}</option>}</select></div></div>
+        <div class="facts-grid"><div><span>Email</span><strong>{{ inquiry.email }}</strong></div><div><span>Phone</span><strong>{{ inquiry.phone || '—' }}</strong></div><div><span>Project type</span><strong>{{ inquiry.projectType || '—' }}</strong></div><div><span>Budget</span><strong>{{ inquiry.budgetRange || '—' }}</strong></div><div><span>Intent</span><strong>{{ inquiry.intent || '—' }}</strong></div><div><span>Received</span><strong>{{ inquiry.createdAt | date:'medium' }}</strong></div></div>
+        <div class="brief-message"><span class="eyebrow">CLIENT MESSAGE</span><p>{{ inquiry.message }}</p></div>
       </div>
-
-      <h2 class="sub-heading">Quotations</h2>
-
-      @if (quotations().length > 0) {
-        <div class="quotation-list">
-          @for (quotation of quotations(); track quotation.id) {
-            <div class="card quotation-card">
-              <div class="quotation-head">
-                <h3>{{ quotation.title }}</h3>
-                <span class="tag">{{ quotation.status }}</span>
-              </div>
-              <p class="total">{{ quotation.currency }} {{ quotation.totalAmount }}</p>
-              @if (quotation.status !== 'DRAFT') {
-                <p class="view-meta">
-                  @if (quotation.viewCount && quotation.viewCount > 0) {
-                    Viewed {{ quotation.viewCount }}x
-                    @if (quotation.lastViewedAt) {
-                      — last {{ quotation.lastViewedAt | date: 'medium' }}
-                    }
-                  } @else {
-                    Not yet opened
-                  }
-                </p>
-              }
-              @if (quotation.status === 'REJECTED' && quotation.responseReason) {
-                <p class="decline-reason">Client's reason: "{{ quotation.responseReason }}"</p>
-              }
-              @if (quotation.status === 'DRAFT') {
-                <button class="btn btn-primary" (click)="sendQuotation(quotation.id)" [disabled]="sendingId() === quotation.id">
-                  {{ sendingId() === quotation.id ? 'Sending…' : 'Send to client' }}
-                </button>
-              }
-            </div>
-          }
-        </div>
-      }
-
-      <h2 class="sub-heading">Create a quotation</h2>
-
-      <form [formGroup]="form" (ngSubmit)="createQuotation()" novalidate class="card quotation-form">
-        <label>
-          Title
-          <input type="text" formControlName="title" placeholder="e.g. Full-stack MVP build" />
-        </label>
-
-        <label>
-          Scope summary
-          <textarea formControlName="scopeSummary" rows="3"></textarea>
-        </label>
-
-        <div formArrayName="lineItems" class="line-items">
-          @for (item of lineItems.controls; track $index; let i = $index) {
-            <div [formGroupName]="i" class="line-item">
-              <input type="text" formControlName="description" placeholder="Line item description" />
-              <input type="number" formControlName="amount" placeholder="Amount" />
-              <button type="button" class="remove" (click)="removeLineItem(i)">&times;</button>
-            </div>
-          }
-        </div>
-
-        <button type="button" class="btn btn-ghost" (click)="addLineItem()">+ Add line item</button>
-
-        <div class="row two">
-          <label>
-            Currency
-            <input type="text" formControlName="currency" />
-          </label>
-          <label>
-            Valid until
-            <input type="date" formControlName="validUntil" />
-          </label>
-        </div>
-
-        <label>
-          Internal notes (optional)
-          <textarea formControlName="notes" rows="2"></textarea>
-        </label>
-
-        <button type="submit" class="btn btn-primary" [disabled]="creating()">
-          {{ creating() ? 'Creating…' : 'Create quotation' }}
-        </button>
-      </form>
-
-      <h2 class="sub-heading">Start a client project</h2>
-      <p class="hint">
-        Converts this inquiry into a project on the client's dashboard. If this email doesn't
-        have an account yet, one is created automatically and the client is emailed a link to
-        set up their workspace — no prior registration needed.
-      </p>
-
-      @if (engagementCreated()) {
-        <div class="card success">
-          <p>Project created — it now appears on the client's dashboard.</p>
-        </div>
-      } @else {
-        <form [formGroup]="engagementForm" (ngSubmit)="createEngagement()" novalidate class="card quotation-form">
-          <label>
-            Project title
-            <input type="text" formControlName="title" placeholder="e.g. Neelastack MVP build" />
-          </label>
-
-          <label>
-            Description (optional)
-            <textarea formControlName="description" rows="2"></textarea>
-          </label>
-
-          <div class="row two">
-            <label>
-              Start date
-              <input type="date" formControlName="startDate" />
-            </label>
-            <label>
-              Target end date
-              <input type="date" formControlName="targetEndDate" />
-            </label>
-          </div>
-
-          @if (engagementError()) {
-            <p class="error">{{ engagementError() }}</p>
-          }
-
-          <button type="submit" class="btn btn-primary" [disabled]="creatingEngagement()">
-            {{ creatingEngagement() ? 'Creating…' : 'Create project' }}
-          </button>
-        </form>
-      }
+      <div class="card proof-card premium-card" *ngIf="inquiry.estimate && (inquiry.estimate.low || inquiry.estimate.high)"><span class="eyebrow">PRELIMINARY SIGNAL</span><h3>Estimated investment range</h3><strong>₹{{ inquiry.estimate.low | number:'1.0-0' }} – ₹{{ inquiry.estimate.high | number:'1.0-0' }}</strong><p>This is an indicative estimate from the acquisition flow, not the approved commercial proposal.</p><a [href]="executiveReportUrl(inquiry.id)" class="btn btn-ghost btn-sm">Download executive brief</a></div>
     </div>
+
+    <aside class="action-rail">
+      <div class="card next-action premium-card"><span class="eyebrow eyebrow-amber">NEXT BEST ACTION</span><h3>{{ inquiry.leadTier === 'HOT' ? 'Prepare a proposal' : inquiry.status === 'QUOTED' ? 'Follow up on the proposal' : 'Qualify the opportunity' }}</h3><p>{{ inquiry.leadTier === 'HOT' ? 'This lead has strong buying intent. Build a clear scope and commercial path while the conversation is warm.' : 'Keep the record moving with a clear next step and owner.' }}</p></div>
+      <div class="card premium-card"><span class="eyebrow">WORKFLOW</span><div class="mini-timeline"><div class="done"><b>01</b><span>Inquiry received</span></div><div [class.done]="inquiry.status !== 'NEW'"><b>02</b><span>Qualified</span></div><div [class.done]="quotations().length > 0"><b>03</b><span>Proposal prepared</span></div><div [class.done]="hasSentQuotation()"><b>04</b><span>Proposal sent</span></div></div></div>
+    </aside>
+  </div>
+
+  <section class="section-block"><div class="section-header"><div><span class="eyebrow">PROPOSALS</span><h2 class="sub-heading">Commercial proposals</h2></div><span class="section-caption">Create once · preview · send · track</span></div>
+    @if (quotations().length > 0) { <div class="quotation-list">@for(quotation of quotations(); track quotation.id){<div class="card quotation-card premium-card"><div class="quotation-head"><div><span class="tag">{{ quotation.status }}</span><h3>{{ quotation.title }}</h3></div><strong>{{ quotation.currency }} {{ quotation.totalAmount | number:'1.0-2' }}</strong></div><div class="proposal-meta"><span>Created {{ quotation.createdAt | date:'mediumDate' }}</span>@if(quotation.validUntil){<span>Valid until {{ quotation.validUntil | date:'mediumDate' }}</span>}<span>@if(quotation.viewCount){Viewed {{ quotation.viewCount }}×} @else {Not opened yet}</span></div>@if(quotation.status === 'REJECTED' && quotation.responseReason){<p class="decline-reason">Client note: {{ quotation.responseReason }}</p>}<div class="proposal-actions">@if(quotation.status === 'DRAFT'){<button class="btn btn-primary btn-sm" (click)="sendQuotation(quotation.id)" [disabled]="sendingId() === quotation.id">{{ sendingId() === quotation.id ? 'Sending…' : 'Send proposal' }}</button>}<a class="btn btn-ghost btn-sm" [href]="proposalPdfUrl(quotation.id)">Download branded PDF</a></div></div>}</div> } @else { <div class="empty-panel"><span class="eyebrow">READY WHEN YOU ARE</span><h3>No proposal yet.</h3><p>Use a template below to turn this opportunity into a client-ready commercial proposal in minutes.</p></div> }
   </section>
+
+  <section class="section-block"><div class="section-header"><div><span class="eyebrow eyebrow-amber">PROPOSAL BUILDER</span><h2 class="sub-heading">Build a client-ready proposal</h2></div><div class="template-picker"><label for="proposal-template">Start from</label><select id="proposal-template" (change)="applyTemplate($any($event.target).value)">@for(t of templates; track t){<option [value]="t">{{ t }}</option>}</select></div></div>
+    <form [formGroup]="form" (ngSubmit)="createQuotation()" novalidate class="card proposal-form premium-card">
+      <div class="form-grid">
+        <label class="wide">Proposal title<input type="text" formControlName="title" placeholder="e.g. Acme — Enterprise Product Engineering"/>@if(form.controls.title.touched&&form.controls.title.invalid){<span class="field-error">Proposal title is required.</span>}</label>
+        <label class="wide">Executive summary<textarea formControlName="executiveSummary" rows="4" placeholder="The outcome, business context and recommended engagement."></textarea></label>
+        <label class="wide">Scope summary<textarea formControlName="scopeSummary" rows="4"></textarea></label>
+        <label>Deliverables<textarea formControlName="deliverables" rows="5" placeholder="Use one bullet or item per line."></textarea></label>
+        <label>Delivery roadmap<textarea formControlName="timeline" rows="5" placeholder="Week 1 · Discovery\nWeeks 2–4 · Build"></textarea></label>
+        <label>Payment terms<textarea formControlName="paymentTerms" rows="5"></textarea></label>
+        <label>Assumptions<textarea formControlName="assumptions" rows="5"></textarea></label>
+        <label>Exclusions<textarea formControlName="exclusions" rows="5"></textarea></label>
+        <label>Next steps<textarea formControlName="nextSteps" rows="5"></textarea></label>
+      </div>
+      <div class="pricing-head"><div><span class="eyebrow">INVESTMENT</span><h3>Line items</h3></div><strong>{{ form.controls.currency.value }} {{ total() | number:'1.0-2' }}</strong></div>
+      <div formArrayName="lineItems" class="line-items">@for(item of lineItems.controls; track $index; let i=$index){<div [formGroupName]="i" class="line-item"><input type="text" formControlName="description" placeholder="Workstream / deliverable"/><input type="number" formControlName="amount" min="1" placeholder="Amount"/><button type="button" class="remove" (click)="removeLineItem(i)" [disabled]="lineItems.length===1">×</button></div>}</div>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="addLineItem()">+ Add workstream</button>
+      <div class="row two"><label>Currency<input type="text" formControlName="currency" maxlength="8"/></label><label>Valid until<input type="date" formControlName="validUntil"/></label></div>
+      <label>Internal notes<textarea formControlName="notes" rows="2" placeholder="Private notes — never shown to the client."></textarea></label>
+      @if(quotationError()){<p class="error" role="alert">{{ quotationError() }}</p>}
+      <div class="builder-footer"><div><strong>Ready to send?</strong><span>The client will get the secure web proposal. A branded PDF is available from the proposal record.</span></div><button type="submit" class="btn btn-primary" [disabled]="creating()">{{ creating() ? 'Creating…' : 'Create proposal' }} →</button></div>
+    </form>
+  </section>
+
+  <section class="section-block"><span class="eyebrow">DELIVERY</span><h2 class="sub-heading">Convert won work into a client project</h2><p class="hint">Once commercial terms are accepted, create the workspace without re-entering the client's identity.</p>
+    @if(engagementCreated()){<div class="card success"><p>Project created — the client can now access the workspace.</p></div>} @else {<form [formGroup]="engagementForm" (ngSubmit)="createEngagement()" novalidate class="card compact-form premium-card"><div class="row two"><label>Project title<input type="text" formControlName="title" placeholder="e.g. Acme product launch"/></label><label>Start date<input type="date" formControlName="startDate"/></label></div><label>Description<textarea rows="2" formControlName="description"></textarea></label><label>Target end date<input type="date" formControlName="targetEndDate"/></label>@if(engagementError()){<p class="error" role="alert">{{ engagementError() }}</p>}<button type="submit" class="btn btn-primary" [disabled]="creatingEngagement()">{{ creatingEngagement() ? 'Creating…' : 'Create client project' }}</button></form>}
+  </section>
+</div></section>
 }

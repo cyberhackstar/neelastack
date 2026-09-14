@@ -1,102 +1,27 @@
-<section class="quote-page">
+<section class="proposal-shell">
   <div class="container">
-    @if (loading()) {
-      <p class="muted">Loading…</p>
-    } @else {
-      @if (notFound()) {
-        <div class="card">
-          <h1>Quotation not found</h1>
-          <p>This link may be incorrect or the quotation may have been withdrawn. Contact hello&#64;neelastack.com if you think this is a mistake.</p>
-        </div>
-      }
-      @if (quotation(); as q) {
-      <span class="eyebrow">// QUOTATION</span>
-      <h1 class="section-heading">{{ q.title }}</h1>
-      <p class="section-sub">Prepared for {{ q.clientName }}</p>
+    @if (loading()) { <div class="proposal-loading"><span class="eyebrow">// SECURE PROPOSAL</span><p class="muted">Preparing your proposal…</p></div> }
+    @else if (notFound()) { <div class="card proposal-not-found"><span class="eyebrow eyebrow-amber">// LINK UNAVAILABLE</span><h1>Proposal not found</h1><p>This secure link may be incorrect, expired, or withdrawn. Contact hello&#64;neelastack.com if you need help.</p></div> }
+    @else if (quotation(); as q) {
+      <div class="proposal-topbar"><div><span class="eyebrow eyebrow-amber">// PRIVATE PROPOSAL</span><span class="secure-label">Secure client link · Confidential</span></div><a class="btn btn-ghost btn-sm" [href]="pdfUrl()">Download branded PDF</a></div>
+      <div class="proposal-cover card"><div class="brand-lockup"><strong>neelastack</strong><span>Software · Product · Engineering</span></div><div class="cover-kicker">Prepared exclusively for</div><h1>{{ q.clientName }}</h1><h2>{{ q.title }}</h2><p class="cover-note">A clear commercial proposal for the next stage of the engagement.</p><div class="cover-meta"><span>Secure online review</span><span>@if(q.validUntil){Valid through {{ q.validUntil }} } @else {Prepared for review}</span></div></div>
 
-      @if (q.scopeSummary) {
-        <div class="card scope">
-          <h2>Scope</h2>
-          <p>{{ q.scopeSummary }}</p>
-        </div>
-      }
+      @if(q.executiveSummary){<section class="proposal-section"><span class="section-number">01</span><div><span class="eyebrow">EXECUTIVE SUMMARY</span><h2>The engagement at a glance</h2><p class="rich-copy">{{ q.executiveSummary }}</p></div></section>}
+      @if(q.scopeSummary){<section class="proposal-section"><span class="section-number">02</span><div><span class="eyebrow">SCOPE</span><h2>What we are solving</h2><p class="rich-copy">{{ q.scopeSummary }}</p></div></section>}
+      @if(q.deliverables){<section class="proposal-section"><span class="section-number">03</span><div><span class="eyebrow">DELIVERABLES</span><h2>What you receive</h2><div class="text-list">@for(item of q.deliverables.split('\n'); track item){@if(item.trim()){<p>✓ {{ item.replace('• ','') }}</p>}}</div></div></section>}
+      @if(q.timeline){<section class="proposal-section"><span class="section-number">04</span><div><span class="eyebrow">ROADMAP</span><h2>How we will deliver</h2><div class="roadmap">@for(step of q.timeline.split('\n'); track step){@if(step.trim()){<div><b>{{ $index + 1 }}</b><span>{{ step }}</span></div>}}</div></div></section>}
 
-      <div class="card line-items">
-        <h2>Line items</h2>
-        <table>
-          <tbody>
-            @for (item of q.lineItems; track item.description) {
-              <tr>
-                <td>{{ item.description }}</td>
-                <td class="amount">{{ q.currency }} {{ item.amount }}</td>
-              </tr>
-            }
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>Total</td>
-              <td class="amount total">{{ q.currency }} {{ q.totalAmount }}</td>
-            </tr>
-          </tfoot>
-        </table>
-        @if (q.validUntil) {
-          <p class="valid-until">Valid until {{ q.validUntil }}</p>
-        }
-      </div>
+      <section class="proposal-section investment-section"><span class="section-number">05</span><div><span class="eyebrow">INVESTMENT</span><h2>Commercials</h2><div class="investment-card"><table><tbody>@for(item of q.lineItems; track item.description){<tr><td>{{ item.description }}</td><td>{{ q.currency }} {{ item.amount | number:'1.0-2' }}</td></tr>}</tbody><tfoot><tr><td>Total project investment</td><td>{{ q.currency }} {{ q.totalAmount | number:'1.0-2' }}</td></tr></tfoot></table></div>@if(q.paymentTerms){<div class="sub-block"><span class="eyebrow">PAYMENT TERMS</span><div class="text-list">@for(item of q.paymentTerms.split('\n'); track item){@if(item.trim()){<p>{{ item }}</p>}}</div></div>}</div></section>
+      @if(q.assumptions || q.exclusions){<section class="proposal-section"><span class="section-number">06</span><div><span class="eyebrow">COMMERCIAL CLARITY</span><h2>Assumptions & exclusions</h2><div class="clarity-grid">@if(q.assumptions){<div><strong>Assumptions</strong><p>{{ q.assumptions }}</p></div>}@if(q.exclusions){<div><strong>Exclusions</strong><p>{{ q.exclusions }}</p></div>}</div></div></section>}
+      @if(q.nextSteps){<section class="proposal-section"><span class="section-number">07</span><div><span class="eyebrow">NEXT STEPS</span><h2>How we move forward</h2><div class="text-list">@for(item of q.nextSteps.split('\n'); track item){@if(item.trim()){<p>{{ item }}</p>}}</div></div></section>}
 
-      @if (q.relatedCaseStudy; as cs) {
-        <div class="card case-study-proof">
-          <span class="eyebrow">// SIMILAR WORK</span>
-          <h2>{{ cs.title }}</h2>
-          @if (cs.summary) {
-            <p>{{ cs.summary }}</p>
-          }
-          @if (cs.keyMetrics.length) {
-            <ul class="key-metrics">
-              @for (metric of cs.keyMetrics; track metric) {
-                <li>{{ metric }}</li>
-              }
-            </ul>
-          }
-          @if (cs.averageRating && cs.reviewCount) {
-            <p class="rating">★ {{ cs.averageRating }} ({{ cs.reviewCount }} review{{ cs.reviewCount === 1 ? '' : 's' }})</p>
-          }
-          <a [routerLink]="['/portfolio', cs.slug]" class="btn btn-ghost">View full case study →</a>
-        </div>
-      }
+      @if(q.relatedCaseStudy; as cs){<section class="proof-panel card"><div><span class="eyebrow">RELEVANT PROOF</span><h2>{{ cs.title }}</h2><p>{{ cs.summary }}</p>@if(cs.keyMetrics.length){<div class="metrics">@for(metric of cs.keyMetrics; track metric){<span>{{ metric }}</span>}</div>}<a [routerLink]="['/portfolio', cs.slug]" class="btn btn-ghost btn-sm">View case study →</a></div></section>}
 
-      @if (q.status === 'SENT') {
-        <div class="card actions">
-          @if (!showRejectReason()) {
-            <button class="btn btn-primary" (click)="accept()" [disabled]="responding()">
-              {{ responding() ? 'Processing…' : 'Accept quotation' }}
-            </button>
-            <button class="btn btn-ghost" (click)="showRejectReason.set(true)" [disabled]="responding()">
-              Decline
-            </button>
-          } @else {
-            <label>
-              Let us know why (optional)
-              <textarea [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)" rows="3"></textarea>
-            </label>
-            <div class="reject-actions">
-              <button class="btn btn-primary" (click)="reject()" [disabled]="responding()">
-                {{ responding() ? 'Sending…' : 'Confirm decline' }}
-              </button>
-              <button class="btn btn-ghost" (click)="showRejectReason.set(false)">Cancel</button>
-            </div>
-          }
-        </div>
-      } @else if (q.status === 'ACCEPTED') {
-        <div class="card status-notice accepted">
-          <p>You accepted this quotation. We'll be in touch shortly to get started.</p>
-        </div>
-      } @else if (q.status === 'REJECTED') {
-        <div class="card status-notice rejected">
-          <p>You declined this quotation. If anything changes, just reply to the original email.</p>
-        </div>
-      }
-      }
+      @if(q.status === 'SENT'){<section class="decision-panel card"><div><span class="eyebrow eyebrow-amber">READY TO DECIDE?</span><h2>Approve the engagement online.</h2><p>Accept the proposal to confirm that the scope and commercial terms work for you. You can also decline or ask us to discuss anything before deciding.</p></div>@if(!showRejectReason()){<div class="decision-actions"><button class="btn btn-primary" (click)="accept()" [disabled]="responding()">{{ responding() ? 'Processing…' : 'Accept proposal →' }}</button><button class="btn btn-ghost" (click)="showRejectReason.set(true)" [disabled]="responding()">Request changes / decline</button></div>} @else {<label class="reason-label">What would you like us to know? <textarea [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)" rows="4"></textarea></label><div class="decision-actions"><button class="btn btn-primary" (click)="reject()" [disabled]="responding()">{{ responding() ? 'Sending…' : 'Submit response' }}</button><button class="btn btn-ghost" (click)="showRejectReason.set(false)">Keep proposal open</button></div>}@if(responseError()){<p class="response-error" role="alert">{{ responseError() }}</p>}</section>}
+      @else if(q.status === 'ACCEPTED'){<section class="decision-panel card accepted"><div class="status-icon">✓</div><span class="eyebrow">// ACCEPTED</span><h2>Engagement approved.</h2><p>Your acceptance has been recorded. We will follow up with the onboarding and kickoff steps.</p></section>}
+      @else if(q.status === 'REJECTED'){<section class="decision-panel card"><span class="eyebrow">// RESPONSE RECORDED</span><h2>Thanks for the feedback.</h2><p>Your response has been recorded. Reply to the proposal email if you would like to revisit anything.</p></section>}
+
+      <footer class="proposal-footer"><strong>neelastack</strong><span>Confidential proposal · Software, product & engineering</span><span>hello&#64;neelastack.com</span></footer>
     }
   </div>
 </section>

@@ -7,29 +7,29 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('Public acquisition funnel', () => {
   test('home page renders and links to core pages', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/Neelastack/);
     await expect(page.locator('h1').first()).toBeVisible();
   });
 
   test('can navigate home -> services -> solutions -> contact', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     await page.getByRole('link', { name: /services/i }).first().click();
     await expect(page).toHaveURL(/\/services/);
     await expect(page.locator('h1').first()).toBeVisible();
 
-    await page.goto('/solutions');
+    await page.goto('/solutions', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/solutions/);
     await expect(page.locator('h1').first()).toBeVisible();
 
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/contact/);
     await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
   });
 
   test('estimator wizard: intent selection through to review step', async ({ page }) => {
-    await page.goto('/estimate');
+    await page.goto('/estimate', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /tell us what you're building/i })).toBeVisible();
 
     // Step 1: intent (BUILD/FIX/MODERNIZE toggle buttons, not a form control)
@@ -43,7 +43,7 @@ test.describe('Public acquisition funnel', () => {
   });
 
   test('contact form can be submitted successfully', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
 
     await page.getByLabel("Name", { exact: true }).fill('E2E Test User');
     await page.getByLabel("Email", { exact: true }).fill('e2e-test@example.com');
@@ -68,7 +68,7 @@ test.describe('Public acquisition funnel', () => {
 
 test.describe('Public form validation and scheduling', () => {
   test('contact form explains invalid required fields instead of silently doing nothing', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /send project brief/i }).click();
     await expect(page.getByText('Your name is required.')).toBeVisible();
     await expect(page.getByText('Email address is required.')).toBeVisible();
@@ -76,25 +76,25 @@ test.describe('Public form validation and scheduling', () => {
   });
 
   test('schedule a call CTA opens the booking flow', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
     await page.getByRole('link', { name: /schedule a call/i }).click();
     await expect(page).toHaveURL(/\/book$/);
     await expect(page.getByRole('heading', { name: /choose a time to talk/i })).toBeVisible();
   });
 
   test('auth forms show inline validation feedback', async ({ page }) => {
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /^sign in$/i }).click();
     await expect(page.getByText('Email address is required.')).toBeVisible();
     await expect(page.getByText('Password is required.')).toBeVisible();
 
-    await page.goto('/register');
+    await page.goto('/register', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /create account/i }).click();
     await expect(page.getByText('Full name is required.')).toBeVisible();
     await expect(page.getByText('Email address is required.')).toBeVisible();
     await expect(page.getByText('Password is required.')).toBeVisible();
 
-    await page.goto('/forgot-password');
+    await page.goto('/forgot-password', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /send reset link/i }).click();
     await expect(page.getByText('Email address is required.')).toBeVisible();
   });

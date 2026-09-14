@@ -318,6 +318,13 @@ export interface QuotationPayload {
   currency?: string;
   validUntil?: string;
   notes?: string;
+  executiveSummary?: string;
+  deliverables?: string;
+  timeline?: string;
+  paymentTerms?: string;
+  assumptions?: string;
+  exclusions?: string;
+  nextSteps?: string;
 }
 
 export interface Quotation {
@@ -331,6 +338,13 @@ export interface Quotation {
   status: QuotationStatus;
   validUntil?: string;
   notes?: string;
+  executiveSummary?: string;
+  deliverables?: string;
+  timeline?: string;
+  paymentTerms?: string;
+  assumptions?: string;
+  exclusions?: string;
+  nextSteps?: string;
   responseReason?: string;
   respondedAt?: string;
   sentAt?: string;
@@ -660,6 +674,13 @@ export interface PublicQuotation {
   currency: string;
   status: QuotationStatus;
   validUntil?: string;
+  executiveSummary?: string;
+  deliverables?: string;
+  timeline?: string;
+  paymentTerms?: string;
+  assumptions?: string;
+  exclusions?: string;
+  nextSteps?: string;
   clientName: string;
   /** Module 3: contextual social proof for the quoted service — absent when no
    *  published, matching case study exists. Never a generic fallback. */

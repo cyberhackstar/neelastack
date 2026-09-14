@@ -69,4 +69,12 @@ export class InquiryService {
   sendQuotation(id: string) {
     return this.http.post<Quotation>(`${this.adminBase}/quotations/${id}/send`, {});
   }
+
+  quotationPdfUrl(id: string): string {
+    return `${this.adminBase}/quotations/${id}/pdf`;
+  }
+
+  executiveReportUrl(id: string): string {
+    return `${this.adminBase}/inquiries/${id}/executive-report`;
+  }
 }

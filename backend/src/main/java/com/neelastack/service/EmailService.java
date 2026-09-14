@@ -188,8 +188,11 @@ public class EmailService {
 
                 %s
 
-                <p><a class="button" href="%s/quote/%s">Review quotation</a></p>
-                <p class="small">You can review, accept, or decline the quotation securely from this page.</p>
+                <div style="margin:18px 0;">
+                  <a class="button" href="%s/quote/%s">Review proposal</a>
+                  <a class="button secondary" style="margin-left:8px;" href="%s/api/v1/public/quotations/%s/pdf">Download PDF</a>
+                </div>
+                <p class="small">Review the secure proposal online to accept or discuss it. A branded PDF is provided for your internal review and sharing.</p>
                 """.formatted(
                 esc(quotation.getInquiry().getName()),
                 esc(quotation.getTitle()),
@@ -199,6 +202,8 @@ public class EmailService {
                 esc(displayTotal),
                 validity.isBlank() ? "" : "<p class=\"small\">" + esc(validity) + "</p>",
                 scope.isBlank() ? "" : "<div class=\"card subtle\"><div class=\"label\">SCOPE</div><p>" + esc(scope) + "</p></div>",
+                escAttr(frontendUrl),
+                escAttr(quotation.getPublicToken()),
                 escAttr(frontendUrl),
                 escAttr(quotation.getPublicToken())
         );

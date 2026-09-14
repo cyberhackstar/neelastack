@@ -112,6 +112,29 @@ public class Quotation {
     /** Set only on a SENT -> REJECTED transition; query-friendly split of respondedAt. */
     private LocalDateTime rejectedAt;
 
+    // --- Premium proposal presentation (V45) ---
+
+    @Column(name = "executive_summary", columnDefinition = "TEXT")
+    private String executiveSummary;
+
+    @Column(columnDefinition = "TEXT")
+    private String deliverables;
+
+    @Column(columnDefinition = "TEXT")
+    private String timeline;
+
+    @Column(name = "payment_terms", columnDefinition = "TEXT")
+    private String paymentTerms;
+
+    @Column(columnDefinition = "TEXT")
+    private String assumptions;
+
+    @Column(columnDefinition = "TEXT")
+    private String exclusions;
+
+    @Column(name = "next_steps", columnDefinition = "TEXT")
+    private String nextSteps;
+
     // --- Pricing version traceability (V21) ---
 
     /**

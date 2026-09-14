@@ -16,6 +16,13 @@ public record QuotationRequest(
         String currency,
         LocalDate validUntil,
         String notes,
+        String executiveSummary,
+        String deliverables,
+        String timeline,
+        String paymentTerms,
+        String assumptions,
+        String exclusions,
+        String nextSteps,
         /** Optional: which PricingRule this quotation was based on. See Quotation.pricingRuleId. */
         java.util.UUID pricingRuleId,
         /** Optional: service-line key for case-study matching (see Quotation.serviceCategory).

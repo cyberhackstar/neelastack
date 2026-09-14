@@ -6,7 +6,7 @@ import { PublicQuotation } from '../models/content.model';
 @Injectable({ providedIn: 'root' })
 export class PublicQuotationService {
   private http = inject(HttpClient);
-  private readonly base = `${environment.apiBaseUrl}/public/quotations`;
+  readonly base = `${environment.apiBaseUrl}/public/quotations`;
 
   get(token: string) {
     return this.http.get<PublicQuotation>(`${this.base}/${token}`);
