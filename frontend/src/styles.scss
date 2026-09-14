@@ -933,3 +933,13 @@ textarea {
     background-attachment: scroll;
   }
 }
+
+/* Enterprise form validation primitives */
+.auth-card .form-kicker { color:var(--color-amber); font-family:var(--font-mono); font-size:.68rem; letter-spacing:.1em; font-weight:700; }
+.auth-card .field-hint { color:var(--color-text-muted); font-size:.7rem; line-height:1.4; font-weight:400; }
+.auth-card .optional-mark { color:var(--color-text-muted); font-size:.68rem; font-weight:400; margin-left:.25rem; text-transform:uppercase; letter-spacing:.04em; }
+.auth-card .required-mark { color:var(--color-amber); }
+.auth-card .field-invalid input { border-color:rgba(var(--color-danger-rgb),.75); box-shadow:0 0 0 3px rgba(var(--color-danger-rgb),.07); }
+.auth-card .field-error { display:block; color:var(--color-danger); font-size:.76rem; line-height:1.35; margin-top:.02rem; }
+.auth-card input[aria-invalid="true"] { border-color:rgba(var(--color-danger-rgb),.75); }
+.auth-card .field-hint + .field-error { margin-top:.05rem; }

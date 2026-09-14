@@ -64,3 +64,38 @@ test.describe('Public acquisition funnel', () => {
 
 
 
+
+
+test.describe('Public form validation and scheduling', () => {
+  test('contact form explains invalid required fields instead of silently doing nothing', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByRole('button', { name: /send project brief/i }).click();
+    await expect(page.getByText('Your name is required.')).toBeVisible();
+    await expect(page.getByText('Email address is required.')).toBeVisible();
+    await expect(page.getByText(/tell us a little about the project/i)).toBeVisible();
+  });
+
+  test('schedule a call CTA opens the booking flow', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByRole('link', { name: /schedule a call/i }).click();
+    await expect(page).toHaveURL(/\/book$/);
+    await expect(page.getByRole('heading', { name: /choose a time to talk/i })).toBeVisible();
+  });
+
+  test('auth forms show inline validation feedback', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: /^sign in$/i }).click();
+    await expect(page.getByText('Email address is required.')).toBeVisible();
+    await expect(page.getByText('Password is required.')).toBeVisible();
+
+    await page.goto('/register');
+    await page.getByRole('button', { name: /create account/i }).click();
+    await expect(page.getByText('Full name is required.')).toBeVisible();
+    await expect(page.getByText('Email address is required.')).toBeVisible();
+    await expect(page.getByText('Password is required.')).toBeVisible();
+
+    await page.goto('/forgot-password');
+    await page.getByRole('button', { name: /send reset link/i }).click();
+    await expect(page.getByText('Email address is required.')).toBeVisible();
+  });
+});

@@ -1,11 +1,14 @@
-<section class="page-header">
-  <div class="container">
-    <span class="eyebrow">// CONTACT</span>
-    <h1 class="section-heading">Let's build something.</h1>
-    <p class="section-sub">
-      Tell me what you're building. I reply to every inquiry within one business day with a
-      scoped estimate — no sales call required first.
-    </p>
+<section class="contact-hero bg-grid">
+  <div class="container contact-hero-inner">
+    <div>
+      <span class="eyebrow eyebrow-amber">// START A CONVERSATION</span>
+      <h1 class="section-heading">Let's build something exceptional.</h1>
+      <p class="section-sub">Tell me what you're building. You'll get a thoughtful response within one business day — with scope, risks, and the right next step made clear.</p>
+    </div>
+    <div class="contact-hero-status">
+      <span class="status-dot"></span>
+      <div><strong>Accepting new projects</strong><span>Typically replies within 1 business day</span></div>
+    </div>
   </div>
 </section>
 
@@ -13,97 +16,100 @@
   <div class="container contact-grid">
     <div class="form-col">
       @if (submitted()) {
-        <div class="card success">
-          <h2>Got it — thank you.</h2>
-          <p>
-            I've sent a confirmation to your inbox and will follow up within one business day
-            with next steps.
-          </p>
+        <div class="card success contact-success">
+          <span class="success-mark">✓</span>
+          <span class="eyebrow">// RECEIVED</span>
+          <h2>You're on the list.</h2>
+          <p>I've sent a confirmation to your inbox. Expect a reply within one business day with the next steps.</p>
           @if (bookingUrl()) {
             <app-booking-widget [bookingUrl]="bookingUrl()!" />
+          } @else {
+            <a routerLink="/book" class="btn btn-primary">Schedule a consultation <span aria-hidden="true">→</span></a>
           }
         </div>
       } @else {
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card">
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card contact-form">
+          <div class="form-heading">
+            <span class="label">PROJECT BRIEF</span>
+            <h2>A few details to get started</h2>
+            <p>Required fields are marked <span class="required-mark" aria-hidden="true">*</span>. No lengthy sales questionnaire.</p>
+          </div>
+
           <div class="row two">
-            <label>
-              Name
-              <input type="text" formControlName="name" autocomplete="name" />
+            <label for="contact-name" [class.field-invalid]="form.controls.name.invalid && form.controls.name.touched">
+              <span>Name <span class="required-mark" aria-hidden="true">*</span></span>
+              <input id="contact-name" type="text" formControlName="name" autocomplete="name" placeholder="Your full name" aria-label="Name" [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched" aria-describedby="contact-name-error" />
+              @if (form.controls.name.touched && form.controls.name.hasError('required')) { <span class="field-error" id="contact-name-error">Your name is required.</span> }
+              @else if (form.controls.name.touched && form.controls.name.hasError('minlength')) { <span class="field-error" id="contact-name-error">Enter at least 2 characters.</span> }
+              @else if (form.controls.name.touched && form.controls.name.hasError('maxlength')) { <span class="field-error" id="contact-name-error">Name must be 120 characters or fewer.</span> }
             </label>
-            <label>
-              Email
-              <input type="email" formControlName="email" autocomplete="email" />
+            <label for="contact-email" [class.field-invalid]="form.controls.email.invalid && form.controls.email.touched">
+              <span>Email <span class="required-mark" aria-hidden="true">*</span></span>
+              <input id="contact-email" type="email" formControlName="email" autocomplete="email" placeholder="you@company.com" aria-label="Email" [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched" aria-describedby="contact-email-error" />
+              @if (form.controls.email.touched && form.controls.email.hasError('required')) { <span class="field-error" id="contact-email-error">Email address is required.</span> }
+              @else if (form.controls.email.touched && form.controls.email.hasError('email')) { <span class="field-error" id="contact-email-error">Enter a valid email address.</span> }
+              @else if (form.controls.email.touched && form.controls.email.hasError('maxlength')) { <span class="field-error" id="contact-email-error">Email must be 180 characters or fewer.</span> }
             </label>
           </div>
 
           <div class="row two">
-            <label>
-              Phone (optional)
-              <input type="tel" formControlName="phone" autocomplete="tel" />
+            <label for="contact-phone" [class.field-invalid]="form.controls.phone.invalid && form.controls.phone.touched">
+              <span>Phone <span class="optional-mark" aria-hidden="true">Optional</span></span>
+              <input id="contact-phone" type="tel" formControlName="phone" autocomplete="tel" placeholder="+91 98765 43210" aria-label="Phone" [attr.aria-invalid]="form.controls.phone.invalid && form.controls.phone.touched" aria-describedby="contact-phone-error" />
+              @if (form.controls.phone.touched && form.controls.phone.hasError('pattern')) { <span class="field-error" id="contact-phone-error">Enter a valid phone number (7–20 characters).</span> }
+              @else if (form.controls.phone.touched && form.controls.phone.hasError('maxlength')) { <span class="field-error" id="contact-phone-error">Phone number must be 20 characters or fewer.</span> }
             </label>
-            <label>
-              Company (optional)
-              <input type="text" formControlName="company" autocomplete="organization" />
+            <label for="contact-company" [class.field-invalid]="form.controls.company.invalid && form.controls.company.touched">
+              <span>Company <span class="optional-mark" aria-hidden="true">Optional</span></span>
+              <input id="contact-company" type="text" formControlName="company" autocomplete="organization" placeholder="Company or organization" aria-label="Company" aria-describedby="contact-company-error" />
+              @if (form.controls.company.touched && form.controls.company.hasError('maxlength')) { <span class="field-error" id="contact-company-error">Company must be 120 characters or fewer.</span> }
             </label>
           </div>
 
           <div class="row two">
-            <label>
-              Project type
-              <select formControlName="projectType">
-                <option value="">Select one</option>
-                @for (type of projectTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
+            <label for="contact-project-type"><span>Project type <span class="optional-mark" aria-hidden="true">Optional</span></span>
+              <select id="contact-project-type" formControlName="projectType" aria-label="Project type"><option value="">Select one</option>@for (type of projectTypes; track type) { <option [value]="type">{{ type }}</option> }</select>
             </label>
-            <label>
-              Budget range
-              <select formControlName="budgetRange">
-                <option value="">Select one</option>
-                @for (range of budgetRanges; track range) {
-                  <option [value]="range">{{ range }}</option>
-                }
-              </select>
+            <label for="contact-budget-range"><span>Budget range <span class="optional-mark" aria-hidden="true">Optional</span></span>
+              <select id="contact-budget-range" formControlName="budgetRange" aria-label="Budget range"><option value="">Select one</option>@for (range of budgetRanges; track range) { <option [value]="range">{{ range }}</option> }</select>
             </label>
           </div>
 
-          <label>
-            Tell me about the project
-            <textarea formControlName="message" rows="6" placeholder="What are you building, what's the timeline, what's already in place?"></textarea>
+          <label for="contact-message" class="message-field" [class.field-invalid]="form.controls.message.invalid && form.controls.message.touched">
+            <span>Tell me about the project <span class="required-mark" aria-hidden="true">*</span></span>
+            <textarea id="contact-message" formControlName="message" aria-label="Tell me about the project" rows="7" maxlength="4000" placeholder="What are you building, what's the timeline, and what's already in place?" [attr.aria-invalid]="form.controls.message.invalid && form.controls.message.touched" aria-describedby="contact-message-error contact-message-count"></textarea>
+            <span class="field-meta" id="contact-message-count">{{ form.controls.message.value.length || 0 }} / 4000</span>
+            @if (form.controls.message.touched && form.controls.message.hasError('required')) { <span class="field-error" id="contact-message-error">Tell us a little about the project.</span> }
+            @else if (form.controls.message.touched && form.controls.message.hasError('minlength')) { <span class="field-error" id="contact-message-error">Please provide at least 20 characters so we can understand the request.</span> }
           </label>
 
-          @if (errorMessage()) {
-            <p class="error">{{ errorMessage() }}</p>
-          }
-
-          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-            {{ submitting() ? 'Sending…' : 'Send inquiry' }}
-          </button>
+          @if (errorMessage()) { <p class="error" role="alert">{{ errorMessage() }}</p> }
+          <div class="form-submit-row">
+            <button type="submit" class="btn btn-primary" [disabled]="submitting()">{{ submitting() ? 'Sending…' : 'Send project brief' }} <span aria-hidden="true">→</span></button>
+            <span class="secure-note">Private · No spam · One-business-day response</span>
+          </div>
         </form>
       }
     </div>
 
     <aside class="sidebar">
-      <div class="card">
-        <h3>What happens next</h3>
+      <div class="card schedule-card">
+        <span class="label">FASTEST PATH</span>
+        <h3>Prefer to talk first?</h3>
+        <p>Pick a consultation, choose a real available time, and confirm it without creating an account.</p>
+        <a routerLink="/book" class="btn btn-primary schedule-button">Schedule a call <span aria-hidden="true">→</span></a>
+      </div>
+
+      <div class="card process-card">
+        <span class="label">HOW IT WORKS</span>
+        <h3>Clear from day one.</h3>
         <ol class="steps">
-          @for (step of nextSteps; track step.title) {
-            <li>
-              <strong>{{ step.title }}</strong>
-              <span>{{ step.description }}</span>
-            </li>
-          }
+          @for (step of nextSteps; track step.title) { <li><strong>{{ step.title }}</strong><span>{{ step.description }}</span></li> }
         </ol>
       </div>
 
       <div class="card contact-direct">
-        <h3>Prefer to pick a time?</h3>
-        <p>Choose a consultation and book an available time without creating an account.</p>
-        <a routerLink="/book" class="btn btn-primary">Schedule a call</a>
-      </div>
-
-      <div class="card contact-direct">
+        <span class="label">DIRECT LINE</span>
         <h3>Prefer email?</h3>
         <a href="mailto:hello@neelastack.com">hello&#64;neelastack.com</a>
         <p>Same one-business-day response time either way.</p>
@@ -111,4 +117,3 @@
     </aside>
   </div>
 </section>
-

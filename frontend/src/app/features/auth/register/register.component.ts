@@ -33,8 +33,13 @@ export class RegisterComponent implements OnInit {
   form = this.fb.nonNullable.group({
     fullName: ["", [Validators.required, Validators.minLength(2)]],
     email: ["", [Validators.required, Validators.email]],
-    password: ["", [Validators.required, Validators.minLength(8)]],
-    phone: [""],
+    password: ["", [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.maxLength(72),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/),
+    ]],
+    phone: ["", [Validators.maxLength(20), Validators.pattern(/^[+0-9()\s.-]{7,20}$/)]],
   });
 
   submit(): void {

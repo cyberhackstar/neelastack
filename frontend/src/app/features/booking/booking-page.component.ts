@@ -48,10 +48,10 @@ export class BookingPageComponent implements OnInit {
   confirmation = signal<BookingDto | null>(null);
 
   detailsForm = this.fb.group({
-    clientName: ["", [Validators.required, Validators.minLength(2)]],
-    clientEmail: ["", [Validators.required, Validators.email]],
-    clientPhone: [""],
-    clientCompany: [""],
+    clientName: ["", [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+    clientEmail: ["", [Validators.required, Validators.email, Validators.maxLength(180)]],
+    clientPhone: ["", [Validators.maxLength(20), Validators.pattern(/^[+0-9()\s.-]{7,20}$/)]],
+    clientCompany: ["", [Validators.maxLength(120)]],
     inquiryId: [""],
   });
   dynamicFields: Record<string, string> = {};

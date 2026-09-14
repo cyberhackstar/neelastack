@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
 import { InquiryService } from '../../core/services/inquiry.service';
 import { BookingWidgetComponent } from '../../shared/components/booking-widget/booking-widget.component';
@@ -17,7 +17,7 @@ const INTENT_PROJECT_TYPE: Record<string, string> = {
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [ReactiveFormsModule, BookingWidgetComponent],
+  imports: [ReactiveFormsModule, RouterLink, BookingWidgetComponent],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
@@ -57,13 +57,13 @@ export class ContactComponent implements OnInit {
   ];
 
   form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    email: ['', [Validators.required, Validators.email]],
-    phone: [''],
-    company: [''],
+    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(180)]],
+    phone: ['', [Validators.maxLength(20), Validators.pattern(/^[+0-9()\s.-]{7,20}$/)]],
+    company: ['', [Validators.maxLength(120)]],
     projectType: [''],
     budgetRange: [''],
-    message: ['', [Validators.required, Validators.minLength(20)]],
+    message: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(4000)]],
   });
 
   ngOnInit(): void {

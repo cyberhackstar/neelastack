@@ -75,22 +75,28 @@
           </div>
 
           <form [formGroup]="detailsForm" (ngSubmit)="submit()" class="form-fields">
-            <label>
-              Full name
-              <input type="text" formControlName="clientName" />
+            <label [class.field-invalid]="detailsForm.controls.clientName.invalid && detailsForm.controls.clientName.touched">
+              <span>Full name <span class="required-mark" aria-hidden="true">*</span></span>
+              <input type="text" formControlName="clientName" autocomplete="name" />
+              @if (detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('required')) { <span class="field-error">Full name is required.</span> }
+              @else if (detailsForm.controls.clientName.touched && detailsForm.controls.clientName.hasError('minlength')) { <span class="field-error">Enter at least 2 characters.</span> }
             </label>
-            <label>
-              Email
-              <input type="email" formControlName="clientEmail" />
+            <label [class.field-invalid]="detailsForm.controls.clientEmail.invalid && detailsForm.controls.clientEmail.touched">
+              <span>Email <span class="required-mark" aria-hidden="true">*</span></span>
+              <input type="email" formControlName="clientEmail" autocomplete="email" />
+              @if (detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('required')) { <span class="field-error">Email address is required.</span> }
+              @else if (detailsForm.controls.clientEmail.touched && detailsForm.controls.clientEmail.hasError('email')) { <span class="field-error">Enter a valid email address.</span> }
             </label>
             <div class="row two">
-              <label>
-                Phone (optional)
-                <input type="tel" formControlName="clientPhone" />
+              <label [class.field-invalid]="detailsForm.controls.clientPhone.invalid && detailsForm.controls.clientPhone.touched">
+                <span>Phone <span class="optional-mark" aria-hidden="true">Optional</span></span>
+                <input type="tel" formControlName="clientPhone" autocomplete="tel" />
+                @if (detailsForm.controls.clientPhone.touched && detailsForm.controls.clientPhone.hasError('pattern')) { <span class="field-error">Enter a valid phone number.</span> }
               </label>
-              <label>
-                Company (optional)
-                <input type="text" formControlName="clientCompany" />
+              <label [class.field-invalid]="detailsForm.controls.clientCompany.invalid && detailsForm.controls.clientCompany.touched">
+                <span>Company <span class="optional-mark" aria-hidden="true">Optional</span></span>
+                <input type="text" formControlName="clientCompany" autocomplete="organization" />
+                @if (detailsForm.controls.clientCompany.touched && detailsForm.controls.clientCompany.hasError('maxlength')) { <span class="field-error">Company must be 120 characters or fewer.</span> }
               </label>
             </div>
 
