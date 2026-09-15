@@ -50,41 +50,63 @@ export class HomeComponent implements OnInit {
     { value: 'A+', label: 'SSL Labs rating' },
   ];
 
-  readonly trustItems = [
-    'JWT Authentication',
-    'Role-based Access Control',
-    'Rate Limiting',
-    'Encrypted Transport',
-    'Automated Testing',
-    'CI/CD Deployment',
+  readonly businessPaths = [
+    { slug: 'gyms-fitness', title: 'I run a gym or fitness business', copy: 'Memberships, class booking, payments, member experience and a stronger online presence.' },
+    { slug: 'retail-ecommerce', title: 'I sell products', copy: 'A premium storefront, ecommerce, payments, orders and a digital customer journey.' },
+    { slug: 'restaurants-hospitality', title: 'I run a restaurant or hospitality business', copy: 'Menus, reservations, ordering and a digital experience that turns discovery into action.' },
+    { slug: 'healthcare-clinics', title: 'I run a clinic or healthcare practice', copy: 'Trusted service pages, appointment journeys and a professional patient-facing presence.' },
+    { slug: 'professional-services', title: 'I sell expertise or services', copy: 'Lead generation, consultation booking, client portals and simpler business workflows.' },
+    { slug: 'startups', title: 'I have an idea I want to launch', copy: 'A product, MVP or platform that looks credible now and can keep growing later.' },
+  ];
+
+  readonly outcomes = [
+    { index: '01', title: 'More customers can find you.', copy: 'A strong online presence gives people a clear path from search and social discovery to enquiry, booking or purchase.' },
+    { index: '02', title: 'Customers can do more without calling you.', copy: 'Bookings, purchases, enquiries, accounts and updates can move online — available whenever your business is.' },
+    { index: '03', title: 'Your team spends less time on repetitive work.', copy: 'Connect the workflows behind the scenes so information moves between customers, staff, payments and operations.' },
+    { index: '04', title: 'Your business looks as good online as it does in person.', copy: 'Premium design and a thoughtful user journey turn your website from an online placeholder into a real business asset.' },
+  ];
+
+  readonly steps = [
+    { number: '01', title: 'Discover', copy: 'We understand your business, customers, goals and the friction you want to remove.' },
+    { number: '02', title: 'Recommend', copy: 'We turn that into a clear solution, scope, timeline and investment.' },
+    { number: '03', title: 'Build', copy: 'Design and engineering move together, with regular checkpoints and visible progress.' },
+    { number: '04', title: 'Launch & grow', copy: 'We take care of production readiness and leave you with a product designed for the next stage.' },
   ];
 
   ngOnInit(): void {
     this.seo.update({
-      title: 'Enterprise-grade Web Applications',
+      title: 'Web & Software Development for Growing Businesses',
       description:
-        'Neelastack is an independent software engineering practice building fast, secure, production-grade web applications with Spring Boot and Angular.',
+        'Neelastack helps businesses build premium websites, custom web applications and digital platforms that attract customers, simplify operations and grow online.',
       path: '/',
     });
 
-    this.seo.setJsonLd({
-      '@context': 'https://schema.org',
-      '@type': 'ProfessionalService',
-      name: 'Neelastack',
-      description: 'Independent full-stack engineering practice — Spring Boot and Angular specialists.',
-      url: 'https://neelastack.com',
-      // TODO: fill in once available — these materially help local/service
-      // search relevance and rich-result eligibility, but must stay accurate.
-      // areaServed: 'IN',
-      // sameAs: ['https://github.com/<handle>', 'https://linkedin.com/in/<handle>'],
-      // telephone / priceRange: only add once decided and true.
-      knowsAbout: ['Spring Boot', 'Angular', 'PostgreSQL', 'System Architecture', 'API Security'],
-      makesOffer: [
-        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'New web application development' } },
-        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Application fixes & performance audits' } },
-        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Legacy system modernization' } },
-      ],
-    });
+    this.seo.setJsonLd([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Neelastack',
+        description: 'Business-first web development and custom software engineering for companies building a stronger digital presence.',
+        url: 'https://neelastack.com',
+        areaServed: 'IN',
+        knowsAbout: ['Web development', 'Custom web applications', 'E-commerce', 'Booking systems', 'Business software', 'Digital transformation', 'Spring Boot', 'Angular'],
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: 'Business digital solutions',
+          itemListElement: this.businessPaths.map((item) => ({
+            '@type': 'Offer',
+            itemOffered: { '@type': 'Service', name: item.title.replace('I ', '') },
+          })),
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Neelastack',
+        url: 'https://neelastack.com',
+        description: 'Premium websites, custom web applications and digital platforms for growing businesses.',
+      },
+    ]);
 
     this.contentService.getServices().subscribe((data) => this.services.set(data));
     this.contentService.getProjects(true).subscribe((data) => this.featuredProjects.set(data));

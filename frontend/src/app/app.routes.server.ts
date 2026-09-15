@@ -28,6 +28,8 @@ import { RenderMode, ServerRoute } from "@angular/ssr";
 export const serverRoutes: ServerRoute[] = [
   // ---- Prerendered at build time: no DB dependency ----
   { path: "about", renderMode: RenderMode.Prerender },
+  { path: "industries", renderMode: RenderMode.Prerender },
+  { path: "industries/:slug", renderMode: RenderMode.Server },
   { path: "team", renderMode: RenderMode.Server },
   { path: "contact", renderMode: RenderMode.Prerender },
   { path: "estimate", renderMode: RenderMode.Prerender },

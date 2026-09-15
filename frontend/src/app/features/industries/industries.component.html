@@ -1,0 +1,26 @@
+<section class="industry-hero bg-grid">
+  <div class="container">
+    <span class="eyebrow eyebrow-amber">// BUILT AROUND YOUR BUSINESS</span>
+    <h1>Technology that makes your business easier to discover, buy from and work with.</h1>
+    <p class="hero-copy">You bring the business knowledge. We turn it into a premium digital experience — from your public website to booking, payments, customer portals and internal tools.</p>
+    <div class="hero-actions">
+      <a routerLink="/estimate" [queryParams]="{ intent: 'build' }" class="btn btn-primary btn-arrow">Tell us what your business needs <span class="arrow">→</span></a>
+      <a routerLink="/book" class="btn btn-ghost">Book a strategy call</a>
+    </div>
+  </div>
+</section>
+<section class="industry-grid-section">
+  <div class="container">
+    <div class="section-intro"><span class="eyebrow">// CHOOSE YOUR BUSINESS</span><h2 class="section-heading">See what Neelastack can build for you.</h2><p class="section-sub">Start with your business, not a technology stack. Each page explains the problems we can solve, the digital experiences we can create and the business outcomes they support.</p></div>
+    <div class="industry-grid">
+      @for (industry of industries; track industry.slug) {
+        <a class="industry-card card card-tilt" [routerLink]="['/industries', industry.slug]">
+          <span class="industry-index">0{{ $index + 1 }}</span><h2>{{ industry.name }}</h2><p class="industry-short">{{ industry.short }}</p><p class="industry-outcome">{{ industry.outcome }}</p>
+          <div class="tag-row">@for (item of industry.services; track item) { <span class="tag">{{ item }}</span> }</div>
+          <span class="industry-link">Explore this solution <span aria-hidden="true">→</span></span>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+<section class="business-message"><div class="container business-message-inner"><div><span class="eyebrow">// NO TECHNICAL KNOWLEDGE REQUIRED</span><h2 class="section-heading">You don't need to know what technology to use.</h2><p class="section-sub">Tell us what your business does, what is difficult today and what you want to improve. We handle the architecture, design, development, integrations, security and launch.</p></div><a routerLink="/contact" class="btn btn-primary btn-arrow">Tell us about your business <span class="arrow">→</span></a></div></section>

@@ -1,224 +1,82 @@
 <section class="hero bg-grid">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow">// FULL-STACK ENGINEERING</span>
-      <h1><span class="line">Software that</span><span class="line line-accent">holds up.</span></h1>
-      <p class="lede">
-        Production-grade web applications, backend systems and digital platforms
-        built to survive real usage — Spring Boot on the backend, Angular on the front,
-        deployed the way real companies deploy.
-      </p>
-
+      <span class="eyebrow eyebrow-amber">// DIGITAL GROWTH & SOFTWARE</span>
+      <h1><span class="line">Build the digital</span><span class="line line-accent">business your customers expect.</span></h1>
+      <p class="lede">Neelastack helps businesses turn ideas, offline processes and ambitious goals into premium websites, web applications and digital platforms that attract customers, simplify operations and create room to grow.</p>
       <div class="hero-actions">
-        <a routerLink="/contact" class="btn btn-primary btn-arrow">
-          Start a project <span class="arrow">→</span>
-        </a>
-        <a routerLink="/portfolio" class="btn btn-ghost">Explore our work</a>
-        <a routerLink="/book" class="btn btn-ghost">Schedule a call</a>
+        <a routerLink="/contact" class="btn btn-primary btn-arrow">Tell us about your business <span class="arrow">→</span></a>
+        <a routerLink="/book" class="btn btn-ghost">Book a strategy call</a>
+        <a routerLink="/portfolio" class="btn btn-ghost">See what we've built</a>
       </div>
-
-      <dl class="stat-strip">
-        @for (stat of stats; track stat.label) {
-          <div class="stat-block">
-            <dt class="stat-value">{{ stat.value }}</dt>
-            <dd class="stat-label">{{ stat.label }}</dd>
-          </div>
-        }
-        <div class="stat-block">
-          <span class="stat-flag">PRODUCTION</span>
-          <dd class="stat-label">status monitored</dd>
-        </div>
-      </dl>
+      <div class="proof-strip" aria-label="Neelastack delivery principles">
+        <span><strong>Business-first</strong> strategy</span><span><strong>Production-ready</strong> engineering</span><span><strong>One partner</strong> end to end</span>
+      </div>
     </div>
-
-    <div
-      class="hero-visual glass-panel"
-      aria-hidden="true"
-      [style.transform]="'translate3d(' + parallax().x + 'px, ' + parallax().y + 'px, 0)'"
-    >
+    <div class="hero-visual glass-panel" aria-hidden="true" [style.transform]="'translate3d(' + parallax().x + 'px, ' + parallax().y + 'px, 0)'">
+      <div class="hero-visual-label"><span class="status-dot"></span> From idea → launch → growth</div>
       <app-architecture-diagram></app-architecture-diagram>
     </div>
   </div>
+  <div class="container"><div class="system-line" aria-hidden="true"></div></div>
+</section>
 
+<section class="business-selector">
   <div class="container">
-    <div class="system-line" aria-hidden="true"></div>
+    <div class="selector-heading"><span class="eyebrow">// START WITH YOUR BUSINESS</span><h2 class="section-heading">What are you trying to make better?</h2><p class="section-sub">You don't need to know what technology you need. Pick the closest description and we'll show you what a digital solution could look like.</p></div>
+    <div class="selector-grid">
+      @for (item of businessPaths; track item.slug) {
+        <a class="selector-card card card-tilt" [routerLink]="['/industries', item.slug]">
+          <span class="selector-number">0{{ $index + 1 }}</span><h3>{{ item.title }}</h3><p>{{ item.copy }}</p><span class="selector-link">See what we could build <span aria-hidden="true">→</span></span>
+        </a>
+      }
+    </div>
+    <div class="selector-footer"><span>Don't see your business?</span><a routerLink="/contact">Tell us what you do →</a></div>
   </div>
 </section>
 
-<section class="trust-band">
+<section class="outcomes-band">
   <div class="container">
-    <span class="eyebrow">// ENGINEERED FOR PRODUCTION</span>
-    <div class="trust-strip">
-      @for (item of trustItems; track item) {
-        <span class="trust-item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          {{ item }}
-        </span>
-      }
+    <span class="eyebrow eyebrow-amber">// WHAT CHANGES FOR YOUR BUSINESS</span>
+    <h2 class="section-heading">Technology should create momentum, not more work.</h2>
+    <div class="outcome-grid">
+      @for (outcome of outcomes; track outcome.title) { <article class="outcome-card"><span class="outcome-index">{{ outcome.index }}</span><h3>{{ outcome.title }}</h3><p>{{ outcome.copy }}</p></article> }
     </div>
   </div>
 </section>
 
-<section class="lifecycle-band">
+<section class="how-band">
   <div class="container">
-    <span class="eyebrow">// FULL LIFECYCLE</span>
-    <h2 class="section-heading">Software doesn't end at deployment.</h2>
-    <p class="section-sub">You engineer the entire lifecycle, not just the interface.</p>
-
-    <div class="lifecycle-flow">
-      <div class="lifecycle-stage">
-        <span class="tag eyebrow-amber">BUILD</span>
-        <ul>
-          <li>Architecture</li>
-          <li>Code</li>
-          <li>Testing</li>
-        </ul>
-      </div>
-      <div class="lifecycle-connector system-line" aria-hidden="true"></div>
-      <div class="lifecycle-stage">
-        <span class="tag">SHIP</span>
-        <ul>
-          <li>CI/CD</li>
-          <li>Docker</li>
-          <li>Cloud release</li>
-        </ul>
-      </div>
-      <div class="lifecycle-connector system-line" aria-hidden="true"></div>
-      <div class="lifecycle-stage">
-        <span class="tag">OPERATE</span>
-        <ul>
-          <li>Monitoring</li>
-          <li>Security</li>
-          <li>Optimization</li>
-        </ul>
-      </div>
+    <span class="eyebrow">// HOW WE WORK</span><h2 class="section-heading">One conversation. A clear plan. A product built to last.</h2><p class="section-sub">We keep the client experience simple while doing the complicated work behind the scenes.</p>
+    <div class="how-flow">
+      @for (step of steps; track step.number) { <article class="how-step"><span>{{ step.number }}</span><h3>{{ step.title }}</h3><p>{{ step.copy }}</p></article> }
     </div>
   </div>
 </section>
 
 <section class="services-preview">
-  <div class="container">
-    <span class="eyebrow">// SERVICES</span>
-    <h2 class="section-heading">What I build</h2>
-    <p class="section-sub">Scoped, fixed-outcome engagements — not open-ended hours.</p>
-
-    <div class="grid">
-      @for (service of services(); track service.id) {
-        <article class="card card-tilt">
-          <h3>{{ service.title }}</h3>
-          <p>{{ service.summary }}</p>
-          @if (service.startingPrice) {
-            <span class="tag">{{ service.startingPrice }}</span>
-          }
-        </article>
-      }
-    </div>
-
-    <a routerLink="/services" class="btn btn-ghost see-all">View all services</a>
+  <div class="container"><span class="eyebrow">// WHAT WE BUILD</span><h2 class="section-heading">A digital presence that can become a digital business.</h2><p class="section-sub">From the first page a customer sees to the internal workflow your team relies on, we build the pieces around the outcome you want.</p>
+    <div class="grid">@for (service of services(); track service.id) { <article class="card service-card"><span class="tag">{{ service.startingPrice ? service.startingPrice : 'CUSTOM' }}</span><h3>{{ service.title }}</h3><p>{{ service.summary }}</p></article> }</div>
+    <a routerLink="/services" class="btn btn-ghost see-all">Explore all capabilities →</a>
   </div>
 </section>
 
 @if (featuredProjects().length > 0) {
-  <section class="work-preview">
-    <div class="container">
-      <span class="eyebrow">// SELECTED WORK</span>
-      <h2 class="section-heading">Recent builds</h2>
-
-      <div class="grid">
-        @for (project of featuredProjects(); track project.id) {
-          <a [routerLink]="['/portfolio', project.slug]" class="card card-tilt project-card">
-            <app-browser-mockup
-              [url]="project.liveUrl || 'neelastack.com'"
-              [screenshotUrl]="project.coverImageUrl"
-              [title]="project.title"
-            ></app-browser-mockup>
-            <h3>{{ project.title }}</h3>
-            <p>{{ project.summary }}</p>
-            <div class="tags">
-              @for (tech of project.techStack; track tech) {
-                <span class="tag">{{ tech }}</span>
-              }
-            </div>
-            @if (project.liveUrl) {
-              <span class="status-chip">
-                <span class="status-dot"></span> Live in production
-              </span>
-            }
-          </a>
-        }
-      </div>
-
-      <a routerLink="/portfolio" class="btn btn-ghost see-all">View full portfolio</a>
-    </div>
-  </section>
+<section class="work-preview"><div class="container"><span class="eyebrow">// SELECTED WORK</span><h2 class="section-heading">Proof over promises.</h2><p class="section-sub">Explore real builds, the problem behind each one and what the digital product was designed to change.</p>
+  <div class="grid">@for (project of featuredProjects(); track project.id) { <a [routerLink]="['/portfolio', project.slug]" class="card card-tilt project-card"><app-browser-mockup [url]="project.liveUrl || 'neelastack.com'" [screenshotUrl]="project.coverImageUrl" [title]="project.title"></app-browser-mockup><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><div class="tags">@for (tech of project.techStack; track tech) {<span class="tag">{{ tech }}</span>}</div>@if(project.liveUrl){<span class="status-chip"><span class="status-dot"></span> Live in production</span>}</a> }</div>
+  <a routerLink="/portfolio" class="btn btn-ghost see-all">Explore the full portfolio →</a>
+</div></section>
 }
 
-<section class="why-band">
-  <div class="container">
-    <span class="eyebrow">// WHY NEELASTACK</span>
-    <h2 class="section-heading">Confidence before persuasion.</h2>
+<section class="why-band"><div class="container"><span class="eyebrow">// WHY NEELASTACK</span><h2 class="section-heading">Premium on the surface. Serious underneath.</h2><div class="grid why-grid">
+  <article class="card"><span class="tag">OUTCOME FIRST</span><h3>We start with your business.</h3><p>You don't need to translate your goals into technical language. We do that part.</p></article>
+  <article class="card"><span class="tag">END TO END</span><h3>One accountable partner.</h3><p>Strategy, UX, engineering, integrations, launch and the systems that keep it running.</p></article>
+  <article class="card"><span class="tag">PRODUCTION READY</span><h3>Built for real customers.</h3><p>Security, testing, performance and maintainability are part of the build, not a later upgrade.</p></article>
+  <article class="card"><span class="tag">CLEAR COMMUNICATION</span><h3>You always know what's next.</h3><p>Clear scope, milestones, decisions and ownership from the first conversation through launch.</p></article>
+</div></div></section>
 
-    <div class="grid why-grid">
-      <article class="card">
-        <span class="tag">PRODUCTION, NOT PROTOTYPES</span>
-        <p>Engineering decisions consider security, testing, deployment and maintainability from day one — not bolted on after launch.</p>
-      </article>
-      <article class="card">
-        <span class="tag">FULL-STACK OWNERSHIP</span>
-        <p>Frontend, backend, database, integrations and deployment — one engineer accountable for the whole system, not a hand-off between teams.</p>
-      </article>
-      <article class="card">
-        <span class="tag">DIRECT COMMUNICATION</span>
-        <p>No account managers, no agency layers. You talk to the person writing the code.</p>
-      </article>
-      <article class="card">
-        <span class="tag">TRANSPARENT DELIVERY</span>
-        <p>Milestones, documentation, source ownership and clear scope — you always know where the project stands.</p>
-      </article>
-    </div>
-  </div>
-</section>
+<section class="seo-depth"><div class="container seo-depth-grid"><div><span class="eyebrow eyebrow-amber">// FOR SEARCHERS & DECISION MAKERS</span><h2 class="section-heading">Looking for a website, app or software partner?</h2></div><div><p>Neelastack designs and develops custom websites and web applications for businesses that want more than a brochure. We can help you build an online store, booking system, customer portal, business dashboard, membership platform, internal workflow or a completely custom product.</p><p>Whether you're a gym owner taking memberships online, a retailer moving beyond a physical store, a clinic improving appointment discovery, a restaurant building a better ordering experience or a growing company replacing manual processes, we start with the business problem and build the right digital solution around it.</p><a routerLink="/industries" class="text-link">Explore business solutions →</a></div></div></section>
 
-<section class="cta-band bg-grid">
-  <div class="container cta-inner">
-    <span class="eyebrow eyebrow-amber">// LET'S TALK</span>
-    <h2 class="section-heading">Have a system to build, fix, or modernize?</h2>
-    <p class="section-sub center-sub">Tell me which one — I'll reply with a scoped estimate, not a sales call.</p>
+<section class="cta-band bg-grid"><div class="container cta-inner"><span class="eyebrow eyebrow-amber">// LET'S MAKE IT REAL</span><h2 class="section-heading">Tell us what your business needs to do next.</h2><p class="section-sub center-sub">We'll help you understand what to build, what it could cost and what the right next step looks like — without requiring you to speak technology.</p><div class="cta-actions"><a routerLink="/contact" class="btn btn-primary btn-arrow">Tell us about your business <span class="arrow">→</span></a><a routerLink="/book" class="btn btn-ghost">Book a free strategy call</a></div></div></section>
 
-    <div class="cta-paths">
-      <a routerLink="/estimate" [queryParams]="{ intent: 'build' }" class="card card-tilt cta-path">
-        <span class="tag">BUILD</span>
-        <h3>Something new</h3>
-        <p>A platform, product, or MVP built from architecture through launch.</p>
-        <span class="cta-path-link">Start building <span class="arrow">→</span></span>
-      </a>
-      <a routerLink="/estimate" [queryParams]="{ intent: 'fix' }" class="card card-tilt cta-path">
-        <span class="tag">FIX</span>
-        <h3>Something broken</h3>
-        <p>Bugs, outages, performance issues, or a system nobody wants to touch.</p>
-        <span class="cta-path-link">Get it stabilized <span class="arrow">→</span></span>
-      </a>
-      <a routerLink="/estimate" [queryParams]="{ intent: 'modernize' }" class="card card-tilt cta-path">
-        <span class="tag">MODERNIZE</span>
-        <h3>Something old</h3>
-        <p>Legacy code, outdated stacks, or infrastructure due for a rebuild.</p>
-        <span class="cta-path-link">Plan the upgrade <span class="arrow">→</span></span>
-      </a>
-    </div>
-  </div>
-</section>
-
-<section class="review-band">
-  <div class="container review-inner">
-    <div>
-      <span class="eyebrow">// ALREADY HAVE AN APPLICATION?</span>
-      <h3>Get a focused architecture review.</h3>
-      <p>Performance, security, scalability, and technical debt — a written summary, not a sales call.</p>
-    </div>
-    <a routerLink="/architecture-review" class="btn btn-ghost btn-arrow">
-      Request an architecture review <span class="arrow">→</span>
-    </a>
-  </div>
-</section>
+<section class="review-band"><div class="container review-inner"><div><span class="eyebrow">// ALREADY HAVE A SYSTEM?</span><h3>We'll help you find out what's holding it back.</h3><p>Performance, security, scalability, technical debt and the next practical step — presented in a decision-ready review.</p></div><a routerLink="/architecture-review" class="btn btn-ghost btn-arrow">Request an architecture review <span class="arrow">→</span></a></div></section>

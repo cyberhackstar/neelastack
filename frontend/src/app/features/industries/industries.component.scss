@@ -1,0 +1,8 @@
+.industry-hero{padding:6.5rem 0 5rem;border-bottom:1px solid var(--color-border)}
+.industry-hero h1{max-width:920px;font-family:var(--font-display);font-size:clamp(2.5rem,6vw,5rem);line-height:1.03;letter-spacing:-.035em;margin:0 0 1.4rem}
+.hero-copy{max-width:760px;color:var(--color-text-muted);font-size:1.12rem;line-height:1.75;margin:0}
+.hero-actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2rem}
+.industry-grid-section{padding:5rem 0}.section-intro{max-width:760px;margin-bottom:2.5rem}.industry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}
+.industry-card{position:relative;text-decoration:none;min-height:330px;display:flex;flex-direction:column;gap:.7rem;overflow:hidden}.industry-index{font-family:var(--font-mono);font-size:.72rem;color:var(--color-amber);letter-spacing:.08em}.industry-card h2{font-family:var(--font-display);font-size:clamp(1.35rem,2vw,1.8rem);margin:0}.industry-short,.industry-outcome{margin:0;color:var(--color-text-muted);line-height:1.6}.industry-outcome{color:var(--color-text)}.tag-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.45rem}.industry-link{margin-top:auto;font-family:var(--font-mono);font-size:.8rem;color:var(--color-amber)}
+.business-message{border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);padding:3.5rem 0;background:var(--color-panel)}.business-message-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem}
+@media(max-width:820px){.industry-grid{grid-template-columns:1fr}.business-message-inner{flex-direction:column;align-items:flex-start}}

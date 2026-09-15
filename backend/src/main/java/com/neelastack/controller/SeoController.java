@@ -35,6 +35,13 @@ public class SeoController {
         // crawlers to distrust the signal).
         addUrl(xml, baseUrl + "/", "1.0", "weekly", null);
         addUrl(xml, baseUrl + "/services", "0.9", "monthly", null);
+        addUrl(xml, baseUrl + "/industries", "0.9", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/gyms-fitness", "0.8", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/retail-ecommerce", "0.8", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/restaurants-hospitality", "0.8", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/healthcare-clinics", "0.8", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/professional-services", "0.8", "monthly", null);
+        addUrl(xml, baseUrl + "/industries/startups", "0.8", "monthly", null);
         addUrl(xml, baseUrl + "/portfolio", "0.9", "weekly", null);
         addUrl(xml, baseUrl + "/blog", "0.9", "daily", null);
         addUrl(xml, baseUrl + "/solutions", "0.9", "monthly", null);

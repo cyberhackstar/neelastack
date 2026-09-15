@@ -8,7 +8,18 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
-    title: 'Neelastack — Enterprise-grade Web Applications',
+    title: 'Neelastack — Web & Software Development for Growing Businesses',
+  },
+  {
+    path: 'industries',
+    loadComponent: () =>
+      import('./features/industries/industries.component').then((m) => m.IndustriesComponent),
+    title: 'Web & Software Solutions for Businesses — Neelastack',
+  },
+  {
+    path: 'industries/:slug',
+    loadComponent: () =>
+      import('./features/industries/industry-detail.component').then((m) => m.IndustryDetailComponent),
   },
   {
     path: 'services',
