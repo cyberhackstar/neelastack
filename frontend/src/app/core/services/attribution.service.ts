@@ -31,9 +31,10 @@ export class AttributionService {
     const params = route.snapshot.queryParamMap;
     const utmSource = params.get('utm_source') ?? undefined;
     const utmMedium = params.get('utm_medium') ?? undefined;
-    const utmCampaign = params.get('utm_campaign') ?? undefined;
+    const referral = params.get('ref') ?? undefined;
+    const utmCampaign = params.get('utm_campaign') ?? referral ?? undefined;
 
-    if (!utmSource && !utmMedium && !utmCampaign && !document.referrer) {
+    if (!utmSource && !utmMedium && !utmCampaign && !referral && !document.referrer) {
       return; // nothing worth storing (e.g. a direct visit with no params)
     }
 

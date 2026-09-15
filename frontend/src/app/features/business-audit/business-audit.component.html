@@ -1,0 +1,58 @@
+<section class="audit-hero bg-grid">
+  <div class="container hero-inner">
+    <div>
+      <span class="eyebrow eyebrow-amber">// FREE BUSINESS AUDIT</span>
+      <h1>See how strong your business is online.</h1>
+      <p class="hero-copy">Answer six quick questions and get a free digital readiness score. No technical knowledge needed — just tell us how your business works today.</p>
+      <div class="hero-points"><span>✓ Customer journey</span><span>✓ Lead capture</span><span>✓ Online presence</span><span>✓ Growth opportunities</span></div>
+    </div>
+    <div class="hero-note card"><span class="label">BUILT FOR BUSINESS OWNERS</span><h2>Not a technical audit.</h2><p>It's a practical way to see where your digital experience could make it easier for customers to discover, trust, buy or book with you.</p><a routerLink="/architecture-review" class="text-link">Already have a software system? Get a technical review →</a></div>
+  </div>
+</section>
+
+<section class="audit-main">
+  <div class="container">
+    @if (step() === 'form') {
+      <form [formGroup]="form" (ngSubmit)="score()" novalidate class="card audit-card">
+        <div class="form-head"><span class="eyebrow">01 / YOUR BUSINESS</span><h2>Tell us what your business looks like today.</h2><p>Every question has a simple answer. Choose the closest fit.</p></div>
+        <div class="question-grid">
+          <label [class.invalid]="hasError('industry')"><span>What kind of business do you run? <b aria-hidden="true">*</b></span><select formControlName="industry" aria-label="Industry" [attr.aria-invalid]="hasError('industry')"><option value="">Choose an industry</option>@for (item of industries; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('industry')) {<small class="field-error">Choose your industry.</small>}</label>
+          <label [class.invalid]="hasError('websitePresence')"><span>How would you describe your website? <b aria-hidden="true">*</b></span><select formControlName="websitePresence" aria-label="Website presence" [attr.aria-invalid]="hasError('websitePresence')"><option value="">Choose one</option>@for (item of websiteOptions; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('websitePresence')) {<small class="field-error">Choose the closest option.</small>}</label>
+          <label [class.invalid]="hasError('customerAction')"><span>What can customers do online today? <b aria-hidden="true">*</b></span><select formControlName="customerAction" aria-label="Customer action" [attr.aria-invalid]="hasError('customerAction')"><option value="">Choose one</option>@for (item of actionOptions; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('customerAction')) {<small class="field-error">Choose the closest option.</small>}</label>
+          <label [class.invalid]="hasError('leadCapture')"><span>How do you capture new enquiries? <b aria-hidden="true">*</b></span><select formControlName="leadCapture" aria-label="Lead capture" [attr.aria-invalid]="hasError('leadCapture')"><option value="">Choose one</option>@for (item of leadOptions; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('leadCapture')) {<small class="field-error">Choose the closest option.</small>}</label>
+          <label [class.invalid]="hasError('localDiscovery')"><span>How easy are you to find locally? <b aria-hidden="true">*</b></span><select formControlName="localDiscovery" aria-label="Local discovery" [attr.aria-invalid]="hasError('localDiscovery')"><option value="">Choose one</option>@for (item of localOptions; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('localDiscovery')) {<small class="field-error">Choose the closest option.</small>}</label>
+          <label [class.invalid]="hasError('primaryGoal')"><span>What matters most right now? <b aria-hidden="true">*</b></span><select formControlName="primaryGoal" aria-label="Primary goal" [attr.aria-invalid]="hasError('primaryGoal')"><option value="">Choose your goal</option>@for (item of goals; track item) {<option [value]="item">{{ item }}</option>}</select>@if (hasError('primaryGoal')) {<small class="field-error">Choose your primary goal.</small>}</label>
+        </div>
+        @if (errorMessage()) {<p class="error" role="alert">{{ errorMessage() }}</p>}
+        <div class="submit-row"><button type="submit" class="btn btn-primary btn-arrow" [disabled]="scoring()">{{ scoring() ? 'Calculating…' : 'Show my digital score' }} <span aria-hidden="true">→</span></button><span class="trust">Free · No spam · Takes about 60 seconds</span></div>
+      </form>
+    }
+
+    @if (step() === 'result' && preview(); as p) {
+      <div class="card result-card"><div class="result-top"><div><span class="eyebrow eyebrow-amber">// YOUR DIGITAL READINESS</span><h2>{{ p.level }}</h2><p>{{ p.disclaimer }}</p></div><div class="score"><span>{{ p.score }}</span><small>/ 100</small></div></div><div class="result-findings"><h3>What stands out</h3><ul>@for (finding of p.teaserFindings; track finding) {<li>{{ finding }}</li>}</ul>@if (p.lockedFindingsCount > 0) {<p class="locked">🔒 {{ p.lockedFindingsCount }} more opportunit{{ p.lockedFindingsCount === 1 ? 'y' : 'ies' }} in your full report.</p>}</div><button type="button" class="btn btn-primary btn-arrow" (click)="goToUnlock()">Get my full business report <span aria-hidden="true">→</span></button></div>
+    }
+
+    @if (step() === 'unlock') {
+      <form [formGroup]="unlockForm" (ngSubmit)="unlock()" novalidate class="card audit-card unlock-card">
+        <span class="eyebrow eyebrow-amber">02 / GET THE FULL REPORT</span><h2>Where should we send your recommendations?</h2><p class="section-sub">Your answers are already saved. Add a few details so we can turn the result into a useful business conversation.</p>
+        <div class="question-grid two">
+          <label><span>Name <b aria-hidden="true">*</b></span><input type="text" formControlName="name" autocomplete="name" aria-label="Name" placeholder="Your name" />@if (unlockForm.controls.name.touched && unlockForm.controls.name.hasError('required')) {<small class="field-error">Your name is required.</small>}@else if (unlockForm.controls.name.touched && unlockForm.controls.name.hasError('minlength')) {<small class="field-error">Enter at least 2 characters.</small>}</label>
+          <label><span>Work email <b aria-hidden="true">*</b></span><input type="email" formControlName="email" autocomplete="email" aria-label="Email" placeholder="you@company.com" />@if (unlockForm.controls.email.touched && unlockForm.controls.email.hasError('required')) {<small class="field-error">Email address is required.</small>}@else if (unlockForm.controls.email.touched && unlockForm.controls.email.hasError('email')) {<small class="field-error">Enter a valid email address.</small>}</label>
+          <label><span>Company</span><input type="text" formControlName="company" autocomplete="organization" aria-label="Company" placeholder="Your business" /></label>
+          <label><span>City</span><input type="text" formControlName="city" autocomplete="address-level2" aria-label="City" placeholder="Jaipur, Mumbai, Delhi…" /></label>
+          <label class="wide"><span>Website</span><input type="url" formControlName="website" autocomplete="url" aria-label="Website" placeholder="https://yourbusiness.com" /></label>
+          <label class="wide"><span>Phone</span><input type="tel" formControlName="phone" autocomplete="tel" aria-label="Phone" placeholder="+91 98765 43210" /></label>
+        </div>
+        @if (errorMessage()) {<p class="error" role="alert">{{ errorMessage() }}</p>}
+        <button type="submit" class="btn btn-primary btn-arrow" [disabled]="unlocking()">{{ unlocking() ? 'Preparing report…' : 'Unlock my report' }} <span aria-hidden="true">→</span></button>
+      </form>
+    }
+
+    @if (step() === 'unlocked' && preview(); as p) {
+      <div class="report-card">
+        <div class="report-hero card"><div><span class="eyebrow eyebrow-amber">// YOUR BUSINESS REPORT</span><h2>{{ p.score }}/100 — {{ p.level }}</h2><p>{{ p.disclaimer }}</p></div><div class="report-score">{{ p.score }}</div></div>
+        <div class="report-grid"><section class="card"><span class="label">OPPORTUNITIES</span><h3>Where the biggest improvements are likely to be</h3>@for (finding of findings(); track finding.title) {<article class="finding"><div><span class="priority">{{ finding.priority }}</span><h4>{{ finding.title }}</h4></div><p>{{ finding.summary }}</p><strong>Opportunity</strong><p>{{ finding.opportunity }}</p></article>}</section><aside class="card recommendations"><span class="label">RECOMMENDED NEXT STEP</span><h3>A practical starting point for your business</h3><ul>@for (item of recommendations(); track item) {<li>{{ item }}</li>}</ul>@if (bookingUrl()) {<app-booking-widget [bookingUrl]="bookingUrl()!" />} @else {<a routerLink="/book" class="btn btn-primary">Book a strategy call <span aria-hidden="true">→</span></a>}<a routerLink="/estimate" class="text-link">Get a tailored project estimate →</a></aside></div>
+      </div>
+    }
+  </div>
+</section>

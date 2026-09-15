@@ -35,6 +35,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: "estimate", renderMode: RenderMode.Prerender },
   { path: "architecture-review", renderMode: RenderMode.Prerender },
   { path: "audit-preview", renderMode: RenderMode.Prerender },
+  { path: "free-business-audit", renderMode: RenderMode.Prerender },
 
   // ---- Server-rendered per request: reads live CMS/DB data ----
   { path: "", renderMode: RenderMode.Server },

@@ -49,6 +49,7 @@ public class SeoController {
         addUrl(xml, baseUrl + "/team", "0.6", "monthly", null);
         addUrl(xml, baseUrl + "/estimate", "0.9", "monthly", null);
         addUrl(xml, baseUrl + "/architecture-review", "0.9", "monthly", null);
+        addUrl(xml, baseUrl + "/free-business-audit", "1.0", "monthly", null);
         addUrl(xml, baseUrl + "/contact", "0.6", "monthly", null);
 
         // Programmatic SEO silo pages — high-intent, one URL per tech-stack/engagement

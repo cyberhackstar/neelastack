@@ -4,6 +4,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
 import { InquiryService } from '../../core/services/inquiry.service';
 import { BookingWidgetComponent } from '../../shared/components/booking-widget/booking-widget.component';
+import { AttributionService } from '../../core/services/attribution.service';
+import { GaAnalyticsService } from '../../core/services/ga-analytics.service';
 
 // Maps the homepage "Build / Fix / Modernize" CTA to a sensible starting
 // project type, so picking a path on the homepage actually saves the person
@@ -26,6 +28,8 @@ export class ContactComponent implements OnInit {
   private seo = inject(SeoService);
   private inquiryService = inject(InquiryService);
   private route = inject(ActivatedRoute);
+  private attribution = inject(AttributionService);
+  private ga = inject(GaAnalyticsService);
 
   submitting = signal(false);
   submitted = signal(false);
@@ -89,11 +93,12 @@ export class ContactComponent implements OnInit {
     this.submitting.set(true);
     this.errorMessage.set(null);
 
-    this.inquiryService.submitInquiry(this.form.getRawValue()).subscribe({
+    this.inquiryService.submitInquiry({ ...this.form.getRawValue(), ...this.attribution.get() }).subscribe({
       next: (inquiry) => {
         this.submitting.set(false);
         this.submitted.set(true);
         this.bookingUrl.set(inquiry.bookingUrl ?? null);
+        this.ga.trackEvent('contact_submit', { source: this.attribution.get().utmSource ?? 'direct' });
       },
       error: (err) => {
         this.submitting.set(false);

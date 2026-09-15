@@ -76,8 +76,9 @@ server:
   port: ${SERVER_PORT:8080}
   compression:
     enabled: true
-  error:
-    include-message: always
+  web:
+    error:
+      include-message: always
   # Everything in prod reaches this app as: browser --https--> Cloudflare edge
   # --http--> cloudflared tunnel --http--> nginx (infra/nginx/neelastack.conf, which
   # sets X-Forwarded-Proto: https) --http--> here. Without this, Spring sees every

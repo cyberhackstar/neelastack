@@ -75,6 +75,52 @@ test.describe('Public acquisition funnel', () => {
 
 
 
+
+test.describe('Business acquisition audit', () => {
+  test('free business audit validates, scores and unlocks the full report', async ({ page }) => {
+    await page.goto('/free-business-audit', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: /see how strong your business is online/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /show my digital score/i }).click();
+    const industrySelect = page.getByLabel('Industry');
+    await expect(industrySelect).toBeVisible();
+    await expect(industrySelect).toHaveValue('');
+
+    await industrySelect.selectOption({ label: 'Gym / fitness business' });
+    await expect(industrySelect).toHaveValue('Gym / fitness business');
+    await page.getByLabel('Website presence').selectOption({ label: 'Basic / outdated website' });
+    await page.getByLabel('Customer action').selectOption({ label: 'Mostly offline' });
+    await page.getByLabel('Lead capture').selectOption({ label: 'Manual / unclear' });
+    await page.getByLabel('Local discovery').selectOption({ label: 'Weak / unsure' });
+    await page.getByLabel('Primary goal').selectOption({ label: 'Get more customers' });
+
+    const scorePromise = page.waitForResponse(
+      (response) => response.url().includes('/api/v1/public/business-audit/score') && response.request().method() === 'POST',
+      { timeout: 20000 },
+    );
+    await page.getByRole('button', { name: /show my digital score/i }).click();
+    const scoreResponse = await scorePromise;
+    expect(scoreResponse.status()).toBe(200);
+    await expect(page.getByRole('heading', { name: /room to grow|needs attention|solid foundation/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /get my full business report/i }).click();
+    await page.getByLabel('Name', { exact: true }).fill('E2E Audit User');
+    await page.getByLabel('Email', { exact: true }).fill('e2e-business-audit@example.com');
+    await page.getByLabel('Company', { exact: true }).fill('E2E Business');
+    await page.getByLabel('City', { exact: true }).fill('Jaipur');
+
+    const unlockPromise = page.waitForResponse(
+      (response) => response.url().includes('/api/v1/public/business-audit/unlock') && response.request().method() === 'POST',
+      { timeout: 20000 },
+    );
+    await page.getByRole('button', { name: /unlock my report/i }).click();
+    const unlockResponse = await unlockPromise;
+    expect(unlockResponse.status()).toBe(201);
+    await expect(page.getByText('YOUR BUSINESS REPORT', { exact: false })).toBeVisible();
+    await expect(page.getByText(/\d+\/100/)).toBeVisible();
+  });
+});
+
 test.describe('Public form validation and scheduling', () => {
   test('contact form explains invalid required fields instead of silently doing nothing', async ({ page }) => {
     await page.goto('/contact', { waitUntil: 'domcontentloaded' });

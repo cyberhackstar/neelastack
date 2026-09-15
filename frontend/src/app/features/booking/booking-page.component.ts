@@ -3,6 +3,8 @@ import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { ActivatedRoute } from "@angular/router";
+import { AttributionService } from "../../core/services/attribution.service";
+import { GaAnalyticsService } from "../../core/services/ga-analytics.service";
 import { BookingService } from "../../core/services/booking.service";
 import { SeoService } from "../../core/services/seo.service";
 import {
@@ -30,6 +32,8 @@ export class BookingPageComponent implements OnInit {
   private bookingService = inject(BookingService);
   private fb = inject(FormBuilder);
   private seo = inject(SeoService);
+  private attribution = inject(AttributionService);
+  private ga = inject(GaAnalyticsService);
 
   meetingType = signal<MeetingTypeDto | null>(null);
   loading = signal(true);
@@ -220,15 +224,18 @@ export class BookingPageComponent implements OnInit {
             ? window.location.href.slice(0, 300)
             : undefined,
         referrer:
-          typeof document !== "undefined"
-            ? document.referrer.slice(0, 300)
-            : undefined,
+          this.attribution.get().referrer ??
+          (typeof document !== "undefined" ? document.referrer.slice(0, 300) : undefined),
+        utmSource: this.attribution.get().utmSource,
+        utmMedium: this.attribution.get().utmMedium,
+        utmCampaign: this.attribution.get().utmCampaign,
       })
       .subscribe({
         next: (booking) => {
           this.confirmation.set(booking);
           this.step.set("confirmed");
           this.submitting.set(false);
+          this.ga.trackEvent("booking_complete", { meeting_type: booking.meetingTypeName });
         },
         error: (err) => {
           this.submitError.set(

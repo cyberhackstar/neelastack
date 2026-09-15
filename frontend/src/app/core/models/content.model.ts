@@ -180,6 +180,11 @@ export interface InquiryPayload {
   projectType?: string;
   budgetRange?: string;
   message: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  referrer?: string;
+  landingPage?: string;
 }
 
 export interface Estimate {
@@ -242,6 +247,53 @@ export interface ArchitectureReviewPayload {
 export interface EstimatorResponse {
   inquiry: Inquiry;
   estimate: Estimate;
+}
+
+export interface BusinessAuditPreviewPayload {
+  industry: string;
+  websitePresence: string;
+  customerAction: string;
+  leadCapture: string;
+  localDiscovery: string;
+  primaryGoal: string;
+}
+
+export interface BusinessAuditPreviewResult {
+  score: number;
+  level: 'SOLID FOUNDATION' | 'ROOM TO GROW' | 'NEEDS ATTENTION';
+  teaserFindings: string[];
+  lockedFindingsCount: number;
+  disclaimer: string;
+}
+
+export interface BusinessAuditUnlockPayload extends BusinessAuditPreviewPayload {
+  website?: string;
+  city?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  referrer?: string;
+  landingPage?: string;
+}
+
+export interface BusinessAuditFinding {
+  title: string;
+  priority: string;
+  summary: string;
+  opportunity: string;
+}
+
+export interface BusinessAuditUnlockResult {
+  inquiry: Inquiry;
+  score: number;
+  level: 'SOLID FOUNDATION' | 'ROOM TO GROW' | 'NEEDS ATTENTION';
+  findings: BusinessAuditFinding[];
+  recommendations: string[];
+  disclaimer: string;
 }
 
 // ---- Module 1: Instant Architecture Risk Score (/audit-preview) ----

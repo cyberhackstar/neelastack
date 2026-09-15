@@ -89,6 +89,12 @@ export const routes: Routes = [
     title: 'Instant Architecture Risk Score — Neelastack',
   },
   {
+    path: 'free-business-audit',
+    loadComponent: () =>
+      import('./features/business-audit/business-audit.component').then((m) => m.BusinessAuditComponent),
+    title: 'Free Business Digital Audit — Neelastack',
+  },
+  {
     path: 'contact',
     loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent),
     title: 'Contact — Neelastack',

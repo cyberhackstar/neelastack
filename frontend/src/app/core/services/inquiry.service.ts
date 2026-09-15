@@ -3,6 +3,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import {
   ArchitectureReviewPayload,
+  BusinessAuditPreviewPayload,
+  BusinessAuditPreviewResult,
+  BusinessAuditUnlockPayload,
+  BusinessAuditUnlockResult,
   AuditPreviewPayload,
   AuditPreviewResult,
   AuditUnlockPayload,
@@ -33,6 +37,14 @@ export class InquiryService {
 
   submitArchitectureReview(payload: ArchitectureReviewPayload) {
     return this.http.post<Inquiry>(`${this.publicBase}/architecture-review`, payload);
+  }
+
+  scoreBusinessAudit(payload: BusinessAuditPreviewPayload) {
+    return this.http.post<BusinessAuditPreviewResult>(`${this.publicBase}/business-audit/score`, payload);
+  }
+
+  unlockBusinessAudit(payload: BusinessAuditUnlockPayload) {
+    return this.http.post<BusinessAuditUnlockResult>(`${this.publicBase}/business-audit/unlock`, payload);
   }
 
   /** Module 1, step 1 — free, anonymous, nothing persisted server-side. */

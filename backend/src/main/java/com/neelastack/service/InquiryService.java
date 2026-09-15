@@ -73,6 +73,11 @@ public class InquiryService {
                 .intent(InquiryIntent.GENERAL)
                 .leadScore(score)
                 .leadTier(leadScoringService.tier(score))
+                .utmSource(request.utmSource())
+                .utmMedium(request.utmMedium())
+                .utmCampaign(request.utmCampaign())
+                .referrer(request.referrer())
+                .landingPage(request.landingPage())
                 .build();
 
         Inquiry saved = inquiryRepository.saveAndFlush(inquiry);
