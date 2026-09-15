@@ -1,45 +1,9 @@
-<section class="page-header">
-  <div class="container">
-    <span class="eyebrow">// TEAM</span>
-    <h1 class="section-heading">Small by design.</h1>
-    <p class="section-sub">
-      Neelastack is Bhawesh's practice — every engagement is led by him
-      personally, start to finish. For larger builds, he brings in a small
-      network of engineers he trusts, rather than handing your project off to
-      whoever's free.
-    </p>
-  </div>
-</section>
-<section class="team-grid-section">
-  <div class="container grid">
-    @for (member of team(); track member.name) {
-      <article class="card card-tilt member-card">
-        <div class="avatar">
-          @if (member.photoUrl) {
-            <img [src]="member.photoUrl" [alt]="member.name" loading="lazy" width="96" height="96" />
-          } @else {
-            <span class="avatar-fallback">{{ member.initials }}</span>
-          }
-        </div>
-        <h2>{{ member.name }}</h2>
-        <span class="role">{{ member.role }}</span>
-        <p>{{ member.bio }}</p>
-        <div class="tags">
-          @for (skill of member.skills; track skill) {
-            <span class="tag">{{ skill }}</span>
-          }
-        </div>
-      </article>
-    }
-  </div>
-</section>
-<section class="cta-band">
-  <div class="container cta-inner">
-    <h2 class="section-heading">One point of contact, always accountable.</h2>
-    <p class="section-sub">
-      No account managers relaying messages between you and the engineer. You
-      talk directly to the person writing the code.
-    </p>
-    <a routerLink="/contact" class="btn btn-primary">Start a conversation</a>
-  </div>
-</section>
+<section class="team-hero"><div class="container hero-grid"><div><span class="eyebrow eyebrow-amber">// PEOPLE & ACCOUNTABILITY</span><h1 class="section-heading">A focused team, built around trust.</h1><p class="section-sub">Neelastack stays intentionally small: direct leadership, senior attention to the important decisions, and a trusted network that can expand around the work when a project calls for it.</p><div class="hero-actions"><a routerLink="/contact" class="btn btn-primary">Meet us through a project →</a><a routerLink="/about" class="btn btn-ghost">Our approach</a></div></div><div class="hero-note card"><span class="eyebrow">THE MODEL</span><strong>Small core.<br/>High ownership.</strong><p>Less handoff. More context. Faster decisions.</p></div></div></section>
+
+<section class="people"><div class="container"><div class="section-header"><div><span class="eyebrow">01 / THE PEOPLE</span><h2 class="section-heading">Meet the team behind the work.</h2></div><span class="section-caption">Leadership · specialists · delivery</span></div><div class="grid">@for(member of team(); track member.name){<article class="card card-tilt member-card"><div class="avatar">@if(member.photoUrl){<img [src]="member.photoUrl" [alt]="member.name" loading="lazy" width="112" height="112"/>}@else{<span class="avatar-fallback">{{ member.initials }}</span>}</div><div class="member-top"><div><h2>{{ member.name }}</h2><span class="role">{{ member.role }}</span></div><span class="member-index">{{ ($index+1).toString().padStart(2,'0') }}</span></div><p>{{ member.bio }}</p><div class="tags">@for(skill of member.skills; track skill){<span class="tag">{{ skill }}</span>}</div></article>}</div></div></section>
+
+<section class="collaboration"><div class="container"><span class="eyebrow">02 / HOW WE COLLABORATE</span><h2 class="section-heading">Designed to keep ownership obvious.</h2><div class="collab-grid">@for(item of collaboration; track item.label){<article class="collab-item"><span>{{ item.label }}</span><h3>{{ item.title }}</h3><p>{{ item.description }}</p></article>}</div></div></section>
+
+<section class="working-style"><div class="container style-grid"><div><span class="eyebrow eyebrow-amber">03 / WORKING STYLE</span><h2 class="section-heading">You should know who is making the important calls.</h2></div><div><p>There is no unnecessary layer between your business and the engineering decisions shaping the product. The team is assembled around the work, not around a large org chart.</p><p>That makes the experience feel closer to a premium product studio: thoughtful discovery, clear communication, and enough technical depth to handle the hard parts properly.</p></div></div></section>
+
+<section class="cta-band"><div class="container cta-inner"><span class="eyebrow">LET'S BUILD</span><h2 class="section-heading">Bring us the outcome you need to create.</h2><p class="section-sub">We'll bring the team, structure and engineering discipline to turn it into a product people can rely on.</p><a routerLink="/contact" class="btn btn-primary">Start a conversation →</a></div></section>

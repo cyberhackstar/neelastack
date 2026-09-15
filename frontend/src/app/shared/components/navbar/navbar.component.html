@@ -3,6 +3,7 @@
     <app-logo></app-logo>
 
     <nav class="primary-nav" aria-label="Primary">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">Home</a>
       <a routerLink="/services" routerLinkActive="active" ariaCurrentWhenActive="page">Services</a>
       <a routerLink="/industries" routerLinkActive="active" ariaCurrentWhenActive="page">For your business</a>
       <a routerLink="/solutions" routerLinkActive="active" ariaCurrentWhenActive="page">Solutions</a>
@@ -62,6 +63,7 @@
       (keydown)="onPanelKeydown($event)"
     >
       <nav class="mobile-links" aria-label="Mobile primary">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">Home</a>
         <a routerLink="/services" routerLinkActive="active" ariaCurrentWhenActive="page">Services</a>
         <a routerLink="/industries" routerLinkActive="active" ariaCurrentWhenActive="page">For your business</a>
         <a routerLink="/solutions" routerLinkActive="active" ariaCurrentWhenActive="page">Solutions</a>

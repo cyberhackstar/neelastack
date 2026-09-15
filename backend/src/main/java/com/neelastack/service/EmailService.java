@@ -24,9 +24,9 @@ import java.util.List;
  * All user-facing mail is sent as responsive HTML with a simple Neelastack
  * visual system: dark header, blue accent, clean cards, and mobile-safe layout.
  *
- * Failures are logged, not thrown, for ordinary notifications. The testimonial
- * request intentionally propagates MailException so its outbox-style retry
- * logic can record the actual delivery failure.
+ * Failures are logged, not thrown, for ordinary asynchronous notifications.
+ * Quotation delivery is intentionally synchronous and propagates its mail failure so
+ * the API can report a failed send instead of falsely marking the quotation as SENT.
  */
 @Service
 @RequiredArgsConstructor
@@ -137,8 +137,8 @@ public class EmailService {
         sendHtml(adminAddress, title, htmlEmail(title, content, "A new opportunity is ready for review."));
     }
 
-    @Async
-    public void sendQuotation(Quotation quotation) {
+    /** Sends a quotation synchronously so the admin UI only marks it SENT after SMTP accepts it. */
+    public void sendQuotationNow(Quotation quotation) {
         StringBuilder items = new StringBuilder();
         BigDecimal total = BigDecimal.ZERO;
 
@@ -208,7 +208,7 @@ public class EmailService {
                 escAttr(quotation.getPublicToken())
         );
 
-        sendHtml(
+        sendHtmlOrThrow(
                 quotation.getInquiry().getEmail(),
                 "Your Neelastack quotation — " + quotation.getTitle(),
                 htmlEmail(title, content, "A clear scope, price, and next step.")

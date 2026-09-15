@@ -321,15 +321,14 @@ public class QuotationService {
         inquiry.setStatus(InquiryStatus.QUOTED);
         inquiryRepository.save(inquiry);
 
-        // sendQuotation is @Async and runs on a separate thread with no Hibernate session,
-        // so every lazy association/collection the email template touches must be initialized
-        // while this transaction is still open. The template reads both the line-items and
+        // The quotation email is dispatched synchronously so a failed SMTP delivery
+        // failure cannot leave the quotation incorrectly marked SENT. The email template reads both the line-items and
         // the Inquiry's name/email; initializing only lineItems would still make quotation
         // emails fail with LazyInitializationException when the async worker dereferences
         // saved.getInquiry().
         Hibernate.initialize(saved.getLineItems());
         Hibernate.initialize(saved.getInquiry());
-        emailService.sendQuotation(saved);
+        emailService.sendQuotationNow(saved);
 
         auditLogService.recordBestEffort(AuditAction.QUOTATION_DISPATCHED, "Quotation", saved.getId().toString(), null);
 

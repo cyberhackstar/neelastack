@@ -28,12 +28,19 @@ export class TeamComponent implements OnInit {
     { name: "Padmasinha Chitte", role: "Collaborating Engineer", bio: "Brought in on select engagements that need extra hands or a second set of eyes on architecture decisions.", initials: "PC", photoUrl: "https://res.cloudinary.com/ddrt7emvo/image/upload/v1789237020/padam_team_x16tpe.png", skills: ["Software Engineering"] },
     { name: "Anuragdeep Srivastav", role: "Collaborating Engineer", bio: "Brought in on select engagements that need extra hands or a second set of eyes on architecture decisions.", initials: "AS", photoUrl: "https://res.cloudinary.com/ddrt7emvo/image/upload/v1789237020/anurag_team_lunwb2.png", skills: ["Software Engineering"] },
   ];
+
+  readonly collaboration = [
+    { label: 'Leadership', title: 'One accountable owner', description: 'Every engagement has a clear technical lead responsible for decisions, quality and delivery.' },
+    { label: 'Specialists', title: 'Expertise when the work needs it', description: 'A trusted network can join selectively for focused engineering, design or delivery needs.' },
+    { label: 'Client experience', title: 'Direct access, less handoff', description: 'The people making the product stay close to the people using and funding it.' },
+  ];
+
   private readonly http = inject(HttpClient);
   ngOnInit(): void {
     this.seo.update({
       title: "Team",
       description:
-        "Meet the people behind Neelastack — the engineers trusted to deliver client work.",
+        "Meet the people behind Neelastack — a focused engineering team built around direct accountability, specialist depth and premium client delivery.",
       path: "/team",
     });
     this.http.get<ApiTeamMember[]>(`${environment.apiBaseUrl}/public/team-members`).subscribe({

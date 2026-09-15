@@ -39,6 +39,19 @@ export class AboutComponent implements OnInit {
     },
   ];
 
+
+  readonly principles = [
+    { number: '01', title: 'Clarity before complexity', description: 'We start with the business outcome, then design only the technology needed to get there.' },
+    { number: '02', title: 'Production is the product', description: 'Security, testing, observability, deployment and maintainability belong in the definition of done.' },
+    { number: '03', title: 'Direct accountability', description: 'Decisions stay close to the people building the system, so context does not get lost between layers.' },
+  ];
+
+  readonly signals = [
+    { value: 'Business-first', label: 'Every recommendation tied to an outcome' },
+    { value: 'Full-stack', label: 'Product, platform and delivery under one roof' },
+    { value: 'Production-ready', label: 'Built for real users, real data and real operations' },
+  ];
+
   readonly certifications = [
     'Oracle Certified Java Programmer (OCJP)',
     'Data Structures & Algorithms — UpGrad',
@@ -48,7 +61,7 @@ export class AboutComponent implements OnInit {
   ngOnInit(): void {
     this.seo.update({
       title: 'About',
-      description: 'Neelastack is Bhawesh Sharma\'s independent software engineering practice — a Spring Boot and Angular specialist building production-grade systems, not prototypes.',
+      description: 'Neelastack helps growing businesses turn ambitious ideas into premium digital products, customer experiences and production-ready software.',
       path: '/about',
     });
 

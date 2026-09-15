@@ -12,6 +12,15 @@ test.describe('Public acquisition funnel', () => {
     await expect(page.locator('h1').first()).toBeVisible();
   });
 
+  test('primary navigation exposes an explicit Home link', async ({ page }) => {
+    await page.goto('/services', { waitUntil: 'domcontentloaded' });
+    const home = page.getByRole('link', { name: /^home$/i }).first();
+    await expect(home).toBeVisible();
+    await home.click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('h1').first()).toBeVisible();
+  });
+
   test('can navigate home -> services -> solutions -> contact', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
@@ -80,6 +89,17 @@ test.describe('Public form validation and scheduling', () => {
     await page.getByRole('link', { name: /schedule a call/i }).click();
     await expect(page).toHaveURL(/\/book$/);
     await expect(page.getByRole('heading', { name: /choose a time to talk/i })).toBeVisible();
+  });
+
+  test('mobile form focus zoom resets after leaving the field', async ({ page }) => {
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    const viewport = page.locator('meta[name="viewport"]');
+    const original = await viewport.getAttribute('content');
+    const email = page.getByLabel('Email', { exact: true });
+    await email.focus();
+    await email.blur();
+    await page.waitForTimeout(450);
+    await expect(viewport).toHaveAttribute('content', original ?? 'width=device-width, initial-scale=1');
   });
 
   test('auth forms show inline validation feedback', async ({ page }) => {

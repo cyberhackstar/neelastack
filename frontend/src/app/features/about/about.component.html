@@ -1,108 +1,49 @@
-<section class="page-header">
-  <div class="container">
-    <span class="eyebrow">// ABOUT</span>
-    <h1 class="section-heading">Engineering, not just code.</h1>
-    <p class="section-sub">
-      Neelastack is the independent engineering practice of Bhawesh Sharma — a full-stack Java developer who
-      builds the kind of systems he'd want to inherit: documented, tested, and boring in exactly
-      the ways production software should be boring.
-    </p>
+<section class="about-hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow eyebrow-amber">// THE NEELASTACK APPROACH</span>
+      <h1 class="section-heading">Technology should move the business forward.</h1>
+      <p class="section-sub">Neelastack partners with growing businesses to turn ideas, operational pain points and digital ambitions into polished products that are ready for customers and ready for the real world.</p>
+      <div class="hero-actions"><a routerLink="/contact" class="btn btn-primary">Start a conversation →</a><a routerLink="/portfolio" class="btn btn-ghost">Explore selected work</a></div>
+    </div>
+    <div class="hero-panel card">
+      <span class="eyebrow">AT A GLANCE</span>
+      <div class="signal-stack">@for(signal of signals; track signal.value){<div class="signal"><strong>{{ signal.value }}</strong><span>{{ signal.label }}</span></div>}</div>
+    </div>
   </div>
+</section>
+
+<section class="manifesto">
+  <div class="container manifesto-grid">
+    <div><span class="eyebrow">01 / WHY NEELASTACK</span><h2 class="section-heading">Small enough to stay accountable. Serious enough to build for production.</h2></div>
+    <div class="manifesto-copy"><p>Neelastack is the independent engineering practice of Bhawesh Sharma. The model is deliberately focused: understand the business, make the recommendation clear, build carefully, and stay accountable through launch.</p><p>The result is not technology for technology's sake. It is a digital experience, internal system or customer platform that helps the business serve people better and operate with less friction.</p></div>
+  </div>
+</section>
+
+<section class="principles">
+  <div class="container"><span class="eyebrow">02 / PRINCIPLES</span><h2 class="section-heading">How the work stays premium</h2><div class="principle-grid">@for(item of principles; track item.number){<article class="card principle-card"><span>{{ item.number }}</span><h3>{{ item.title }}</h3><p>{{ item.description }}</p></article>}</div></div>
 </section>
 
 <section class="bio">
   <div class="container bio-grid">
     <div class="bio-copy">
-      <span class="eyebrow">// BACKGROUND</span>
-      <h2 class="section-heading">Who's building this</h2>
-      <p>
-        I'm a full-stack Java developer currently working on enterprise systems at LTIMindtree,
-        where I build and maintain REST APIs on Spring Boot and PostgreSQL, ship Angular UI
-        modules, and run CI/CD pipelines through Jenkins for production deployments.
-      </p>
-      <p>
-        Outside client work, I build things end-to-end to keep my architecture instincts sharp —
-        <strong>GymAI</strong>, a microservices-based fitness platform with an AI recommendation
-        service, event-driven progress tracking over Kafka, and a self-hosted deployment on a
-        Raspberry Pi cloud server; and a <strong>car rental platform</strong> with booking,
-        payments, and vehicle-availability services wired together over ActiveMQ. Both taught me
-        more about what breaks in production than any tutorial could.
-      </p>
-      <p>
-        I hold an MCA from Lovely Professional University and a BCA from Rajasthan University,
-        and I'm an Oracle Certified Java Programmer. Neelastack exists because I'd rather build a
-        handful of things properly for people who need them done right, than a lot of things
-        quickly for people who won't notice the difference until it's too late.
-      </p>
-
-      <div class="certifications">
-        @for (cert of certifications; track cert) {
-          <span class="tag">{{ cert }}</span>
-        }
-      </div>
+      <span class="eyebrow">03 / BACKGROUND</span>
+      <h2 class="section-heading">Engineering depth with a business lens.</h2>
+      <p>I'm a full-stack Java developer currently working on enterprise systems at LTIMindtree, where I build and maintain Spring Boot and PostgreSQL services, Angular interfaces, and CI/CD workflows for production deployments.</p>
+      <p>Outside client work, I build end-to-end systems to keep architecture instincts practical — including a microservices-based fitness platform with AI recommendations and event-driven progress tracking, and a car rental platform with booking, payments and availability services.</p>
+      <p>I hold an MCA from Lovely Professional University and a BCA from Rajasthan University, and I'm an Oracle Certified Java Programmer.</p>
+      <div class="certifications">@for(cert of certifications; track cert){<span class="tag">{{ cert }}</span>}</div>
     </div>
-
-    <div class="bio-card">
-      <div class="card">
-        <h3>At a glance</h3>
-        <dl>
-          <dt>Current role</dt>
-          <dd>Full Stack Java Developer, LTIMindtree</dd>
-          <dt>Focus</dt>
-          <dd>Spring Boot APIs · Angular UIs · Microservices</dd>
-          <dt>Education</dt>
-          <dd>MCA, Lovely Professional University</dd>
-          <dt>Based in</dt>
-          <dd>Jaipur, India — works with clients globally</dd>
-        </dl>
-      </div>
-    </div>
+    <aside class="bio-card card"><span class="eyebrow">THE BUILDER</span><h3>Bhawesh Sharma</h3><p class="bio-role">Founder · Full-stack Java developer</p><dl><dt>Core strength</dt><dd>Spring Boot · Angular · APIs · PostgreSQL</dd><dt>Product thinking</dt><dd>Discovery · architecture · delivery · launch</dd><dt>Operating model</dt><dd>Direct communication with the people making the product</dd><dt>Based in</dt><dd>Jaipur, India · working with clients globally</dd></dl></aside>
   </div>
 </section>
 
 <section class="process">
-  <div class="container">
-    <span class="eyebrow">// HOW I WORK</span>
-    <h2 class="section-heading">A process built to remove surprises</h2>
-    <p class="section-sub">Four stages, every engagement, no exceptions.</p>
-
-    <div class="process-grid">
-      @for (step of process; track step.title; let i = $index) {
-        <div class="card process-step">
-          <span class="step-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
-          <h3>{{ step.title }}</h3>
-          <p>{{ step.description }}</p>
-        </div>
-      }
-    </div>
-  </div>
+  <div class="container"><span class="eyebrow">04 / DELIVERY SYSTEM</span><h2 class="section-heading">A clear path from brief to launch.</h2><p class="section-sub">Every engagement uses the same disciplined sequence, adapted to the business.</p><div class="process-grid">@for(step of process; track step.title; let i = $index){<div class="card process-step"><span class="step-index">{{ (i+1).toString().padStart(2,'0') }}</span><h3>{{ step.title }}</h3><p>{{ step.description }}</p></div>}</div></div>
 </section>
 
 <section class="stack">
-  <div class="container">
-    <span class="eyebrow">// STACK</span>
-    <h2 class="section-heading">What I build with</h2>
-    <p class="section-sub">The same tools this website itself runs on — nothing here is untested in production.</p>
-
-    <div class="skill-groups">
-      @for (group of skillGroups; track group.label) {
-        <div class="skill-group">
-          <h4>{{ group.label }}</h4>
-          <div class="tags">
-            @for (item of group.items; track item) {
-              <span class="tag">{{ item }}</span>
-            }
-          </div>
-        </div>
-      }
-    </div>
-  </div>
+  <div class="container"><span class="eyebrow">05 / ENGINEERING FOUNDATION</span><h2 class="section-heading">A modern stack, used with restraint.</h2><p class="section-sub">The technology choices stay understandable, maintainable and appropriate to the product.</p><div class="skill-groups">@for(group of skillGroups; track group.label){<div class="skill-group"><h4>{{ group.label }}</h4><div class="tags">@for(item of group.items; track item){<span class="tag">{{ item }}</span>}</div></div>}</div></div>
 </section>
 
-<section class="cta-band">
-  <div class="container cta-inner">
-    <h2 class="section-heading">Let's talk about your project</h2>
-    <p class="section-sub">If it needs to actually work in production, I'm the right person to talk to.</p>
-    <a routerLink="/contact" class="btn btn-primary">Get in touch</a>
-  </div>
-</section>
+<section class="cta-band"><div class="container cta-inner"><span class="eyebrow eyebrow-amber">READY WHEN YOU ARE</span><h2 class="section-heading">Bring the business problem. We'll shape the digital solution.</h2><p class="section-sub">Tell us where customers, operations or growth are being held back today.</p><a routerLink="/contact" class="btn btn-primary">Tell us about the business →</a></div></section>
